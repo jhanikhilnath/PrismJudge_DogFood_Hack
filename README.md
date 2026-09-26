@@ -141,6 +141,8 @@ A 5-minute video demonstration covering the full event lifecycle:
 
 ## 8. Documentation Index
 
+- [AGENTS.md](AGENTS.md): Autonomous agent operating manual, invariants, testing runbook, and role credentials.
+- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Records (ADRs) with deep context and mathematical rationales.
 - [ARCHITECTURE.md](ARCHITECTURE.md): System design, component boundaries, and Fastify request lifecycle.
 - [DATA-MODEL.md](DATA-MODEL.md): Relational schema, entity descriptions, and fixture ingestion.
 - [JUDGING.md](JUDGING.md): Normalization proofs, Bradley-Terry math, rubric weights, and isolation rules.

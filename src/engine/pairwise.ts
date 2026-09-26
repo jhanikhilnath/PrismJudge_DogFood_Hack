@@ -10,7 +10,7 @@ export interface PairwiseComparisonRow {
 }
 
 export interface BradleyTerryResult {
-  ratings: Record<string, { skill: number; winRate: number; rank: number }>;
+  ratings: Record<string, { skill: number; elo: number; winRate: number; rank: number }>;
   rankedProjectIds: string[];
   iterations: number;
   converged: boolean;
@@ -35,7 +35,7 @@ export function solveBradleyTerry(
     const projs = queryAll<{ id: string }>('SELECT id FROM projects');
     const emptyRatings: BradleyTerryResult['ratings'] = {};
     for (let i = 0; i < projs.length; i++) {
-      emptyRatings[projs[i]!.id] = { skill: 0.0, winRate: 0.0, rank: i + 1 };
+      emptyRatings[projs[i]!.id] = { skill: 0.0, elo: 1500, winRate: 0.0, rank: i + 1 };
     }
     return {
       ratings: emptyRatings,
@@ -108,14 +108,15 @@ export function solveBradleyTerry(
     }
   }
 
-  // Calculate win rates & log-odds skills
-  const results: Array<{ id: string; skill: number; winRate: number }> = [];
+  // Calculate win rates, Elo, & log-odds skills
+  const results: Array<{ id: string; skill: number; elo: number; winRate: number }> = [];
   for (let i = 0; i < n; i++) {
     const id = projects[i]!;
     const totalMatches = matches[i]!.reduce((a, b) => a + b, 0);
     const winRate = totalMatches > 0 ? (wins[i]! - 0.01) / totalMatches : 0;
     const skill = parseFloat(Math.log(pi[i]!).toFixed(4));
-    results.push({ id, skill, winRate: parseFloat(winRate.toFixed(3)) });
+    const elo = Math.round(1500 + 400 * Math.log10(Math.max(1e-4, pi[i]!)));
+    results.push({ id, skill, elo, winRate: parseFloat(winRate.toFixed(3)) });
   }
 
   results.sort((a, b) => b.skill - a.skill);
@@ -124,7 +125,7 @@ export function solveBradleyTerry(
   const rankedProjectIds: string[] = [];
   for (let i = 0; i < results.length; i++) {
     const r = results[i]!;
-    ratings[r.id] = { skill: r.skill, winRate: r.winRate, rank: i + 1 };
+    ratings[r.id] = { skill: r.skill, elo: r.elo, winRate: r.winRate, rank: i + 1 };
     rankedProjectIds.push(r.id);
   }
 

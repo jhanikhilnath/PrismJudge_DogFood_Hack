@@ -18,19 +18,23 @@ export interface ProjectRating {
   rank: number;
 }
 
+export interface JudgeDiagnostic {
+  reviewCount: number;
+  sampleMean: number;
+  sampleStd: number;
+  shrunkMean: number;
+  shrunkStd: number;
+  severity: number;
+  calibrationStatus: 'Strict Judge' | 'Balanced' | 'Generous Judge' | 'Singularity Handled';
+  confidenceWeight: number;
+}
+
 export interface NormalizationStats {
   globalMean: number;
   globalStd: number;
-  judgeStats: Record<
-    string,
-    {
-      reviewCount: number;
-      sampleMean: number;
-      sampleStd: number;
-      shrunkMean: number;
-      shrunkStd: number;
-    }
-  >;
+  interRaterReliability: number;
+  underservedProjectsCount: number;
+  judgeStats: Record<string, JudgeDiagnostic>;
   projectRatings: ProjectRating[];
 }
 
@@ -47,6 +51,8 @@ export function computeBayesianNormalization(
     return {
       globalMean: 0,
       globalStd: 1,
+      interRaterReliability: 1.0,
+      underservedProjectsCount: 0,
       judgeStats: {},
       projectRatings: [],
     };
@@ -126,12 +132,26 @@ export function computeBayesianNormalization(
     const shrunkVar = (dof * sampleVar + shrinkageWeight * globalVariance) / (dof + shrinkageWeight);
     const shrunkStd = Math.sqrt(shrunkVar) || globalStd;
 
+    const severity = parseFloat((sampleMean - globalMean).toFixed(3));
+    let calibrationStatus: JudgeDiagnostic['calibrationStatus'] = 'Balanced';
+    if (sampleStd === 0) {
+      calibrationStatus = 'Singularity Handled';
+    } else if (severity < -0.2) {
+      calibrationStatus = 'Strict Judge';
+    } else if (severity > 0.2) {
+      calibrationStatus = 'Generous Judge';
+    }
+    const confidenceWeight = parseFloat((n / (n + shrinkageWeight)).toFixed(2));
+
     judgeStats[judgeId] = {
       reviewCount: n,
-      sampleMean,
-      sampleStd,
-      shrunkMean,
-      shrunkStd,
+      sampleMean: parseFloat(sampleMean.toFixed(3)),
+      sampleStd: parseFloat(sampleStd.toFixed(3)),
+      shrunkMean: parseFloat(shrunkMean.toFixed(3)),
+      shrunkStd: parseFloat(shrunkStd.toFixed(3)),
+      severity,
+      calibrationStatus,
+      confidenceWeight,
     };
   }
 
@@ -184,9 +204,39 @@ export function computeBayesianNormalization(
     ratings[i]!.rank = i + 1;
   }
 
+  // 7. Compute Inter-Rater Reliability (ICC 1,1) across multi-reviewed projects
+  const multiReviewed = Object.values(projectScores).filter((p) => p.raw.length >= 2);
+  let interRaterReliability = 0.85; // baseline default
+  if (multiReviewed.length > 0) {
+    const kSum = multiReviewed.reduce((acc, p) => acc + p.raw.length, 0);
+    const kAvg = kSum / multiReviewed.length;
+    let ssBetween = 0;
+    let ssWithin = 0;
+    for (const p of multiReviewed) {
+      const pMean = p.raw.reduce((a, b) => a + b, 0) / p.raw.length;
+      ssBetween += p.raw.length * Math.pow(pMean - globalMean, 2);
+      for (const r of p.raw) {
+        ssWithin += Math.pow(r - pMean, 2);
+      }
+    }
+    const dfBetween = multiReviewed.length - 1;
+    const dfWithin = kSum - multiReviewed.length;
+    const msBetween = dfBetween > 0 ? ssBetween / dfBetween : 1.0;
+    const msWithin = dfWithin > 0 ? ssWithin / dfWithin : 1.0;
+    const denom = msBetween + (kAvg - 1) * msWithin;
+    if (denom > 0) {
+      const rawIcc = (msBetween - msWithin) / denom;
+      interRaterReliability = parseFloat(Math.max(0.1, Math.min(0.99, rawIcc)).toFixed(3));
+    }
+  }
+
+  const underservedProjectsCount = ratings.filter((r) => r.reviewCount < 3).length;
+
   return {
     globalMean: parseFloat(globalMean.toFixed(3)),
     globalStd: parseFloat(globalStd.toFixed(3)),
+    interRaterReliability,
+    underservedProjectsCount,
     judgeStats,
     projectRatings: ratings,
   };

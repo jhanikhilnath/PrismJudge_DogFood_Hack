@@ -66,6 +66,10 @@ This document formalizes our threat model, defensive architecture, mathematical 
 * **Attack Scenario**: Malicious input containing SQL meta-characters (`' OR 1=1 --`, `UNION SELECT`) injected into search queries, track filters, or JSON bodies.
 * **Mitigation**: 100% of SQLite queries in `src/db/` and route handlers use parameterized prepared statements (`db.prepare(sql).run(...params)`). Zero dynamic string concatenation is used for SQL query generation.
 
+### Threat 7: Credential Scraping & Certificate Exposure
+* **Attack Scenario**: A participant or outside scraper crawls `/certificates/:projectId` to harvest participant rosters, team credentials, or forged certificates.
+* **Mitigation**: Route-level authorization checks require that the requester is either an event organizer/admin or a registered member of that project's team in `team_members`. Unauthenticated visitors are redirected (`HTTP 302`) to login, while peer participants and non-team judges receive `HTTP 403 Forbidden`. External authenticity is verified via `/certificates/:projectId/verify` without exposing personal credentials.
+
 ---
 
 ## 3. Automated Penetration Test Results

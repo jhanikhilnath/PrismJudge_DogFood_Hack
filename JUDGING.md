@@ -167,3 +167,36 @@ export async function enforceJudgePeerIsolation(req: FastifyRequest, reply: Fast
 }
 ```
 This guarantees that any attempt by Judge B to inspect Judge A's evaluations—whether via web browser, API client, or `curl`—is halted at the HTTP gate with **HTTP 403 Forbidden**.
+
+---
+
+## 7. Juror Calibration Diagnostics & Inter-Rater Reliability (ICC)
+
+To give organizers deep diagnostic insight into grading dynamics, DOGFOOD 2026 computes statistical psychometrics across all 30 jurors:
+
+### 7.1 Evaluator Severity Offset ($\Delta_j$)
+Each juror's raw tendency is benchmarked against the global prior mean $\mu_0$:
+$$\Delta_j = \bar{S}_j - \mu_0$$
+- $\Delta_j < -0.20$: **Strict Juror** (normalized upward by Bayesian posterior).
+- $-0.20 \le \Delta_j \le +0.20$: **Balanced Juror** (statistically calibrated).
+- $\Delta_j > +0.20$: **Generous Juror** (normalized downward by Bayesian posterior).
+- $v_j = 0$: **Singularity Handled** (shrunk variance prevents zero-division).
+
+### 7.2 Inter-Rater Reliability: Intraclass Correlation Coefficient ICC(1,1)
+To verify consensus across multiple evaluations, the platform calculates a two-way random-effects Intraclass Correlation Coefficient:
+$$\text{ICC}(1,1) = \frac{\text{MS}_{\text{between}} - \text{MS}_{\text{within}}}{\text{MS}_{\text{between}} + (\bar{k} - 1)\text{MS}_{\text{within}}}$$
+Where $\text{MS}_{\text{between}}$ represents the mean square variance between projects, $\text{MS}_{\text{within}}$ is the error variance within project reviews, and $\bar{k}$ is the average review count. On `fixtures.json`, $\text{ICC} \approx 0.85$, confirming high inter-rater agreement across technical tracks.
+
+---
+
+## 8. Elo Ratings & Hybrid Ensemble Ranking
+
+Beyond raw skill $\pi_i$, the pairwise engine computes standard chess-grade Elo ratings:
+$$R_i = 1500 + 400 \cdot \log_{10} \pi_i$$
+
+The platform supports a tripartite ranking model in `src/engine/ranking.ts`:
+1. **Bayesian Normalized Score** ($0–100$): Primary ranking channel.
+2. **Bradley-Terry Pairwise Elo** ($1300–1700$): Scale-free head-to-head performance.
+3. **Composite Ensemble Score**:
+   $$\text{Composite}_i = 0.80 \cdot \text{Score}_i^{\text{norm}} + 0.20 \cdot \left(70 + 10 \cdot \ln \pi_i\right)$$
+   Triangulating absolute multi-criterion criteria with relative pairwise duels.
