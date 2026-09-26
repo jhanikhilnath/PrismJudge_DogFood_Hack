@@ -1,0 +1,53 @@
+<div class="page-hero">
+  <div>
+    <h1 class="page-title">Project Submission</h1>
+    <p class="page-subtitle">Submit your hackathon project or edit your team's existing draft</p>
+  </div>
+</div>
+
+<% if (isClosed) { %>
+  <div class="alert alert-danger">
+    <strong>⚠️ Submissions Closed:</strong> The submission deadline was <%= event ? event.submissions_close : 'in the past' %>.
+    The backend strictly refuses new submissions and draft modifications after the deadline has elapsed.
+  </div>
+<% } %>
+
+<div class="form-card">
+  <form action="/projects/new" method="POST">
+    <div class="form-group">
+      <label class="form-label" for="title">Project Title *</label>
+      <input type="text" id="title" name="title" required class="form-input" placeholder="e.g. Quiet Hours" <%= isClosed ? 'disabled' : '' %>>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="summary">One-line Summary *</label>
+      <textarea id="summary" name="summary" required rows="2" class="form-textarea" placeholder="One clear sentence explaining what you built..." <%= isClosed ? 'disabled' : '' %>></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="track_id">Hackathon Track *</label>
+      <select id="track_id" name="track_id" required class="form-select" <%= isClosed ? 'disabled' : '' %>>
+        <% tracks.forEach(function(t) { %>
+          <option value="<%= t.id %>"><%= t.name %></option>
+        <% }); %>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="repo_url">Repository URL</label>
+      <input type="url" id="repo_url" name="repo_url" class="form-input" placeholder="https://github.com/..." <%= isClosed ? 'disabled' : '' %>>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="demo_url">Demo or Live URL</label>
+      <input type="url" id="demo_url" name="demo_url" class="form-input" placeholder="https://..." <%= isClosed ? 'disabled' : '' %>>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+      <a href="/projects" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" <%= isClosed ? 'disabled' : '' %>>
+        <%= isClosed ? 'Submissions Closed' : 'Submit Project' %>
+      </button>
+    </div>
+  </form>
+</div>

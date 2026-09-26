@@ -1,0 +1,49 @@
+<div class="page-hero">
+  <div>
+    <h1 class="page-title">Project Gallery</h1>
+    <p class="page-subtitle">
+      Explore submissions for <%= event ? event.name : 'Sample Hack 2026' %> (<%= projects.length %> projects entered)
+    </p>
+  </div>
+  <div>
+    <a href="/projects/new" class="btn btn-primary">+ Submit Project</a>
+  </div>
+</div>
+
+<div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+  <input 
+    type="text" 
+    id="gallery-search" 
+    placeholder="Search by title or summary..." 
+    value="<%= query.q %>"
+    class="form-input" 
+    style="flex: 1; min-width: 260px;"
+  >
+  <select id="gallery-track" class="form-select" style="width: auto; min-width: 200px;">
+    <option value="">All Tracks (<%= tracks.length %>)</option>
+    <% tracks.forEach(function(t) { %>
+      <option value="<%= t.id %>" <%= query.track === t.id ? 'selected' : '' %>><%= t.name %></option>
+    <% }); %>
+  </select>
+</div>
+
+<div class="grid-cards">
+  <% projects.forEach(function(p) { %>
+    <div class="project-card" data-title="<%= p.title.toLowerCase() %>" data-summary="<%= p.summary.toLowerCase() %>" data-track="<%= p.track_id %>">
+      <div>
+        <div class="card-header">
+          <h2 class="card-title">
+            <a href="/projects/<%= p.id %>"><%= p.title %></a>
+          </h2>
+          <span class="card-track"><%= p.track_name || p.track_id %></span>
+        </div>
+        <p class="card-summary"><%= p.summary %></p>
+      </div>
+
+      <div class="card-footer">
+        <span>Team: <%= p.team_name || p.team_id %></span>
+        <span><%= p.review_count %> reviews</span>
+      </div>
+    </div>
+  <% }); %>
+</div>

@@ -1,0 +1,85 @@
+<div class="page-hero">
+  <div>
+    <h1 class="page-title">Organizer Control Center</h1>
+    <p class="page-subtitle">Real-time review progress, cross-judge Bayesian normalization, and verifiable audit records</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="/api/export.csv" class="btn btn-primary" download="dogfood-results.csv">⬇ Download CSV Export (Check 7)</a>
+    <a href="/api/organizer/audit" class="btn btn-secondary" target="_blank">Audit Log JSON</a>
+  </div>
+</div>
+
+<!-- Metric Overview Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
+    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Total Projects</div>
+    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent);"><%= counts.projects %></div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
+    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Active Judges</div>
+    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-pink);"><%= counts.judges %></div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
+    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Reviews Submitted</div>
+    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-gold);"><%= counts.scores %></div>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
+    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Global Prior Mean</div>
+    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-emerald);"><%= normalization.globalMean %> <span style="font-size: 1rem; color: var(--text-dim);">/ 5.0</span></div>
+  </div>
+</div>
+
+<!-- Normalization Proof Banner (Bonus #1) -->
+<div style="background: rgba(0, 229, 208, 0.05); border: 1px solid var(--accent); border-radius: 6px; padding: 1.25rem; margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h3 style="font-family: var(--font-mono); font-size: 1rem; color: var(--accent); margin-bottom: 0.25rem;">
+        ★ Normalization Proof Active: Empirical Bayesian Shrinkage Z-Score
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        Global Prior: μ₀ = <%= normalization.globalMean %>, σ₀ = <%= normalization.globalStd %> | Shrinkage Weight m = 3.0.
+        Smoothly shrinks zero-variance judges (e.g. <code>jdg_07</code> with σ = 0) to eliminate singularities.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Live Leaderboard Table -->
+<h2 style="font-family: var(--font-mono); font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-main);">
+  Competition Leaderboard (<%= leaderboard.length %> Submissions)
+</h2>
+
+<div class="table-wrapper" style="margin-bottom: 3rem;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Project ID</th>
+        <th>Project Title</th>
+        <th>Track</th>
+        <th>Reviews</th>
+        <th>Raw Average</th>
+        <th>Normalized Score (0-100)</th>
+        <th>Composite Rating</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% leaderboard.forEach(function(p) { %>
+        <tr>
+          <td style="font-family: var(--font-mono); font-weight: 800; color: <%= p.rank <= 3 ? 'var(--accent-gold)' : 'var(--text-muted)' %>;">
+            #<%= p.rank %>
+          </td>
+          <td style="font-family: var(--font-mono);"><%= p.projectId %></td>
+          <td>
+            <a href="/projects/<%= p.projectId %>" style="font-weight: 600;"><%= p.projectTitle %></a>
+          </td>
+          <td><span class="card-track"><%= p.trackId %></span></td>
+          <td><%= p.reviewCount %></td>
+          <td style="font-family: var(--font-mono);"><%= p.rawAverage.toFixed(2) %> / 5.0</td>
+          <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent);"><%= p.normalizedScore.toFixed(2) %></td>
+          <td style="font-family: var(--font-mono); font-weight: 800; color: var(--text-main);"><%= p.compositeScore.toFixed(2) %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>

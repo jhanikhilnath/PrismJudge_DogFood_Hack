@@ -1,0 +1,71 @@
+<div class="page-hero">
+  <div>
+    <h1 class="page-title">Pairwise Judging Mode</h1>
+    <p class="page-subtitle">Compare two projects side-by-side using the Bradley-Terry Minorization-Maximization (MM) model</p>
+  </div>
+</div>
+
+<div class="alert alert-warning" style="margin-bottom: 2rem;">
+  <strong>★ Bradley-Terry Estimator Active:</strong> Pairwise comparisons fit latent project skill ratings λᵢ via Maximum Likelihood Estimation, effectively eliminating individual judge rubric scaling biases.
+</div>
+
+<% if (project_a && project_b) { %>
+  <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 2rem; align-items: stretch; margin-bottom: 3rem;">
+    <!-- Project A -->
+    <div style="background: var(--bg-card); border: 2px solid var(--border); border-radius: 8px; padding: 2rem; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <span class="card-track"><%= project_a.track_name || 'Track' %></span>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0.75rem 0; color: var(--text-main);"><%= project_a.title %></h2>
+        <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6;"><%= project_a.summary %></p>
+      </div>
+      <div style="margin-top: 2rem;">
+        <button class="btn btn-primary" style="width: 100%; font-size: 1rem; padding: 1rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_a')">
+          ★ Select <%= project_a.title %> as Better
+        </button>
+      </div>
+    </div>
+
+    <!-- VS Divider -->
+    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem;">
+      <div style="width: 1px; height: 80px; background: var(--border);"></div>
+      <span style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: var(--accent-pink);">VS</span>
+      <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'tie')">
+        It's a Tie
+      </button>
+      <div style="width: 1px; height: 80px; background: var(--border);"></div>
+    </div>
+
+    <!-- Project B -->
+    <div style="background: var(--bg-card); border: 2px solid var(--border); border-radius: 8px; padding: 2rem; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <span class="card-track"><%= project_b.track_name || 'Track' %></span>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0.75rem 0; color: var(--text-main);"><%= project_b.title %></h2>
+        <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6;"><%= project_b.summary %></p>
+      </div>
+      <div style="margin-top: 2rem;">
+        <button class="btn btn-primary" style="width: 100%; font-size: 1rem; padding: 1rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_b')">
+          ★ Select <%= project_b.title %> as Better
+        </button>
+      </div>
+    </div>
+  </div>
+<% } else { %>
+  <p style="color: var(--text-muted);">Not enough projects to form a comparison pair.</p>
+<% } %>
+
+<script>
+  async function submitPairwiseVote(projA, projB, winner) {
+    const res = await fetch('/api/pairwise/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_a: projA, project_b: projB, winner: winner })
+    });
+
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      const err = await res.json();
+      alert('Pairwise error: ' + (err.error || 'Failed to submit'));
+    }
+  }
+</script>

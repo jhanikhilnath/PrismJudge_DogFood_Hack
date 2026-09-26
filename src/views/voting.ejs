@@ -1,0 +1,59 @@
+<div class="page-hero">
+  <div>
+    <h1 class="page-title">Community Choice Voting</h1>
+    <p class="page-subtitle">Cast your ballot for the community favorite. Ballots are randomized per session to prevent order bias.</p>
+  </div>
+</div>
+
+<div class="alert alert-warning" style="margin-bottom: 2rem;">
+  <strong>🔒 Privacy Guard:</strong> Real-time vote totals and project rankings remain encrypted and hidden until the community voting window officially closes.
+</div>
+
+<div class="grid-cards">
+  <% projects.forEach(function(p) { %>
+    <div class="project-card">
+      <div>
+        <div class="card-header">
+          <h2 class="card-title">
+            <a href="/projects/<%= p.id %>"><%= p.title %></a>
+          </h2>
+          <span class="card-track"><%= p.track_name || 'General' %></span>
+        </div>
+        <p class="card-summary"><%= p.summary %></p>
+      </div>
+
+      <div class="card-footer" style="flex-direction: column; align-items: stretch; gap: 0.75rem;">
+        <% if (userVotedProjectId === p.id) { %>
+          <button class="btn btn-secondary" disabled style="width: 100%; border-color: var(--accent-emerald); color: var(--accent-emerald);">
+            ✓ You Voted For This
+          </button>
+        <% } else { %>
+          <form action="/api/vote" method="POST" onsubmit="castVote(event, '<%= p.id %>')">
+            <button type="submit" class="btn btn-primary" style="width: 100%;" <%= isVotingClosed ? 'disabled' : '' %>>
+              <%= isVotingClosed ? 'Voting Closed' : '★ Cast Ballot' %>
+            </button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<script>
+  async function castVote(e, projectId) {
+    e.preventDefault();
+    const res = await fetch('/api/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: projectId })
+    });
+
+    if (res.ok) {
+      alert('Your vote has been securely recorded!');
+      window.location.reload();
+    } else {
+      const err = await res.json();
+      alert('Vote error: ' + (err.error || 'Failed to record vote'));
+    }
+  }
+</script>

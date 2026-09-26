@@ -1,0 +1,154 @@
+<div class="page-hero">
+  <div>
+    <h1 class="page-title">Judge Evaluation Portal</h1>
+    <p class="page-subtitle">
+      Logged in as <strong><%= user.name %></strong> (<%= user.userId %>) · <%= completedCount %> of <%= totalAssigned %> reviews completed
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="/judge/pairwise" class="btn btn-secondary">Pairwise Mode (Bonus)</a>
+  </div>
+</div>
+
+<div class="alert alert-warning" style="margin-bottom: 2rem;">
+  <strong>🔒 Strict Role Isolation:</strong> Under competition rule 9, backend role isolation is enforced at the API layer. You are strictly prevented from viewing peer judges' scores.
+</div>
+
+<div class="table-wrapper">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Project ID</th>
+        <th>Project Title</th>
+        <th>Track</th>
+        <th>Status</th>
+        <th>Your Score</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% assigned.forEach(function(p) { %>
+        <tr>
+          <td style="font-family: var(--font-mono); font-weight: 700;"><%= p.id %></td>
+          <td>
+            <a href="/projects/<%= p.id %>" style="font-weight: 600;"><%= p.title %></a>
+          </td>
+          <td><span class="card-track"><%= p.track_name || 'General' %></span></td>
+          <td>
+            <% if (p.hasScored) { %>
+              <span style="color: var(--accent-emerald); font-family: var(--font-mono); font-weight: 700;">✓ SCORED</span>
+            <% } else { %>
+              <span style="color: var(--accent-pink); font-family: var(--font-mono);">PENDING</span>
+            <% } %>
+          </td>
+          <td style="font-family: var(--font-mono); font-weight: 700;">
+            <%= p.hasScored && p.score ? p.score.raw_total.toFixed(2) + ' / 5.0' : '—' %>
+          </td>
+          <td>
+            <button 
+              class="btn btn-secondary" 
+              style="padding: 0.4rem 0.75rem; font-size: 0.75rem;"
+              onclick="openScoringModal('<%= p.id %>', '<%= p.title.replace(/'/g, \"\\\\'\") %>')"
+            >
+              <%= p.hasScored ? 'Update' : 'Evaluate' %>
+            </button>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Simple Scoring Modal Overlay -->
+<div id="scoring-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 1.5rem;">
+  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; max-width: 520px; width: 100%; padding: 2rem;">
+    <h2 id="modal-project-title" style="font-family: var(--font-mono); font-size: 1.25rem; margin-bottom: 1.5rem;">Score Project</h2>
+    
+    <form id="scoring-form" onsubmit="submitScore(event)">
+      <input type="hidden" id="modal-project-id" name="project_id">
+
+      <div class="form-group">
+        <label class="form-label">Functionality (Weight: 40%)</label>
+        <input type="range" min="1" max="5" step="1" value="3" id="score-func" class="rubric-input" data-weight="0.4" style="width: 100%;" oninput="document.getElementById('val-func').textContent = this.value">
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem;">
+          <span>1 (Broken)</span>
+          <span id="val-func" style="color: var(--accent); font-weight: 700; font-size: 1rem;">3</span>
+          <span>5 (Flawless)</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Quality & Architecture (Weight: 30%)</label>
+        <input type="range" min="1" max="5" step="1" value="3" id="score-qual" class="rubric-input" data-weight="0.3" style="width: 100%;" oninput="document.getElementById('val-qual').textContent = this.value">
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem;">
+          <span>1 (Messy)</span>
+          <span id="val-qual" style="color: var(--accent); font-weight: 700; font-size: 1rem;">3</span>
+          <span>5 (Senior Grade)</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Innovation & Impact (Weight: 30%)</label>
+        <input type="range" min="1" max="5" step="1" value="3" id="score-innov" class="rubric-input" data-weight="0.3" style="width: 100%;" oninput="document.getElementById('val-innov').textContent = this.value">
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); margin-top: 0.25rem;">
+          <span>1 (Derivative)</span>
+          <span id="val-innov" style="color: var(--accent); font-weight: 700; font-size: 1rem;">3</span>
+          <span>5 (Inventive)</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Private Judge Feedback (Optional)</label>
+        <textarea id="score-comment" class="form-textarea" rows="2" placeholder="Constructive feedback for organizers..."></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1rem;">
+        <div style="font-family: var(--font-mono); font-size: 0.9rem;">
+          Computed Total: <strong id="computed-raw-total" style="color: var(--accent);">3.00</strong> / 5.0
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Score</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openScoringModal(id, title) {
+    document.getElementById('modal-project-id').value = id;
+    document.getElementById('modal-project-title').textContent = 'Score: ' + title;
+    document.getElementById('scoring-modal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('scoring-modal').style.display = 'none';
+  }
+
+  async function submitScore(e) {
+    e.preventDefault();
+    const projectId = document.getElementById('modal-project-id').value;
+    const func = parseInt(document.getElementById('score-func').value, 10);
+    const qual = parseInt(document.getElementById('score-qual').value, 10);
+    const innov = parseInt(document.getElementById('score-innov').value, 10);
+    const comment = document.getElementById('score-comment').value;
+
+    const res = await fetch('/api/judge/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: projectId,
+        criteria: { functionality: func, quality: qual, innovation: innov },
+        comment: comment
+      })
+    });
+
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      const err = await res.json();
+      alert('Error saving score: ' + (err.error || 'Unknown error'));
+    }
+  }
+</script>
