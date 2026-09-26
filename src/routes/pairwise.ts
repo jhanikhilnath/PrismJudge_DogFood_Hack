@@ -94,7 +94,7 @@ export async function pairwiseRoutes(fastify: FastifyInstance, _opts: FastifyPlu
   // Pairwise judging interactive HTML view
   fastify.get('/judge/pairwise', async (req: FastifyRequest, reply: FastifyReply) => {
     if (!req.user || (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin')) {
-      return reply.redirect('/api/auth/switch/judge_a?redirect=/judge/pairwise');
+      return reply.redirect('/login?redirect=/judge/pairwise&error=Judge+access+required');
     }
 
     const projects = queryAll<{ id: string; title: string; track_name: string; summary: string }>(`

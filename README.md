@@ -64,7 +64,8 @@ claimed T1 T2, verified T1 T2
 
 ### T1 CORE (Verified 100%)
 * **Authentication & Sessions**: Dual cookie session (`Cookie: session=...`) and bearer token (`Authorization: Bearer ...`) support.
-* **Role-Based Access Control**: 5 distinct roles (`visitor`, `participant`, `judge`, `organizer`, `admin`).
+* **Role-Based Access Control**: 5 distinct roles (`visitor`, `participant`, `judge`, `organizer`, `admin`) with tailored navigation bars and strict route gating.
+* **Consumer-Grade UI & Adaptive Deadlines**: Light-theme editorial interface free of developer artifacts (no raw tokens, no internal DB IDs, no raw hash dumps); deadline timestamps adaptively formatted in user's local timezone alongside UTC.
 * **Event Administration**: Configurable submission deadlines, judging windows, tracks, and rubric criteria.
 * **Team Formation**: Invite codes (`/teams`), membership tracking.
 * **Project Submissions**: Draft editing prior to deadline; strict server UTC deadline enforcement that rejects late submissions.

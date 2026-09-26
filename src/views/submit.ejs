@@ -1,3 +1,26 @@
+<%
+  function formatUtcDate(isoString) {
+    if (!isoString) return '';
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC'
+      }) + ' at ' + d.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short',
+        timeZone: 'UTC'
+      });
+    } catch(e) {
+      return isoString;
+    }
+  }
+%>
+
 <div class="breadcrumb-nav" style="max-width: 680px; margin-left: auto; margin-right: auto;">
   <a href="/projects" class="breadcrumb-link">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -16,7 +39,20 @@
   <div class="security-banner" style="max-width: 680px; margin: 0 auto 1.5rem; background: #FEF2F2; border-color: #FECDD3;">
     <svg class="security-icon" style="color: #DC2626;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     <div class="security-text" style="color: #991B1B;">
-      <strong>Submissions Window Closed:</strong> The event deadline passed on <%= event ? event.submissions_close : 'the scheduled deadline' %>. The engine is no longer accepting new submissions or amendments.
+      <strong>Submissions Window Closed:</strong> The event deadline passed on 
+      <time class="local-time" datetime="<%= event ? event.submissions_close : '' %>">
+        <%= event ? formatUtcDate(event.submissions_close) : 'March 1, 2026 at 6:00 PM UTC' %>
+      </time>. The portal is no longer accepting new submissions or amendments.
+    </div>
+  </div>
+<% } else { %>
+  <div class="security-banner" style="max-width: 680px; margin: 0 auto 1.5rem; background: #F0FDF4; border-color: #BBF7D0;">
+    <svg class="security-icon" style="color: #16A34A;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <div class="security-text" style="color: #15803D;">
+      <strong>Submissions Open:</strong> Entries are accepted until 
+      <time class="local-time" datetime="<%= event ? event.submissions_close : '' %>">
+        <%= event ? formatUtcDate(event.submissions_close) : 'March 1, 2026 at 6:00 PM UTC' %>
+      </time>.
     </div>
   </div>
 <% } %>

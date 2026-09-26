@@ -23,7 +23,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3200);
   };
 
-  // 2. Active Navigation Item Highlight
+  // 2. Format Local Times
+  document.querySelectorAll('time.local-time').forEach((el) => {
+    const iso = el.getAttribute('datetime');
+    if (!iso) return;
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return;
+      const localStr = d.toLocaleDateString(undefined, {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }) + ' at ' + d.toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+      el.textContent = `${localStr} (6:00 PM UTC)`;
+    } catch (e) {}
+  });
+
+  // 3. Active Navigation Item Highlight
   const currentPath = window.location.pathname;
   const navLinks = document.querySelectorAll('.main-nav .nav-link');
   navLinks.forEach((link) => {

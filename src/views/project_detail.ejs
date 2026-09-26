@@ -26,7 +26,7 @@
     <% } %>
     <a href="/certificates/<%= project.id %>" class="btn btn-primary">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-      Verifiable Certificate
+      Certificate of Participation
     </a>
   </div>
 </div>
@@ -39,14 +39,28 @@
       <h2 class="section-title">Technical Overview &amp; Architecture</h2>
       <p class="project-summary-text"><%= project.summary %></p>
 
-      <!-- Cryptographic Provenance Block -->
-      <div class="crypto-provenance-box">
-        <div class="crypto-label-row">
-          <span class="crypto-title">CRYPTOGRAPHIC PROVENANCE (SHA-256)</span>
-          <span style="font-family: var(--font-mono); font-size: 0.68rem; color: #059669; font-weight: 600;">IMMUTABLE RECORD</span>
+      <!-- Clean Project Metadata Grid (No crypto slop) -->
+      <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+        <div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.25rem;">COMPETITION TRACK</div>
+          <div style="font-weight: 600; color: var(--text-primary);"><%= project.track_name || project.track_id %></div>
         </div>
-        <code class="crypto-hash-code">sha256-verified-entry-<%= project.id %>-<%= Buffer.from(project.title).toString('hex').slice(0, 16) %></code>
-        <div class="crypto-timestamp">RECORDED AT: <%= project.submitted_at %></div>
+        <div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.25rem;">SUBMISSION DATE</div>
+          <div style="color: var(--text-secondary); font-size: 0.88rem;"><%= new Date(project.submitted_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></div>
+        </div>
+        <% if (project.repo_url) { %>
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.25rem;">CODE REPOSITORY</div>
+            <a href="<%= project.repo_url %>" target="_blank" style="color: var(--accent-blue); font-weight: 600; font-size: 0.85rem;">github.com ↗</a>
+          </div>
+        <% } %>
+        <% if (project.demo_url) { %>
+          <div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.25rem;">DEMONSTRATION</div>
+            <a href="<%= project.demo_url %>" target="_blank" style="color: var(--accent-blue); font-weight: 600; font-size: 0.85rem;">Launch Live App ↗</a>
+          </div>
+        <% } %>
       </div>
     </div>
 
@@ -91,6 +105,19 @@
 
   <!-- Sidebar Column -->
   <div class="project-sidebar-col">
+    <% if (typeof user !== 'undefined' && user && (user.role === 'judge' || user.role === 'organizer')) { %>
+      <!-- Judge Action Card -->
+      <div class="content-card" style="background: #F8FAFC; border-color: #CBD5E1;">
+        <h3 class="section-title" style="font-size: 0.95rem; color: #1E3A8A;">Judge Evaluation</h3>
+        <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.5;">
+          Evaluate this project across functionality, architecture, innovation, and impact in your judging queue.
+        </p>
+        <a href="/judge/dashboard" class="btn btn-primary" style="width: 100%;">
+          Open Judging Queue →
+        </a>
+      </div>
+    <% } %>
+
     <!-- Team Roster -->
     <div class="content-card">
       <h3 class="section-title" style="font-size: 0.95rem;">Team Roster</h3>

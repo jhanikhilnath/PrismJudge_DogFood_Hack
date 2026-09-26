@@ -141,3 +141,23 @@ An append-only audit trail (`audit_logs` table) records high-security lifecycle 
 * `CSV_EXPORT_DOWNLOADED`
 
 Logs capture actor ID, actor role, timestamp, action, resource, JSON payload diffs, and IP address. Accessible to organizers via `/api/organizer/audit`.
+
+---
+
+## 6. Role-Based View Architecture & User-Facing Presentation
+
+To provide a consumer-grade user experience free of developer debris, the presentation layer strictly enforces role-based information visibility across all SSR templates:
+
+### Role-Based Navigation Matrix
+| Role | Primary Navigation Tabs | Gated / Hidden Endpoints | Profile Actions |
+| :--- | :--- | :--- | :--- |
+| **Visitor** (`anonymous`) | Gallery, Submit, Ballot | `/judge/*`, `/organizer/*` (HTTP 403 / Redirect) | Direct Sign In Link |
+| **Participant** (`participant`) | Gallery, Submit, Ballot | `/judge/*`, `/organizer/*` (HTTP 403 / Redirect) | User Badge & Sign Out |
+| **Judge** (`judge`) | Gallery, Ballot, Judging Queue, Pairwise | `/organizer/*` (HTTP 403), Submit (Hidden) | Judge Badge & Sign Out |
+| **Organizer** (`organizer`, `admin`) | Gallery, Console, Judging Queue, Pairwise, Ballot, Submit | None (Full System Oversight) | Admin Badge & Sign Out |
+
+### De-Slopping Principles
+1. **Zero Technical Artifacts**: Raw session tokens, API keys, developer debug dumps, and internal database primary keys (`usr_part_...`, `jdg_...`) are strictly excluded from client-facing DOM trees.
+2. **Context-Sensitive Provenance**: Rather than displaying raw 64-character SHA-256 hexadecimal digests, submissions and certificates present authenticated issuance metadata, certificate identifiers (`DF26-PRJ_XX-HASH`), and human-verifiable verification badges.
+3. **Adaptive Time Formatting**: Deadlines and timestamps are rendered as dual-layer `<time class="local-time">` elements, presenting an immediate UTC baseline on the server while automatically adapting to the user's local browser timezone on the client (e.g., `Sunday, 1 March 2026 at 23:30 GMT+5:30 (6:00 PM UTC)`).
+

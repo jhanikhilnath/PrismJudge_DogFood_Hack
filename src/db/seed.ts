@@ -223,6 +223,12 @@ export function seedDatabase(fixtures?: FixtureData): void {
       expiry,
       new Date().toISOString()
     );
+    execute(
+      `INSERT OR REPLACE INTO sessions (token, user_id, expires_at, created_at)
+       VALUES ('usr_part_33aa', 'usr_part', ?, ?)`,
+      expiry,
+      new Date().toISOString()
+    );
   });
 }
 

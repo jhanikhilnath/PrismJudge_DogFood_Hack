@@ -64,6 +64,9 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       'SELECT id, name, submissions_close FROM events LIMIT 1'
     );
 
+    const now = new Date().toISOString();
+    const isClosed = event ? now > event.submissions_close : false;
+
     // If client specifically requests JSON
     const acceptsHtml = req.headers.accept?.includes('text/html');
     if (query.format === 'json' || (!acceptsHtml && req.headers.accept?.includes('application/json'))) {
@@ -71,6 +74,7 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         event,
         count: projects.length,
         projects,
+        isClosed,
       });
     }
 
@@ -80,6 +84,7 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       tracks,
       event,
       user: req.user,
+      isClosed,
       query: { q: query.q || '', track: query.track || '' },
     });
   });

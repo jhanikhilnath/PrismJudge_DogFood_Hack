@@ -25,8 +25,13 @@
     </p>
     <div class="telemetry-strip">
       <div class="telemetry-item">
-        <span class="telemetry-dot"></span>
-        <span>Submissions Active</span>
+        <% if (typeof isClosed !== 'undefined' && isClosed) { %>
+          <span class="telemetry-dot" style="background: #F59E0B; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);"></span>
+          <span>Submissions Closed · Judging Phase</span>
+        <% } else { %>
+          <span class="telemetry-dot"></span>
+          <span>Submissions Open</span>
+        <% } %>
       </div>
       <div class="telemetry-divider"></div>
       <div class="telemetry-item">
@@ -38,12 +43,19 @@
       </div>
       <div class="telemetry-divider"></div>
       <div class="telemetry-item">
-        <span>SHA-256 Provenance</span>
+        <span>Transparent Peer Review</span>
       </div>
     </div>
   </div>
   <div class="hero-actions">
-    <a href="/projects/new" class="btn btn-primary">+ Submit Project</a>
+    <% if (typeof user !== 'undefined' && user && user.role === 'judge') { %>
+      <a href="/judge/dashboard" class="btn btn-primary">Open Judging Portal →</a>
+    <% } else if (typeof user !== 'undefined' && user && user.role === 'organizer') { %>
+      <a href="/organizer/dashboard" class="btn btn-primary">Operations Console →</a>
+      <a href="/projects/new" class="btn btn-secondary">+ Submit Project</a>
+    <% } else { %>
+      <a href="/projects/new" class="btn btn-primary">+ Submit Project</a>
+    <% } %>
   </div>
 </div>
 
@@ -70,16 +82,16 @@
           <span><%= featuredProject.team_name || featuredProject.team_id %></span>
         </div>
         <a href="/projects/<%= featuredProject.id %>" class="btn btn-secondary btn-sm">
-          Inspect Architecture →
+          View Project Details →
         </a>
       </div>
     </div>
 
     <div class="spotlight-meta-panel">
-      <div class="meta-panel-title">SYSTEM TELEMETRY</div>
+      <div class="meta-panel-title">PROJECT OVERVIEW</div>
       <div class="meta-stats-grid">
         <div class="meta-stat-item">
-          <span class="meta-stat-label">SUBMISSION ID</span>
+          <span class="meta-stat-label">ENTRY ID</span>
           <span class="meta-stat-value"><%= featuredProject.id %></span>
         </div>
         <div class="meta-stat-item">
@@ -87,12 +99,12 @@
           <span class="meta-stat-value"><%= featuredProject.track_name || 'General' %></span>
         </div>
         <div class="meta-stat-item">
-          <span class="meta-stat-label">EVALUATIONS</span>
+          <span class="meta-stat-label">PEER REVIEWS</span>
           <span class="meta-stat-value"><%= featuredProject.review_count %> reviews</span>
         </div>
         <div class="meta-stat-item">
-          <span class="meta-stat-label">INTEGRITY RECORD</span>
-          <span class="meta-stat-value" style="color: #059669;">Verified Active</span>
+          <span class="meta-stat-label">STATUS</span>
+          <span class="meta-stat-value" style="color: #059669;">Verified Submission</span>
         </div>
       </div>
       <div>

@@ -16,9 +16,8 @@
   <% } %>
 
   <div class="auth-tabs-bar">
-    <button type="button" class="auth-tab-btn active" data-tab="tab-personas" onclick="switchAuthTab('tab-personas')">Demo Personas (1-Click)</button>
+    <button type="button" class="auth-tab-btn active" data-tab="tab-personas" onclick="switchAuthTab('tab-personas')">Demo Quick-Access</button>
     <button type="button" class="auth-tab-btn" data-tab="tab-credentials" onclick="switchAuthTab('tab-credentials')">Email &amp; Password</button>
-    <button type="button" class="auth-tab-btn" data-tab="tab-token" onclick="switchAuthTab('tab-token')">Direct Token</button>
   </div>
 
   <!-- Tab 1: Demo Personas -->
@@ -32,10 +31,10 @@
               <h3 class="persona-card-title">Lead Organizer</h3>
               <div class="persona-card-sub">organizer@example.org</div>
             </div>
-            <span class="item-tag tag-org">ORG</span>
+            <span class="item-tag tag-org">ORGANIZER</span>
           </div>
           <p class="persona-card-desc">
-            Control room access, live Bayesian Z-score normalization metrics, and CSV export.
+            Full operations console, live Bayesian Z-score normalization metrics, and CSV results export.
           </p>
         </div>
         <form action="/login" method="POST">
@@ -52,8 +51,8 @@
         <div>
           <div class="persona-card-header">
             <div>
-              <h3 class="persona-card-title">Judge A (Lead)</h3>
-              <div class="persona-card-sub">Tomas Varga · jdg_01</div>
+              <h3 class="persona-card-title">Judge A</h3>
+              <div class="persona-card-sub">Tomas Varga · Lead Evaluator</div>
             </div>
             <span class="item-tag tag-judge">JUDGE</span>
           </div>
@@ -75,13 +74,13 @@
         <div>
           <div class="persona-card-header">
             <div>
-              <h3 class="persona-card-title">Judge B (Peer)</h3>
-              <div class="persona-card-sub">Elena Chen · jdg_02</div>
+              <h3 class="persona-card-title">Judge B</h3>
+              <div class="persona-card-sub">Elena Chen · Peer Evaluator</div>
             </div>
             <span class="item-tag tag-judge">JUDGE</span>
           </div>
           <p class="persona-card-desc">
-            Independent evaluator. Cryptographically blocked from inspecting Judge A scores.
+            Independent peer evaluator. Review allocated project queue with private rubric scoring.
           </p>
         </div>
         <form action="/login" method="POST">
@@ -99,12 +98,12 @@
           <div class="persona-card-header">
             <div>
               <h3 class="persona-card-title">Participant</h3>
-              <div class="persona-card-sub">Team 01 · usr_part</div>
+              <div class="persona-card-sub">Team 01 · Contestant</div>
             </div>
             <span class="item-tag tag-part">PARTICIPANT</span>
           </div>
           <p class="persona-card-desc">
-            Contestant view. View submission status, cast ballots, and test permission gates.
+            Contestant view. View submission status, cast community ballots, and inspect project reviews.
           </p>
         </div>
         <form action="/login" method="POST">
@@ -136,27 +135,6 @@
 
         <div style="margin-top: 1.5rem;">
           <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Tab 3: Direct Token -->
-  <div id="tab-token" class="auth-tab-pane" style="display: none; max-width: 440px; margin: 0 auto;">
-    <div class="form-card">
-      <form action="/login" method="POST">
-        <input type="hidden" name="redirect" value="<%= redirect %>">
-
-        <div class="form-group">
-          <label class="form-label" for="login-token">Session Token</label>
-          <input type="text" id="login-token" name="token" required class="form-input" placeholder="e.g. org_7f2a" style="font-family: var(--font-mono);">
-          <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">
-            Demo tokens: <code>org_7f2a</code>, <code>jdg_a_91bc</code>, <code>jdg_b_44de</code>, <code>prt_2e88</code>
-          </span>
-        </div>
-
-        <div style="margin-top: 1.5rem;">
-          <button type="submit" class="btn btn-primary" style="width: 100%;">Authenticate with Token</button>
         </div>
       </form>
     </div>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><%= typeof title !== 'undefined' ? title : 'DOGFOOD 2026 — Hackathon Operating System' %></title>
+  <title><%= typeof title !== 'undefined' ? title : 'DOGFOOD 2026 — Hackathon Platform' %></title>
   <link rel="stylesheet" href="/static/css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,22 +28,29 @@
         </a>
       </div>
 
+      <!-- Role-Based Navigation: Only show tabs relevant to the user's role -->
       <nav class="main-nav">
         <a href="/projects" class="nav-link" data-path="/projects">Gallery</a>
-        <a href="/projects/new" class="nav-link" data-path="/projects/new">Submit</a>
+
+        <% if (!user || user.role === 'participant' || user.role === 'organizer') { %>
+          <a href="/projects/new" class="nav-link" data-path="/projects/new">Submit</a>
+        <% } %>
+
         <a href="/vote" class="nav-link" data-path="/vote">Ballot</a>
-        <a href="/judge/dashboard" class="nav-link" data-path="/judge/dashboard">Judging</a>
-        <a href="/judge/pairwise" class="nav-link" data-path="/judge/pairwise">Pairwise</a>
-        <a href="/organizer/dashboard" class="nav-link" data-path="/organizer/dashboard">Console</a>
-        <a href="/docs" target="_blank" class="nav-link nav-external">
-          API
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
+
+        <% if (user && (user.role === 'judge' || user.role === 'organizer')) { %>
+          <a href="/judge/dashboard" class="nav-link" data-path="/judge/dashboard">Judging</a>
+          <a href="/judge/pairwise" class="nav-link" data-path="/judge/pairwise">Pairwise</a>
+        <% } %>
+
+        <% if (user && user.role === 'organizer') { %>
+          <a href="/organizer/dashboard" class="nav-link" data-path="/organizer/dashboard">Console</a>
+        <% } %>
       </nav>
 
       <div class="auth-section">
         <% if (typeof user !== 'undefined' && user) { %>
-          <!-- Authenticated User Profile Menu -->
+          <!-- Authenticated User Profile Menu (De-slopped: No raw token dumps) -->
           <div class="profile-menu-wrapper">
             <button type="button" class="profile-trigger" id="profile-dropdown-btn">
               <span class="avatar-circle <%= user.role %>">
@@ -62,13 +69,6 @@
               <div class="dropdown-header">
                 <div class="dropdown-user-name"><%= user.name %></div>
                 <div class="dropdown-user-email"><%= user.email %></div>
-                <div class="dropdown-token-box">
-                  <span class="token-label">ACTIVE SESSION TOKEN</span>
-                  <div class="token-val-row">
-                    <code><%= user.token %></code>
-                    <button type="button" class="btn-copy-token" onclick="navigator.clipboard.writeText('<%= user.token %>'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 1500)">Copy</button>
-                  </div>
-                </div>
               </div>
 
               <div class="dropdown-section-title">Switch Persona</div>
@@ -139,15 +139,17 @@
     <div class="footer-container">
       <div class="footer-left">
         <div class="footer-status">
-          <span class="telemetry-dot"></span>
-          <span>Dogfood Core Engine Active · Local SQLite WAL · Zero External Dependencies</span>
+          <span>&copy; 2026 Sample Hackathon. All rights reserved.</span>
         </div>
-        <p class="footer-caption">"Build the platform that will judge you."</p>
+        <p class="footer-caption">Built for transparent peer evaluation and high-integrity competition judging.</p>
       </div>
       <div class="footer-right">
-        <span class="footer-badge">MIT Open Source</span>
-        <a href="/docs" target="_blank" class="footer-link">OpenAPI Spec</a>
-        <a href="https://github.com/jhanikhilnath/dogfood_hack" target="_blank" class="footer-link">GitHub</a>
+        <a href="/projects" class="footer-link">Projects</a>
+        <a href="/vote" class="footer-link">Community Ballot</a>
+        <% if (user && user.role === 'organizer') { %>
+          <a href="/docs" target="_blank" class="footer-link">API Docs</a>
+        <% } %>
+        <span class="footer-badge">Sample Hack 2026</span>
       </div>
     </div>
   </footer>
