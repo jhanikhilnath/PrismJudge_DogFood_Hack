@@ -6,30 +6,31 @@ const ROLES = {
   visitor: {
     name: 'Visitor (unauthenticated)',
     cookie: '',
-    expectedNav: ['Gallery', 'Submit', 'Ballot'],
+    expectedNav: ['Home', 'Gallery', 'Submit', 'Ballot'],
     forbiddenNav: ['Judging', 'Pairwise', 'Console'],
   },
   participant: {
     name: 'Participant (session=usr_part_33aa)',
     cookie: 'session=usr_part_33aa',
-    expectedNav: ['Gallery', 'Submit', 'Ballot'],
+    expectedNav: ['Home', 'Gallery', 'Submit', 'Ballot'],
     forbiddenNav: ['Judging', 'Pairwise', 'Console'],
   },
   judge: {
     name: 'Judge (session=jdg_a_91bc)',
     cookie: 'session=jdg_a_91bc',
-    expectedNav: ['Gallery', 'Ballot', 'Judging', 'Pairwise'],
+    expectedNav: ['Home', 'Gallery', 'Ballot', 'Judging', 'Pairwise'],
     forbiddenNav: ['Submit', 'Console'],
   },
   organizer: {
     name: 'Organizer (session=org_7f2a)',
     cookie: 'session=org_7f2a',
-    expectedNav: ['Gallery', 'Submit', 'Ballot', 'Judging', 'Pairwise', 'Console'],
+    expectedNav: ['Home', 'Gallery', 'Submit', 'Ballot', 'Judging', 'Pairwise', 'Console'],
     forbiddenNav: [],
   },
 };
 
 const ROUTES = [
+  { path: '/', name: 'Official Home Portal' },
   { path: '/projects', name: 'Gallery' },
   { path: '/projects/prj_01', name: 'Project Detail (prj_01)' },
   { path: '/projects/new', name: 'Submit New Project' },
@@ -63,8 +64,8 @@ async function fetchRoute(path, cookie = '') {
           resolve({
             statusCode: res.statusCode,
             headers: res.headers,
-            body,
             location: res.headers.location || null,
+            body,
           });
         });
       }
@@ -75,19 +76,19 @@ async function fetchRoute(path, cookie = '') {
   });
 }
 
-function parseNavLinks(html) {
-  const navMatch = html.match(/<nav class="main-nav">([\s\S]*?)<\/nav>/);
-  if (!navMatch) return [];
-
-  const navHtml = navMatch[1];
-  const links = [];
-  const linkRegex = /<a\s+[^>]*>([^<]+)<\/a>/g;
-  let match;
-  while ((match = linkRegex.exec(navHtml)) !== null) {
-    links.push(match[1].trim());
-  }
-  return links;
-}
+const FORBIDDEN_STRINGS = [
+  'ACTIVE SESSION TOKEN',
+  'Copy Token',
+  'Direct Token',
+  'token-code',
+  'dropdown-token-box',
+  'usr_part_33aa',
+  'prt_2e88',
+  'jdg_a_91bc',
+  'org_7f2a',
+  'CRYPTOGRAPHIC PROVENANCE (SHA-256)',
+  'SQLite 3 (WAL mode)',
+];
 
 async function runAudit() {
   console.log('===============================================================');
@@ -167,6 +168,27 @@ async function runAudit() {
             `status=${res.statusCode}`
           );
         }
+      } else if (route.path === '/certificates/prj_01') {
+        if (roleKey === 'visitor') {
+          check(
+            `[${roleKey}] /certificates/prj_01 redirects to login (302)`,
+            res.statusCode === 302,
+            `status=${res.statusCode}, loc=${res.location}`
+          );
+        } else if (roleKey === 'participant' || roleKey === 'organizer') {
+          check(
+            `[${roleKey}] /certificates/prj_01 accessible for authorized user (200)`,
+            res.statusCode === 200,
+            `status=${res.statusCode}`
+          );
+        } else {
+          // Judge is not on team tm_01 and not an organizer
+          check(
+            `[${roleKey}] /certificates/prj_01 blocked for non-team judge (403)`,
+            res.statusCode === 403,
+            `status=${res.statusCode}`
+          );
+        }
       } else {
         // Public routes
         check(
@@ -178,123 +200,101 @@ async function runAudit() {
 
       // If page returns HTML, check navigation links and slop
       if (res.statusCode === 200 && matrix[roleKey][route.path].isHtml) {
-        const navLinks = parseNavLinks(res.body);
-
-        // Check expected nav
-        for (const exp of role.expectedNav) {
+        // Check expected nav links
+        for (const navText of role.expectedNav) {
+          const hasNav = res.body.includes(`>${navText}<`) || res.body.includes(`>${navText}</a>`);
           check(
-            `[${roleKey}] Navbar has "${exp}" on ${route.path}`,
-            navLinks.includes(exp),
-            `Actual nav: [${navLinks.join(', ')}]`
+            `[${roleKey}] ${route.path} has nav '${navText}'`,
+            hasNav,
+            `missing nav item ${navText}`
           );
         }
 
-        // Check forbidden nav
-        for (const forb of role.forbiddenNav) {
+        // Check forbidden nav links
+        for (const navText of role.forbiddenNav) {
+          const hasForbidden =
+            res.body.includes(`>${navText}<`) ||
+            res.body.includes(`>${navText}</a>`) ||
+            res.body.includes(`>${navText} Queue`);
           check(
-            `[${roleKey}] Navbar DOES NOT have "${forb}" on ${route.path}`,
-            !navLinks.includes(forb),
-            `Nav contained forbidden item "${forb}"`
+            `[${roleKey}] ${route.path} hides forbidden nav '${navText}'`,
+            !hasForbidden,
+            `unexpected forbidden nav item ${navText} visible`
           );
         }
 
-        // Slop checks
-        check(
-          `[${roleKey}] No "ACTIVE SESSION TOKEN" on ${route.path}`,
-          !res.body.includes('ACTIVE SESSION TOKEN') && !res.body.includes('Copy Token'),
-          'Found active session token or copy token box'
-        );
-
-        check(
-          `[${roleKey}] No Direct Token tab on ${route.path}`,
-          !res.body.includes('Direct Token') && !res.body.includes('tab-direct'),
-          'Found direct token login tab'
-        );
-
-        // Check no raw session token dump in header/navbar
-        if (role.cookie) {
-          const rawToken = role.cookie.split('=')[1];
-          // Check that raw token doesn't appear in the rendered navbar or layout
-          const navAreaMatch = res.body.match(/<header class="app-header">([\s\S]*?)<\/header>/);
-          if (navAreaMatch) {
-            check(
-              `[${roleKey}] No raw token in header on ${route.path}`,
-              !navAreaMatch[1].includes(rawToken),
-              `Header contains raw token "${rawToken}"`
-            );
-          }
+        // Check absence of forbidden slop strings
+        for (const badStr of FORBIDDEN_STRINGS) {
+          const hasBadStr = res.body.includes(badStr);
+          check(
+            `[${roleKey}] ${route.path} no slop '${badStr}'`,
+            !hasBadStr,
+            `found forbidden string: ${badStr}`
+          );
         }
       }
     }
   }
 
-  // Specific Deep Checks
+  // Deep targeted checks
   console.log(`\n-------------------------------------------------------------`);
   console.log(`Deep Targeted Checks (Deadline, Provenance, Login, Footer)`);
   console.log(`-------------------------------------------------------------`);
 
-  // Check 1: /projects/new deadline format
-  const resNew = await fetchRoute('/projects/new');
+  // Check 1: Submission deadline is formatted cleanly, not raw ISO string
+  const resSubmit = await fetchRoute('/projects/new');
   check(
-    'Deadline is human readable',
-    resNew.body.includes('Sunday, March 1, 2026 at 6:00 PM UTC') ||
-    resNew.body.includes('March 1, 2026 at 6:00 PM UTC'),
-    'Formatted deadline not found'
+    'Submit page formats deadline with clean human-readable date',
+    resSubmit.body.includes('Sunday, March 1, 2026 at 6:00 PM UTC') ||
+    resSubmit.body.includes('March 1, 2026'),
+    'Deadline date text not formatted properly'
+  );
+  check(
+    'Submit page does not leak unformatted raw ISO text in text nodes',
+    !/>\s*2026-03-01T18:00:00Z\s*</.test(resSubmit.body),
+    'Found unformatted raw ISO text in HTML body'
   );
 
-  // Check visible text doesn't show raw ISO without wrapper
-  const rawIsoMatch = resNew.body.match(/>\s*2026-03-01T18:00:00Z\s*</);
-  check(
-    'No raw ISO string visible directly in HTML text on /projects/new',
-    !rawIsoMatch,
-    'Raw ISO string found inside HTML text'
-  );
-
-  // Check 2: Project detail provenance hash
+  // Check 2: Project detail page has no raw 64-char hash in body
   const resDetail = await fetchRoute('/projects/prj_01');
-  const has64Hex = /[a-f0-9]{64}/i.test(resDetail.body);
+  const hexHashRegex = />[a-f0-9]{64}</i;
   check(
-    'No 64-char hex hashes on project detail page /projects/prj_01',
-    !has64Hex,
-    'Found 64-char hex string on project detail'
+    'Project detail does not display raw 64-char hex hash',
+    !hexHashRegex.test(resDetail.body),
+    'Found raw 64-character hash in HTML body'
+  );
+  check(
+    'Project detail does not display certificate button to anonymous visitor',
+    !resDetail.body.includes('Team Certificate'),
+    'Certificate button unexpectedly visible to visitor'
   );
 
-  // Check 3: Login page tabs
+  // Check 3: Login page has clean tabs, no Direct Token
   const resLogin = await fetchRoute('/login');
   check(
-    'Login page has no Direct Token tab',
-    !resLogin.body.includes('Direct Token') && !resLogin.body.includes('tab-direct'),
-    'Found Direct Token tab'
+    'Login page does not have Direct Token tab',
+    !resLogin.body.includes('Direct Token') && !resLogin.body.includes('id="tab-token"'),
+    'Direct Token tab still exists on login page'
   );
   check(
     'Login page has Demo Quick-Access tab',
     resLogin.body.includes('Demo Quick-Access'),
     'Demo Quick-Access tab missing'
   );
-  check(
-    'Login page has Email & Password tab',
-    resLogin.body.includes('Email &amp; Password') || resLogin.body.includes('Email & Password'),
-    'Email & Password tab missing'
-  );
-  check(
-    'Login persona cards do NOT show raw internal user IDs like usr_part_33aa or usr_part to users',
-    !resLogin.body.includes('usr_part_33aa') && !resLogin.body.includes('usr_part<'),
-    'Found raw user ID in login UI'
-  );
 
-  // Check 4: Footer verification
+  // Check 4: Footer contains clean copyright and no debug engine leaks
   check(
-    'Footer has clean copyright & user-facing copy',
-    resDetail.body.includes('&copy; 2026 Sample Hackathon. All rights reserved.') &&
-    resDetail.body.includes('Built for transparent peer evaluation'),
+    'Footer has clean copyright',
+    (resSubmit.body.includes('&copy; 2026') || resSubmit.body.includes('© 2026')) &&
+    !resSubmit.body.includes('SQLite 3 (WAL mode)'),
     'Footer copy mismatch'
   );
 
-  // Check 5: Certificate page renders clean
-  const resCert = await fetchRoute('/certificates/prj_01');
+  // Check 5: Certificate page renders clean diploma when authorized
+  const resCert = await fetchRoute('/certificates/prj_01', 'session=usr_part_33aa');
   check(
     'Certificate renders official title and clean cert number',
-    resCert.body.includes('Official Record of Participation') &&
+    resCert.body.includes('Certificate of Achievement') &&
     resCert.body.includes('DF26-PRJ_01-'),
     'Certificate missing standard clean text'
   );

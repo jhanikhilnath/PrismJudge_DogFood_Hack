@@ -151,13 +151,14 @@ To provide a consumer-grade user experience free of developer debris, the presen
 ### Role-Based Navigation Matrix
 | Role | Primary Navigation Tabs | Gated / Hidden Endpoints | Profile Actions |
 | :--- | :--- | :--- | :--- |
-| **Visitor** (`anonymous`) | Gallery, Submit, Ballot | `/judge/*`, `/organizer/*` (HTTP 403 / Redirect) | Direct Sign In Link |
-| **Participant** (`participant`) | Gallery, Submit, Ballot | `/judge/*`, `/organizer/*` (HTTP 403 / Redirect) | User Badge & Sign Out |
-| **Judge** (`judge`) | Gallery, Ballot, Judging Queue, Pairwise | `/organizer/*` (HTTP 403), Submit (Hidden) | Judge Badge & Sign Out |
-| **Organizer** (`organizer`, `admin`) | Gallery, Console, Judging Queue, Pairwise, Ballot, Submit | None (Full System Oversight) | Admin Badge & Sign Out |
+| **Visitor** (`anonymous`) | Home, Gallery, Submit, Ballot | `/judge/*`, `/organizer/*`, `/certificates/*` (HTTP 302 / Redirect) | Direct Sign In Link |
+| **Participant** (`participant`) | Home, Gallery, Submit, Ballot | `/judge/*`, `/organizer/*` (HTTP 302 / Redirect), peer certs (HTTP 403) | User Badge, My Team Cert & Sign Out |
+| **Judge** (`judge`) | Home, Gallery, Ballot, Judging Queue, Pairwise | `/organizer/*` (HTTP 302), Submit (Hidden), certs (HTTP 403) | Judge Badge & Sign Out |
+| **Organizer** (`organizer`, `admin`) | Home, Gallery, Console, Judging Queue, Pairwise, Ballot, Submit | None (Full System Oversight & Audit) | Admin Badge & Sign Out |
 
 ### De-Slopping Principles
 1. **Zero Technical Artifacts**: Raw session tokens, API keys, developer debug dumps, and internal database primary keys (`usr_part_...`, `jdg_...`) are strictly excluded from client-facing DOM trees.
-2. **Context-Sensitive Provenance**: Rather than displaying raw 64-character SHA-256 hexadecimal digests, submissions and certificates present authenticated issuance metadata, certificate identifiers (`DF26-PRJ_XX-HASH`), and human-verifiable verification badges.
-3. **Adaptive Time Formatting**: Deadlines and timestamps are rendered as dual-layer `<time class="local-time">` elements, presenting an immediate UTC baseline on the server while automatically adapting to the user's local browser timezone on the client (e.g., `Sunday, 1 March 2026 at 23:30 GMT+5:30 (6:00 PM UTC)`).
+2. **Dedicated Landing Experience**: Rather than abruptly dropping visitors into an unfiltered database dump, the root route (`/`) serves an editorial Home Portal with event telemetry, competition track cards, mathematical rigor spotlights, and clear conversion CTAs.
+3. **Credential Privacy & Authentic Diplomas**: Participation and excellence certificates are private to registered team members and event organizers. Unauthorized competitors or visitors cannot inspect peer certificates. The certificate view (`/certificates/:id`) renders a museum-grade landscape diploma with gold seal medallion, formal signatures, and print/PDF optimization. Public validity can be checked at `/certificates/:projectId/verify`.
+4. **Adaptive Time Formatting**: Deadlines and timestamps are rendered as dual-layer `<time class="local-time">` elements, presenting an immediate UTC baseline on the server while automatically adapting to the user's local browser timezone on the client (e.g., `Sunday, 1 March 2026 at 23:30 GMT+5:30 (6:00 PM UTC)`).
 

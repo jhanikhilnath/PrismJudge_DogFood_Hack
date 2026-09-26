@@ -13,7 +13,7 @@
   <header class="app-header">
     <div class="header-container">
       <div class="brand-section">
-        <a href="/projects" class="brand-link">
+        <a href="/" class="brand-link">
           <div class="brand-glyph">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
@@ -30,6 +30,7 @@
 
       <!-- Role-Based Navigation: Only show tabs relevant to the user's role -->
       <nav class="main-nav">
+        <a href="/" class="nav-link" data-path="/">Home</a>
         <a href="/projects" class="nav-link" data-path="/projects">Gallery</a>
 
         <% if (!user || user.role === 'participant' || user.role === 'organizer') { %>
@@ -89,6 +90,14 @@
                 <span class="item-tag tag-part">PRT</span>
                 <span>Participant (Team 01)</span>
               </a>
+
+              <% if (user.role === 'participant') { %>
+                <div class="dropdown-divider"></div>
+                <a href="/certificates/prj_01" class="dropdown-item">
+                  <span class="item-tag tag-part">CERT</span>
+                  <span>My Team Certificate</span>
+                </a>
+              <% } %>
 
               <div class="dropdown-divider"></div>
               <a href="/logout" class="dropdown-item dropdown-logout">

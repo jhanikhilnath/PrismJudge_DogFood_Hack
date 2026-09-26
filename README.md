@@ -66,6 +66,7 @@ claimed T1 T2, verified T1 T2
 * **Authentication & Sessions**: Dual cookie session (`Cookie: session=...`) and bearer token (`Authorization: Bearer ...`) support.
 * **Role-Based Access Control**: 5 distinct roles (`visitor`, `participant`, `judge`, `organizer`, `admin`) with tailored navigation bars and strict route gating.
 * **Consumer-Grade UI & Adaptive Deadlines**: Light-theme editorial interface free of developer artifacts (no raw tokens, no internal DB IDs, no raw hash dumps); deadline timestamps adaptively formatted in user's local timezone alongside UTC.
+* **Home Portal & Public Gallery**: Dedicated welcome portal (`/`) featuring competition tracks, real-time platform telemetry, and mathematical innovation spotlights, alongside the public project gallery (`/projects`).
 * **Event Administration**: Configurable submission deadlines, judging windows, tracks, and rubric criteria.
 * **Team Formation**: Invite codes (`/teams`), membership tracking.
 * **Project Submissions**: Draft editing prior to deadline; strict server UTC deadline enforcement that rejects late submissions.
@@ -87,7 +88,7 @@ claimed T1 T2, verified T1 T2
 
 ### T4 STRETCH (Implemented)
 * **API First**: OpenAPI 3.1 schema and interactive Swagger UI at `/docs`.
-* **Verifiable Certificates**: Cryptographic HMAC-SHA256 participation and winner certificates (`/certificates/:projectId`).
+* **Verifiable Diplomas & Credential Privacy**: High-resolution, printable diploma certificates with ornate gold medallions, formal signatures, and cryptographic HMAC-SHA256 digests. Strictly gated to registered team members and event organizers with public verification at `/certificates/:projectId/verify`.
 * **Audit Trail**: Immutable event ledger (`/api/organizer/audit`).
 
 ---

@@ -1,0 +1,221 @@
+<!-- DOGFOOD 2026 — Official Landing & Welcome Portal -->
+
+<div class="home-hero-section">
+  <!-- Status Badge -->
+  <div class="hero-status-pill">
+    <span class="status-indicator-dot <%= isClosed ? 'dot-active' : 'dot-open' %>"></span>
+    <span class="status-pill-text">
+      <% if (isClosed) { %>
+        Submissions Closed · Peer &amp; Bayesian Evaluation Phase
+      <% } else { %>
+        Submissions Open · Deadline March 1, 2026 6:00 PM UTC
+      <% } %>
+    </span>
+  </div>
+
+  <!-- Editorial Headline -->
+  <h1 class="home-hero-headline">
+    Build the platform<br><span class="hero-highlight">that will judge you.</span>
+  </h1>
+
+  <p class="home-hero-narrative">
+    DOGFOOD 2026 is an autonomous, self-hostable hackathon platform engineered for rigorous peer evaluation, empirical Bayesian score normalization, Bradley-Terry pairwise matchmaking, and immutable submission provenance.
+  </p>
+
+  <!-- Hero Primary Actions -->
+  <div class="home-hero-actions">
+    <a href="/projects" class="btn btn-primary btn-lg">
+      Explore 41 Submissions →
+    </a>
+    <a href="/vote" class="btn btn-secondary btn-lg">
+      Community Ballot
+    </a>
+
+    <% if (!user) { %>
+      <a href="/login" class="btn btn-secondary btn-lg">
+        Evaluator Sign In
+      </a>
+    <% } else if (user.role === 'judge') { %>
+      <a href="/judge/dashboard" class="btn btn-secondary btn-lg">
+        Open Judging Queue →
+      </a>
+    <% } else if (user.role === 'organizer') { %>
+      <a href="/organizer/dashboard" class="btn btn-secondary btn-lg">
+        Operations Console →
+      </a>
+    <% } else if (user.role === 'participant') { %>
+      <a href="/projects/prj_01" class="btn btn-secondary btn-lg">
+        My Team Project →
+      </a>
+    <% } %>
+  </div>
+</div>
+
+<!-- Key Telemetry Numbers -->
+<div class="home-telemetry-grid">
+  <div class="telemetry-card">
+    <div class="telemetry-value"><%= stats.projectCount || 41 %></div>
+    <div class="telemetry-label">SUBMITTED PROJECTS</div>
+    <div class="telemetry-sub">All fixture projects seeded &amp; verified</div>
+  </div>
+  <div class="telemetry-card">
+    <div class="telemetry-value"><%= stats.trackCount || 8 %></div>
+    <div class="telemetry-label">COMPETITION TRACKS</div>
+    <div class="telemetry-sub">Domain-specialized problem spaces</div>
+  </div>
+  <div class="telemetry-card">
+    <div class="telemetry-value"><%= stats.judgeCount || 30 %></div>
+    <div class="telemetry-label">TECHNICAL EVALUATORS</div>
+    <div class="telemetry-sub">Enforcing peer isolation &amp; blind review</div>
+  </div>
+  <div class="telemetry-card">
+    <div class="telemetry-value">100%</div>
+    <div class="telemetry-label">OFFLINE AUTONOMOUS</div>
+    <div class="telemetry-sub">Embedded SQLite WAL · Zero external APIs</div>
+  </div>
+</div>
+
+<!-- Competition Tracks Showcase -->
+<div class="home-section">
+  <div class="section-header-row">
+    <div>
+      <div class="section-kicker">CHALLENGE CATEGORIES</div>
+      <h2 class="section-title-large">Competition Tracks</h2>
+    </div>
+    <a href="/projects" class="section-link-inline">View all in gallery →</a>
+  </div>
+
+  <div class="tracks-showcase-grid">
+    <% tracks.forEach((track, index) => { %>
+      <a href="/projects?track=<%= track.id %>" class="track-showcase-card">
+        <div class="track-card-top">
+          <span class="track-num-badge">0<%= index + 1 %></span>
+          <svg class="track-arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="7" y1="17" x2="17" y2="7"></line>
+            <polyline points="7 7 17 7 17 17"></polyline>
+          </svg>
+        </div>
+        <h3 class="track-card-title"><%= track.name %></h3>
+        <p class="track-card-desc"><%= track.description || 'Challenging contestants to push the limits of modern software craftsmanship.' %></p>
+        <div class="track-card-footer">
+          <span class="track-cta-label">Explore projects</span>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+</div>
+
+<!-- Evaluation Rigor & Platform Innovations -->
+<div class="home-section">
+  <div class="section-kicker">MATHEMATICAL RIGOR &amp; ARCHITECTURE</div>
+  <h2 class="section-title-large">Why DOGFOOD 2026?</h2>
+  <p class="section-desc-lead">Standard hackathon tools suffer from subjective bias, rogue judges, and zero-variance grading singularities. DOGFOOD replaces guesswork with mathematically proven evaluation mechanics.</p>
+
+  <div class="pillars-grid">
+    <!-- Pillar 1 -->
+    <div class="pillar-card">
+      <div class="pillar-icon-box">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+      </div>
+      <h3 class="pillar-title">Empirical Bayesian Normalization</h3>
+      <p class="pillar-text">
+        Corrects for harsh versus generous grading distributions through empirical shrinkage Z-scoring. Eliminates single-judge bias and resolves zero-variance singular judges smoothly.
+      </p>
+      <div class="pillar-tag">Proof in JUDGING.md</div>
+    </div>
+
+    <!-- Pillar 2 -->
+    <div class="pillar-card">
+      <div class="pillar-icon-box">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+      </div>
+      <h3 class="pillar-title">Bradley-Terry Pairwise Arena</h3>
+      <p class="pillar-text">
+        Direct head-to-head match comparisons that eliminate scoring fatigue. Solved via iterative Minorization-Maximization (MM) convergence for robust relative rankings.
+      </p>
+      <div class="pillar-tag">Interactive at /judge/pairwise</div>
+    </div>
+
+    <!-- Pillar 3 -->
+    <div class="pillar-card">
+      <div class="pillar-icon-box">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </div>
+      <h3 class="pillar-title">Cryptographic Peer Isolation</h3>
+      <p class="pillar-text">
+        Strict Fastify preHandler access control ensures judges can never inspect or be influenced by peer evaluations. Immutable audit trail and verifiable completion certificates.
+      </p>
+      <div class="pillar-tag">Security &amp; Threat Model Verified</div>
+    </div>
+  </div>
+</div>
+
+<!-- Featured Projects Preview -->
+<% if (typeof featuredProjects !== 'undefined' && featuredProjects.length > 0) { %>
+  <div class="home-section">
+    <div class="section-header-row">
+      <div>
+        <div class="section-kicker">SHOWCASE ENTRIES</div>
+        <h2 class="section-title-large">Featured Submissions</h2>
+      </div>
+      <a href="/projects" class="section-link-inline">Browse all 41 entries →</a>
+    </div>
+
+    <div class="featured-preview-grid">
+      <% featuredProjects.forEach(proj => { %>
+        <div class="featured-preview-card">
+          <div class="preview-track-tag"><%= proj.track_name || 'General Track' %></div>
+          <h3 class="preview-proj-title">
+            <a href="/projects/<%= proj.id %>"><%= proj.title %></a>
+          </h3>
+          <p class="preview-proj-summary"><%= proj.summary %></p>
+          <div class="preview-proj-footer">
+            <span class="preview-team">Team <%= proj.team_name || 'Contestant' %></span>
+            <a href="/projects/<%= proj.id %>" class="btn btn-secondary btn-sm">Inspect →</a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Event Timeline Rail -->
+<div class="home-section" style="margin-bottom: 3.5rem;">
+  <div class="section-kicker">SCHEDULE &amp; PHASES</div>
+  <h2 class="section-title-large">Competition Timeline</h2>
+
+  <div class="timeline-rail-card">
+    <div class="timeline-step step-done">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-title">1. Registration &amp; Teams</div>
+      <div class="timeline-desc">Team formation and track selection</div>
+      <div class="timeline-date">February 20, 2026</div>
+    </div>
+    <div class="timeline-step step-done">
+      <div class="timeline-dot">✓</div>
+      <div class="timeline-title">2. Submission Deadline</div>
+      <div class="timeline-desc">Strict deadline enforcement (HTTP 403 on late)</div>
+      <div class="timeline-date">March 1, 2026 · 6:00 PM UTC</div>
+    </div>
+    <div class="timeline-step step-active">
+      <div class="timeline-dot">●</div>
+      <div class="timeline-title">3. Peer &amp; Jury Evaluation</div>
+      <div class="timeline-desc">Track assignments, scoring, and normalization</div>
+      <div class="timeline-date">In Progress Now</div>
+    </div>
+    <div class="timeline-step">
+      <div class="timeline-dot">○</div>
+      <div class="timeline-title">4. Awards &amp; Credentialing</div>
+      <div class="timeline-desc">Final standings, CSV exports &amp; certificates</div>
+      <div class="timeline-date">March 6, 2026</div>
+    </div>
+  </div>
+</div>

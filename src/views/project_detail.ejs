@@ -24,10 +24,16 @@
         Source Code ↗
       </a>
     <% } %>
-    <a href="/certificates/<%= project.id %>" class="btn btn-primary">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-      Certificate of Participation
-    </a>
+    <% 
+      const isTeamMember = user && typeof members !== 'undefined' && members.some(m => m.user_id === user.id);
+      const isStaff = user && (user.role === 'organizer' || user.role === 'admin');
+      if (isTeamMember || isStaff) { 
+    %>
+      <a href="/certificates/<%= project.id %>" class="btn btn-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+        Team Certificate
+      </a>
+    <% } %>
   </div>
 </div>
 

@@ -1,45 +1,163 @@
-<div class="breadcrumb-nav" style="max-width: 720px; margin-left: auto; margin-right: auto;">
-  <a href="/projects/<%= project.id %>" class="breadcrumb-link">
+<!-- Certificate Action Bar (Hidden during print) -->
+<div class="cert-action-bar no-print">
+  <a href="/projects/<%= project.id %>" class="btn btn-secondary btn-sm">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-    Back to <%= project.title %>
+    Return to Project
   </a>
+
+  <div class="cert-status-badge">
+    <span class="cert-status-dot"></span>
+    <span>Official Verified Credential</span>
+  </div>
+
+  <button onclick="window.print()" class="btn btn-primary btn-sm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Print / Save as PDF
+  </button>
 </div>
 
-<div class="certificate-container" style="max-width: 720px; margin: 0 auto; background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 3.5rem 3rem; box-shadow: var(--shadow-sm); text-align: center;">
-  <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.5rem;">
-    Official Record of Participation · Sample Hack 2026
-  </div>
+<!-- Elite Diploma / Credential Sheet -->
+<div class="diploma-wrapper">
+  <div class="diploma-sheet" id="diploma-sheet">
+    <!-- Guilloche Background Watermark (Pure Vector SVG) -->
+    <div class="diploma-watermark" aria-hidden="true">
+      <svg width="420" height="420" viewBox="0 0 200 200" fill="none" opacity="0.035">
+        <circle cx="100" cy="100" r="90" stroke="#0F172A" stroke-width="1" stroke-dasharray="2 3"/>
+        <circle cx="100" cy="100" r="75" stroke="#0F172A" stroke-width="0.8"/>
+        <polygon points="100,15 124,76 185,100 124,124 100,185 76,124 15,100 76,76" stroke="#0F172A" stroke-width="0.75"/>
+        <polygon points="100,25 118,82 175,100 118,118 100,175 82,118 25,100 82,82" stroke="#0F172A" stroke-width="0.5"/>
+        <circle cx="100" cy="100" r="45" stroke="#0F172A" stroke-width="1.2"/>
+        <circle cx="100" cy="100" r="30" stroke="#0F172A" stroke-width="0.6"/>
+      </svg>
+    </div>
 
-  <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); margin-bottom: 0.75rem; line-height: 1.2;">
-    <%= project.title %>
-  </h1>
+    <!-- Outer Ornamental Frame -->
+    <div class="diploma-frame-outer">
+      <!-- Inner Ornamental Frame -->
+      <div class="diploma-frame-inner">
+        <!-- Corner Accents -->
+        <div class="cert-corner corner-tl">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M2 12V2H12M2 2L8 8" stroke="#D97706" stroke-width="1.5"/></svg>
+        </div>
+        <div class="cert-corner corner-tr">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M22 12V2H12M22 2L16 8" stroke="#D97706" stroke-width="1.5"/></svg>
+        </div>
+        <div class="cert-corner corner-bl">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M2 12V22H12M2 22L8 16" stroke="#D97706" stroke-width="1.5"/></svg>
+        </div>
+        <div class="cert-corner corner-br">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M22 12V22H12M22 22L16 16" stroke="#D97706" stroke-width="1.5"/></svg>
+        </div>
 
-  <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 2.25rem; line-height: 1.6; max-width: 520px; margin-left: auto; margin-right: auto;">
-    This certifies that <strong><%= project.team_name || project.team_id %></strong> has successfully engineered and submitted this project in the <strong><%= project.track_name || 'General' %></strong> track.
-  </p>
+        <!-- Certificate Header -->
+        <div class="diploma-header">
+          <div class="diploma-logo-mark">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </div>
+          <div class="diploma-issuer">DOGFOOD 2026 INTERNATIONAL HACKATHON</div>
+          <h1 class="diploma-title">Certificate of Achievement</h1>
+          <div class="diploma-subtitle">OFFICIAL RECORD OF PARTICIPATION &amp; VERIFIED SUBMISSION</div>
+        </div>
 
-  <div style="background: #FAFAFA; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; text-align: left; margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-    <div>
-      <div style="font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">CERTIFICATE NUMBER</div>
-      <div style="font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-top: 0.2rem;">
-        DF26-<%= project.id.toUpperCase() %>-<%= signature.slice(0, 8).toUpperCase() %>
+        <div class="diploma-divider-line"></div>
+
+        <!-- Presentation Body -->
+        <div class="diploma-body">
+          <p class="diploma-present-text">This credential is proudly conferred upon</p>
+          
+          <div class="diploma-recipient-name">
+            <%= project.team_name || project.team_id %>
+          </div>
+
+          <% if (typeof members !== 'undefined' && members.length > 0) { %>
+            <div class="diploma-team-roster">
+              <% members.forEach((m, idx) => { %>
+                <span class="roster-member"><%= m.email.split('@')[0].replace(/[._]/g, ' ') %></span>
+                <% if (idx < members.length - 1) { %><span class="roster-sep">·</span><% } %>
+              <% }) %>
+            </div>
+          <% } %>
+
+          <p class="diploma-achievement-statement">
+            for the successful architecture, implementation, and verified completion of
+          </p>
+
+          <div class="diploma-project-card">
+            <div class="diploma-project-title"><%= project.title %></div>
+            <div class="diploma-track-tag"><%= project.track_name || 'Open Track' %> Track</div>
+          </div>
+        </div>
+
+        <!-- Signatures and Official Gold Seal -->
+        <div class="diploma-footer-grid">
+          <!-- Left Signature -->
+          <div class="diploma-sig-col">
+            <div class="sig-script">Julian Vance</div>
+            <div class="sig-line"></div>
+            <div class="sig-name">Dr. Julian Vance</div>
+            <div class="sig-title">General Chair, Steering Committee</div>
+          </div>
+
+          <!-- Center Official Seal -->
+          <div class="diploma-seal-col">
+            <div class="cert-gold-seal">
+              <svg width="78" height="78" viewBox="0 0 100 100" fill="none">
+                <!-- Starburst Medallion -->
+                <circle cx="50" cy="50" r="46" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+                <circle cx="50" cy="50" r="41" fill="#FBBF24" stroke="#B45309" stroke-width="1" stroke-dasharray="2 2"/>
+                <circle cx="50" cy="50" r="34" fill="#F59E0B"/>
+                <!-- Ribbon Tails -->
+                <path d="M38 86 L30 100 L44 94 L50 100 L46 86 Z" fill="#D97706"/>
+                <path d="M62 86 L70 100 L56 94 L50 100 L54 86 Z" fill="#D97706"/>
+                <!-- Center Seal Graphics -->
+                <polygon points="50,22 55,36 70,36 58,45 62,60 50,50 38,60 42,45 30,36 45,36" fill="#FFFBEB"/>
+                <text x="50" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="5.5" font-weight="700" fill="#78350F" letter-spacing="1">DOGFOOD</text>
+                <text x="50" y="74" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="4.5" font-weight="600" fill="#78350F">2026 JURY</text>
+              </svg>
+            </div>
+            <div class="seal-caption">VERIFIED CREDENTIAL</div>
+          </div>
+
+          <!-- Right Signature -->
+          <div class="diploma-sig-col">
+            <div class="sig-script">Elena Chen</div>
+            <div class="sig-line"></div>
+            <div class="sig-name">Elena Chen</div>
+            <div class="sig-title">Lead Evaluation Committee</div>
+          </div>
+        </div>
+
+        <!-- Security & Audit Verification Strip -->
+        <div class="diploma-audit-strip">
+          <div class="audit-item">
+            <span class="audit-label">CREDENTIAL NUMBER</span>
+            <span class="audit-value">DF26-<%= project.id.toUpperCase() %>-<%= signature.slice(0, 8).toUpperCase() %></span>
+          </div>
+          <div class="audit-item">
+            <span class="audit-label">DATE OF ISSUANCE</span>
+            <span class="audit-value">March 1, 2026</span>
+          </div>
+          <div class="audit-item">
+            <span class="audit-label">STATUS</span>
+            <span class="audit-value" style="color: #059669;">Recorded in Immutable Ledger</span>
+          </div>
+          <div class="audit-item qr-item">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="7" height="7" stroke-width="2"/>
+              <rect x="14" y="3" width="7" height="7" stroke-width="2"/>
+              <rect x="3" y="14" width="7" height="7" stroke-width="2"/>
+              <rect x="15" y="15" width="2" height="2" fill="currentColor"/>
+              <rect x="19" y="15" width="2" height="2" fill="currentColor"/>
+              <rect x="15" y="19" width="2" height="2" fill="currentColor"/>
+              <rect x="19" y="19" width="2" height="2" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
       </div>
     </div>
-    <div>
-      <div style="font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">DATE OF RECORD</div>
-      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
-        March 1, 2026
-      </div>
-    </div>
-  </div>
-
-  <div style="display: flex; justify-content: center; gap: 0.75rem;">
-    <button onclick="window.print()" class="btn btn-primary">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      Print / Save Certificate
-    </button>
-    <a href="/projects/<%= project.id %>" class="btn btn-secondary">
-      Return to Project
-    </a>
   </div>
 </div>
