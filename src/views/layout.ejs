@@ -7,22 +7,24 @@
   <link rel="stylesheet" href="/static/css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
   <header class="app-header">
     <div class="header-container">
       <div class="brand-section">
         <a href="/projects" class="brand-link">
-          <span class="brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="brand-glyph">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
               <polyline points="2 17 12 22 22 17"></polyline>
               <polyline points="2 12 12 17 22 12"></polyline>
             </svg>
-          </span>
-          <span class="brand-name">DOGFOOD</span>
-          <span class="brand-badge">2026</span>
+          </div>
+          <div class="brand-text-group">
+            <span class="brand-name">DOGFOOD</span>
+            <span class="brand-badge">2026</span>
+          </div>
         </a>
       </div>
 
@@ -58,10 +60,10 @@
 
             <div class="profile-dropdown" id="profile-dropdown-content">
               <div class="dropdown-header">
-                <div class="dropdown-name"><%= user.name %></div>
-                <div class="dropdown-email"><%= user.email %></div>
+                <div class="dropdown-user-name"><%= user.name %></div>
+                <div class="dropdown-user-email"><%= user.email %></div>
                 <div class="dropdown-token-box">
-                  <span class="token-label">SESSION TOKEN</span>
+                  <span class="token-label">ACTIVE SESSION TOKEN</span>
                   <div class="token-val-row">
                     <code><%= user.token %></code>
                     <button type="button" class="btn-copy-token" onclick="navigator.clipboard.writeText('<%= user.token %>'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 1500)">Copy</button>
@@ -69,8 +71,7 @@
                 </div>
               </div>
 
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-section-title">Quick Persona Switch</div>
+              <div class="dropdown-section-title">Switch Persona</div>
               
               <a href="/api/auth/switch/organizer" class="dropdown-item <%= user.role === 'organizer' ? 'active-item' : '' %>">
                 <span class="item-tag tag-org">ORG</span>
@@ -98,7 +99,7 @@
           </div>
         <% } else { %>
           <!-- Unauthenticated Sign In Button & Demo Trigger -->
-          <div class="auth-buttons">
+          <div class="auth-buttons" style="display: flex; align-items: center; gap: 0.5rem;">
             <a href="/login" class="btn btn-secondary btn-sm">Sign In</a>
             <div class="demo-menu-wrapper">
               <button type="button" class="btn btn-primary btn-sm" id="demo-dropdown-btn">
@@ -138,8 +139,8 @@
     <div class="footer-container">
       <div class="footer-left">
         <div class="footer-status">
-          <span class="status-pulse-dot"></span>
-          <span>Dogfood Core Engine Active · Local SQLite WAL · Zero Network Dependencies</span>
+          <span class="telemetry-dot"></span>
+          <span>Dogfood Core Engine Active · Local SQLite WAL · Zero External Dependencies</span>
         </div>
         <p class="footer-caption">"Build the platform that will judge you."</p>
       </div>
@@ -151,6 +152,7 @@
     </div>
   </footer>
 
+  <div id="toast-container"></div>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

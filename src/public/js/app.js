@@ -1,7 +1,29 @@
-// DOGFOOD 2026 — Progressive Enhancement & Interactivity
+// DOGFOOD 2026 — Master Client Script & Progressive Interactivity
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Highlight Active Navigation Item based on current path
+  // 1. Toast Notification System
+  window.showToast = function(message, type = 'info') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'error' ? 'toast-error' : type === 'success' ? 'toast-success' : ''}`;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(8px)';
+      setTimeout(() => toast.remove(), 250);
+    }, 3200);
+  };
+
+  // 2. Active Navigation Item Highlight
   const currentPath = window.location.pathname;
   const navLinks = document.querySelectorAll('.main-nav .nav-link');
   navLinks.forEach((link) => {
@@ -15,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 2. Profile & Demo Dropdown Handlers
+  // 3. Dropdowns (Profile & Demo)
   const profileBtn = document.getElementById('profile-dropdown-btn');
   const profileDropdown = document.getElementById('profile-dropdown-content');
 
@@ -37,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Close dropdowns on outside click
   document.addEventListener('click', (e) => {
     if (profileDropdown && !profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
       profileDropdown.classList.remove('show');
@@ -48,10 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 3. Live Gallery Search & Track Filter
+  // 4. Live Search & Track Filter
   const searchInput = document.getElementById('gallery-search');
   const trackFilter = document.getElementById('gallery-track');
-  const projectCards = document.querySelectorAll('.project-card');
+  const trackPillButtons = document.querySelectorAll('.track-pill-btn');
+  const projectCards = document.querySelectorAll('.grid-cards .project-card');
+  const noProjectsBanner = document.getElementById('no-projects-banner');
+  const clearFiltersBtn = document.getElementById('btn-clear-filters');
 
   function filterProjects() {
     if (!projectCards.length) return;
@@ -75,31 +99,53 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    const noProjectsBanner = document.getElementById('no-projects-banner');
     if (noProjectsBanner) {
       noProjectsBanner.style.display = visibleCount === 0 ? 'block' : 'none';
     }
   }
 
-  if (searchInput) searchInput.addEventListener('input', filterProjects);
-  if (trackFilter) trackFilter.addEventListener('change', filterProjects);
-
-  // 4. Dynamic Rubric Score Calculator for Judge Modal
-  const rubricInputs = document.querySelectorAll('.rubric-input');
-  const scoreTotalDisplay = document.getElementById('computed-raw-total');
-
-  function updateScoreTotal() {
-    if (!rubricInputs.length || !scoreTotalDisplay) return;
-    let total = 0;
-    rubricInputs.forEach((input) => {
-      const weight = parseFloat(input.getAttribute('data-weight') || '0.33');
-      const val = parseFloat(input.value || '0');
-      total += val * weight;
-    });
-    scoreTotalDisplay.textContent = total.toFixed(2);
+  if (searchInput) {
+    searchInput.addEventListener('input', filterProjects);
   }
 
-  rubricInputs.forEach((input) => {
-    input.addEventListener('input', updateScoreTotal);
+  // Keyboard shortcut '/' to focus search input
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== searchInput && searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+    }
   });
+
+  // Track Pill Click Handlers
+  trackPillButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const selectedTrack = btn.getAttribute('data-track-id') || '';
+      trackPillButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (trackFilter) {
+        trackFilter.value = selectedTrack;
+      }
+      filterProjects();
+    });
+  });
+
+  if (trackFilter) {
+    trackFilter.addEventListener('change', () => {
+      const val = trackFilter.value;
+      trackPillButtons.forEach(b => {
+        b.classList.toggle('active', (b.getAttribute('data-track-id') || '') === val);
+      });
+      filterProjects();
+    });
+  }
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      if (trackFilter) trackFilter.value = '';
+      trackPillButtons.forEach((b, i) => b.classList.toggle('active', i === 0));
+      filterProjects();
+    });
+  }
 });

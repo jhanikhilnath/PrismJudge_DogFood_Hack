@@ -1,21 +1,22 @@
 <div class="page-hero">
-  <div>
-    <div class="badge-role badge-judge" style="margin-bottom: 0.5rem; display: inline-block;">PAIRWISE ARENA</div>
-    <h1 class="page-title">Head-to-Head Comparison</h1>
-    <p class="page-subtitle">Compare two projects side-by-side using the Bradley-Terry Minorization-Maximization (MM) model</p>
+  <div class="hero-content">
+    <h1 class="page-title">Pairwise Arena</h1>
+    <p class="page-subtitle">
+      Compare two projects side-by-side using the Bradley-Terry Maximum Likelihood model.
+    </p>
   </div>
 </div>
 
-<div class="normalization-card" style="margin-bottom: 2rem;">
+<div class="normalization-card">
   <div class="normalization-header">
     <div class="normalization-title-group">
       <span class="norm-indicator-dot"></span>
-      <h3 class="normalization-title">Bradley-Terry Maximum Likelihood Estimator Active</h3>
+      <h3 class="normalization-title">Bradley-Terry Maximum Likelihood Estimator</h3>
     </div>
-    <span class="norm-pill">PAIRWISE MLE</span>
+    <span class="norm-pill">PAIRWISE</span>
   </div>
   <p class="normalization-desc">
-    Pairwise comparisons fit latent project skill ratings λᵢ via MM iterations, effectively neutralizing individual judge rubric scaling biases and strictness disparities.
+    Pairwise judgments fit latent project skill ratings via Majorization-Minimization (MM) iterations, eliminating individual judge rubric scaling disparities and anchoring relative project quality.
   </p>
 </div>
 
@@ -23,17 +24,15 @@
   <div class="pairwise-arena-grid">
     <!-- Project A -->
     <div class="pairwise-card">
-      <div class="card-inner-shell" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-          <span class="card-track"><%= project_a.track_name || 'Track' %></span>
-          <h2 class="pairwise-project-title"><%= project_a.title %></h2>
-          <p class="pairwise-project-summary"><%= project_a.summary %></p>
-        </div>
-        <div style="margin-top: 2rem;">
-          <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.85rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_a')">
-            ★ Select <%= project_a.title %>
-          </button>
-        </div>
+      <div>
+        <span class="card-track-name" style="margin-bottom: 0.5rem;"><%= project_a.track_name || 'Track' %></span>
+        <h2 style="font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: var(--text-primary);"><%= project_a.title %></h2>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55;"><%= project_a.summary %></p>
+      </div>
+      <div style="margin-top: 2rem;">
+        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_a')">
+          Select <%= project_a.title %> →
+        </button>
       </div>
     </div>
 
@@ -49,39 +48,50 @@
 
     <!-- Project B -->
     <div class="pairwise-card">
-      <div class="card-inner-shell" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-          <span class="card-track"><%= project_b.track_name || 'Track' %></span>
-          <h2 class="pairwise-project-title"><%= project_b.title %></h2>
-          <p class="pairwise-project-summary"><%= project_b.summary %></p>
-        </div>
-        <div style="margin-top: 2rem;">
-          <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.85rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_b')">
-            ★ Select <%= project_b.title %>
-          </button>
-        </div>
+      <div>
+        <span class="card-track-name" style="margin-bottom: 0.5rem;"><%= project_b.track_name || 'Track' %></span>
+        <h2 style="font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: var(--text-primary);"><%= project_b.title %></h2>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55;"><%= project_b.summary %></p>
+      </div>
+      <div style="margin-top: 2rem;">
+        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_b')">
+          Select <%= project_b.title %> →
+        </button>
       </div>
     </div>
   </div>
 <% } else { %>
   <div class="empty-state-card">
-    <p style="color: var(--text-muted);">Not enough active projects to generate a comparison match.</p>
+    <div class="empty-state-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    </div>
+    <h3 class="empty-state-title">Comparison Pair Unavailable</h3>
+    <p class="empty-state-desc">Not enough active projects are available to generate a pairwise showdown match.</p>
   </div>
 <% } %>
 
 <script>
   async function submitPairwiseVote(projA, projB, winner) {
-    const res = await fetch('/api/pairwise/vote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_a: projA, project_b: projB, winner: winner })
-    });
+    try {
+      const res = await fetch('/api/pairwise/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_a: projA, project_b: projB, winner: winner })
+      });
 
-    if (res.ok) {
-      window.location.reload();
-    } else {
-      const err = await res.json();
-      alert('Pairwise error: ' + (err.error || 'Failed to submit match'));
+      if (res.ok) {
+        if (window.showToast) window.showToast('Comparison recorded!', 'success');
+        setTimeout(() => window.location.reload(), 250);
+      } else {
+        const err = await res.json();
+        if (window.showToast) {
+          window.showToast(err.error || 'Failed to submit match', 'error');
+        } else {
+          alert('Error: ' + (err.error || 'Failed to submit match'));
+        }
+      }
+    } catch (e) {
+      if (window.showToast) window.showToast('Network error while recording comparison', 'error');
     }
   }
 </script>

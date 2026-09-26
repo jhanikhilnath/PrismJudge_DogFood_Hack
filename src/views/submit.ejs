@@ -1,32 +1,40 @@
-<div class="page-hero" style="max-width: 760px; margin: 0 auto 2rem;">
+<div class="breadcrumb-nav" style="max-width: 680px; margin-left: auto; margin-right: auto;">
+  <a href="/projects" class="breadcrumb-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back to Submissions
+  </a>
+</div>
+
+<div class="page-hero" style="max-width: 680px; margin: 0 auto 1.5rem; border-bottom: none; padding-bottom: 0;">
   <div>
-    <div class="badge-role badge-participant" style="margin-bottom: 0.5rem; display: inline-block;">SUBMISSION ENGINE</div>
-    <h1 class="page-title">Project Registration</h1>
-    <p class="page-subtitle">Submit your team's hackathon project or update your active entry</p>
+    <h1 class="page-title">Submit a Project</h1>
+    <p class="page-subtitle">Register your team's engineering entry for <%= event ? event.name : 'Sample Hack 2026' %>.</p>
   </div>
 </div>
 
 <% if (isClosed) { %>
-  <div class="alert alert-danger" style="max-width: 760px; margin: 0 auto 2rem;">
-    <strong>⚠️ Submissions Closed:</strong> The event deadline passed at <code><%= event ? event.submissions_close : 'in the past' %></code>.
-    The backend strictly rejects new project submissions and draft edits after deadline expiration.
+  <div class="security-banner" style="max-width: 680px; margin: 0 auto 1.5rem; background: #FEF2F2; border-color: #FECDD3;">
+    <svg class="security-icon" style="color: #DC2626;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div class="security-text" style="color: #991B1B;">
+      <strong>Submissions Window Closed:</strong> The event deadline passed on <%= event ? event.submissions_close : 'the scheduled deadline' %>. The engine is no longer accepting new submissions or amendments.
+    </div>
   </div>
 <% } %>
 
-<div class="form-card" style="max-width: 760px; margin: 0 auto;">
+<div class="form-card" style="max-width: 680px; margin: 0 auto;">
   <form action="/projects/new" method="POST">
     <div class="form-group">
-      <label class="form-label" for="title">Project Title *</label>
-      <input type="text" id="title" name="title" required class="form-input" placeholder="e.g. Quiet Hours" <%= isClosed ? 'disabled' : '' %>>
+      <label class="form-label" for="title">Project Title</label>
+      <input type="text" id="title" name="title" required class="form-input" placeholder="e.g. Glass Signal" <%= isClosed ? 'disabled' : '' %>>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="summary">Executive Summary *</label>
-      <textarea id="summary" name="summary" required rows="3" class="form-textarea" placeholder="One or two clear sentences describing what you engineered and its impact..." <%= isClosed ? 'disabled' : '' %>></textarea>
+      <label class="form-label" for="summary">Technical Summary</label>
+      <textarea id="summary" name="summary" required rows="3" class="form-textarea" placeholder="Explain the problem, architecture, and technology stack..." <%= isClosed ? 'disabled' : '' %>></textarea>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="track_id">Competition Track *</label>
+      <label class="form-label" for="track_id">Target Track</label>
       <select id="track_id" name="track_id" required class="form-select" <%= isClosed ? 'disabled' : '' %>>
         <% tracks.forEach(function(t) { %>
           <option value="<%= t.id %>"><%= t.name %></option>
@@ -35,19 +43,19 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="repo_url">Source Code Repository URL</label>
-      <input type="url" id="repo_url" name="repo_url" class="form-input" placeholder="https://github.com/your-org/your-repo" <%= isClosed ? 'disabled' : '' %>>
+      <label class="form-label" for="repo_url">Repository URL</label>
+      <input type="url" id="repo_url" name="repo_url" class="form-input" placeholder="https://github.com/organization/repo" <%= isClosed ? 'disabled' : '' %>>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="demo_url">Live Demonstration URL (Optional)</label>
-      <input type="url" id="demo_url" name="demo_url" class="form-input" placeholder="https://your-demo-domain.com" <%= isClosed ? 'disabled' : '' %>>
+      <label class="form-label" for="demo_url">Live Deployment URL (Optional)</label>
+      <input type="url" id="demo_url" name="demo_url" class="form-input" placeholder="https://..." <%= isClosed ? 'disabled' : '' %>>
     </div>
 
-    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; border-top: 1px solid var(--border-light); padding-top: 1.25rem;">
       <a href="/projects" class="btn btn-secondary">Cancel</a>
       <button type="submit" class="btn btn-primary" <%= isClosed ? 'disabled' : '' %>>
-        <%= isClosed ? 'Deadline Passed' : 'Submit Project Entry →' %>
+        <%= isClosed ? 'Submissions Closed' : 'Submit Entry' %>
       </button>
     </div>
   </form>

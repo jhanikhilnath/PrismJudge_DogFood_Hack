@@ -1,29 +1,39 @@
-<div class="certificate-container">
-  <div class="certificate-inner-border">
-    <div class="certificate-badge">
-      VERIFIABLE PARTICIPATION RECORD · 2026
+<div class="breadcrumb-nav" style="max-width: 720px; margin-left: auto; margin-right: auto;">
+  <a href="/projects/<%= project.id %>" class="breadcrumb-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back to <%= project.title %>
+  </a>
+</div>
+
+<div class="certificate-container" style="max-width: 720px; margin: 0 auto; background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 3rem 2.5rem; box-shadow: var(--shadow-sm); text-align: center;">
+  <div style="font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.25rem;">
+    Participation &amp; Verification Record · DOGFOOD 2026
+  </div>
+
+  <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); margin-bottom: 0.5rem; line-height: 1.2;">
+    <%= project.title %>
+  </h1>
+
+  <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 2rem;">
+    Submitted by <strong><%= project.team_name || project.team_id %></strong> in the <strong><%= project.track_name || 'General' %></strong> track.
+  </p>
+
+  <div style="background: #FAFAFA; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.25rem; text-align: left; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+      <span style="font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">HMAC-SHA256 Cryptographic Signature:</span>
+      <button type="button" class="btn-copy-token" onclick="navigator.clipboard.writeText('<%= signature %>'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 1500)">Copy Signature</button>
     </div>
+    <code style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-primary); word-break: break-all; display: block;"><%= signature %></code>
+    <div style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">TIMESTAMP (UTC): <%= project.submitted_at %></div>
+  </div>
 
-    <h1 class="certificate-title">
-      <%= project.title %>
-    </h1>
-
-    <p class="certificate-subtitle">
-      Engineered by <strong><%= project.team_name || project.team_id %></strong> within the <strong><%= project.track_name || 'General' %></strong> track.
-    </p>
-
-    <div class="crypto-signature-box">
-      <div class="crypto-label">CRYPTOGRAPHIC VERIFICATION RECORD (HMAC-SHA256):</div>
-      <code class="crypto-hash"><%= signature %></code>
-      <div class="crypto-timestamp">SUBMISSION TIMESTAMP (UTC): <%= project.submitted_at %></div>
-    </div>
-
-    <div class="certificate-actions">
-      <a href="/projects/<%= project.id %>" class="btn btn-secondary">← Back to Project</a>
-      <button onclick="window.print()" class="btn btn-primary">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-        Print Certificate
-      </button>
-    </div>
+  <div style="display: flex; justify-content: center; gap: 0.75rem;">
+    <button onclick="window.print()" class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / Save Certificate
+    </button>
+    <a href="/projects/<%= project.id %>" class="btn btn-secondary">
+      Return to Project
+    </a>
   </div>
 </div>

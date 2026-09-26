@@ -1,24 +1,33 @@
 <div class="page-hero">
-  <div>
-    <div class="badge-role badge-judge" style="margin-bottom: 0.5rem; display: inline-block;">JUDGING CONSOLE</div>
-    <h1 class="page-title">Evaluation Portal</h1>
+  <div class="hero-content">
+    <h1 class="page-title">Judging Portal</h1>
     <p class="page-subtitle">
-      Authenticated as <strong><%= user.name %></strong> (<%= user.userId %>) · <%= completedCount %> of <%= totalAssigned %> reviews completed
+      Logged in as <strong><%= user.name %></strong> (<%= user.userId %>) · <%= completedCount %> of <%= totalAssigned %> assigned reviews completed.
     </p>
+
+    <!-- Progress Bar -->
+    <div style="margin-top: 1rem; max-width: 480px;">
+      <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-family: var(--font-mono); margin-bottom: 0.35rem; color: var(--text-secondary);">
+        <span>Evaluation Progress</span>
+        <span><%= totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 0 %>%</span>
+      </div>
+      <div style="height: 6px; background: var(--bg-subtle); border-radius: 9999px; overflow: hidden; border: 1px solid var(--border);">
+        <div style="height: 100%; width: <%= totalAssigned > 0 ? (completedCount / totalAssigned) * 100 : 0 %>%; background: #059669; border-radius: 9999px; transition: width 0.3s ease;"></div>
+      </div>
+    </div>
   </div>
-  <div style="display: flex; gap: 0.75rem;">
+
+  <div class="hero-actions">
     <a href="/judge/pairwise" class="btn btn-secondary">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-      Pairwise Arena
+      Pairwise Arena ↗
     </a>
   </div>
 </div>
 
-<!-- Security & Isolation Assurance Banner -->
 <div class="security-banner">
-  <div class="security-icon">🔒</div>
+  <svg class="security-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
   <div class="security-text">
-    <strong>Peer Isolation Active:</strong> Backend access control strictly confines score access to your authenticated credentials. Cross-judge snooping attempts via query parameters or API IDOR probes are blocked with HTTP 403.
+    <strong>Peer Isolation Enforcement Active:</strong> Role-based access control guarantees that your scoring records are completely isolated. Attempts to inspect scores submitted by peer judges are blocked by the backend.
   </div>
 </div>
 
@@ -26,36 +35,38 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 120px;">Project ID</th>
+        <th style="width: 110px;">ID</th>
         <th>Project Title</th>
         <th>Track</th>
-        <th style="width: 140px;">Status</th>
-        <th style="width: 130px;">Score</th>
-        <th style="width: 110px; text-align: right;">Action</th>
+        <th style="width: 130px;">Status</th>
+        <th style="width: 120px;">Score</th>
+        <th style="width: 120px; text-align: right;">Action</th>
       </tr>
     </thead>
     <tbody>
       <% assigned.forEach(function(p) { %>
         <tr>
-          <td style="font-family: var(--font-mono); font-weight: 700; color: var(--text-dim);"><%= p.id %></td>
+          <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);"><%= p.id %></td>
           <td>
-            <a href="/projects/<%= p.id %>" style="font-weight: 600; color: var(--text-main);"><%= p.title %></a>
+            <a href="/projects/<%= p.id %>" style="font-weight: 600; color: var(--text-primary);"><%= p.title %></a>
           </td>
-          <td><span class="card-track"><%= p.track_name || 'General' %></span></td>
+          <td>
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);"><%= p.track_name || 'General' %></span>
+          </td>
           <td>
             <% if (p.hasScored) { %>
-              <span class="status-pill status-completed">✓ SCORED</span>
+              <span class="status-pill status-completed">SCORED</span>
             <% } else { %>
               <span class="status-pill status-pending">PENDING</span>
             <% } %>
           </td>
-          <td style="font-family: var(--font-mono); font-weight: 700;">
+          <td style="font-family: var(--font-mono); font-size: 0.84rem; font-weight: 600;">
             <%= p.hasScored && p.score ? p.score.raw_total.toFixed(2) + ' / 5.0' : '—' %>
           </td>
           <td style="text-align: right;">
             <button 
               type="button"
-              class="btn btn-secondary btn-sm" 
+              class="btn <%= p.hasScored ? 'btn-secondary' : 'btn-primary' %> btn-sm" 
               data-project-id="<%= p.id %>"
               data-project-title="<%= p.title %>"
               onclick="openScoringModal(this.dataset.projectId, this.dataset.projectTitle)"
@@ -69,11 +80,11 @@
   </table>
 </div>
 
-<!-- Refined Scoring Modal Overlay -->
+<!-- Scoring Modal Dialog -->
 <div id="scoring-modal" class="modal-backdrop" style="display: none;" onclick="if(event.target===this) closeModal()">
   <div class="modal-dialog">
     <div class="modal-header">
-      <h2 id="modal-project-title" class="modal-title">Score Project</h2>
+      <h2 id="modal-project-title" class="modal-title">Evaluate Project</h2>
       <button type="button" class="btn-close-modal" onclick="closeModal()">✕</button>
     </div>
     
@@ -87,9 +98,9 @@
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-func" class="rubric-input" data-weight="0.4" oninput="document.getElementById('val-func').textContent = this.value; updateModalScore();">
         <div class="slider-scale-labels">
-          <span>1 (Broken)</span>
-          <span>3 (Acceptable)</span>
-          <span>5 (Flawless)</span>
+          <span>1 Broken</span>
+          <span>3 Acceptable</span>
+          <span>5 Flawless</span>
         </div>
       </div>
 
@@ -100,89 +111,113 @@
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-qual" class="rubric-input" data-weight="0.3" oninput="document.getElementById('val-qual').textContent = this.value; updateModalScore();">
         <div class="slider-scale-labels">
-          <span>1 (Messy)</span>
-          <span>3 (Solid)</span>
-          <span>5 (Senior Grade)</span>
+          <span>1 Messy</span>
+          <span>3 Clean</span>
+          <span>5 Robust</span>
         </div>
       </div>
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-          <label class="form-label" style="margin: 0;">Innovation &amp; Impact (30% Weight)</label>
-          <span id="val-innov" class="rubric-val-chip">3</span>
+          <label class="form-label" style="margin: 0;">Innovation (20% Weight)</label>
+          <span id="val-inno" class="rubric-val-chip">3</span>
         </div>
-        <input type="range" min="1" max="5" step="1" value="3" id="score-innov" class="rubric-input" data-weight="0.3" oninput="document.getElementById('val-innov').textContent = this.value; updateModalScore();">
+        <input type="range" min="1" max="5" step="1" value="3" id="score-inno" class="rubric-input" data-weight="0.2" oninput="document.getElementById('val-inno').textContent = this.value; updateModalScore();">
         <div class="slider-scale-labels">
-          <span>1 (Derivative)</span>
-          <span>3 (Novel)</span>
-          <span>5 (Groundbreaking)</span>
+          <span>1 Derivative</span>
+          <span>3 Novel</span>
+          <span>5 Groundbreaking</span>
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Private Judge Feedback (Optional)</label>
-        <textarea id="score-comment" class="form-textarea" rows="2" placeholder="Constructive evaluation notes for organizers and scoring records..."></textarea>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+          <label class="form-label" style="margin: 0;">Impact (10% Weight)</label>
+          <span id="val-imp" class="rubric-val-chip">3</span>
+        </div>
+        <input type="range" min="1" max="5" step="1" value="3" id="score-imp" class="rubric-input" data-weight="0.1" oninput="document.getElementById('val-imp').textContent = this.value; updateModalScore();">
+        <div class="slider-scale-labels">
+          <span>1 Minimal</span>
+          <span>3 Useful</span>
+          <span>5 Transformative</span>
+        </div>
       </div>
 
-      <div class="modal-footer">
-        <div class="computed-score-box">
-          <span class="computed-label">TOTAL SCORE</span>
-          <div class="computed-val">
-            <strong id="computed-raw-total">3.00</strong> <span style="font-size: 0.8rem; color: var(--text-dim);">/ 5.0</span>
-          </div>
-        </div>
-        <div style="display: flex; gap: 0.75rem;">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Evaluation</button>
-        </div>
+      <!-- Live Calculated Total Score Card -->
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0;">
+        <span style="font-weight: 600; font-size: 0.85rem;">Calculated Weighted Total</span>
+        <span style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+          <span id="computed-raw-total">3.00</span> <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">/ 5.0</span>
+        </span>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-submit-score">Submit Evaluation</button>
       </div>
     </form>
   </div>
 </div>
 
 <script>
-  function updateModalScore() {
-    const f = parseFloat(document.getElementById('score-func').value) || 0;
-    const q = parseFloat(document.getElementById('score-qual').value) || 0;
-    const i = parseFloat(document.getElementById('score-innov').value) || 0;
-    const total = f * 0.4 + q * 0.3 + i * 0.3;
-    document.getElementById('computed-raw-total').textContent = total.toFixed(2);
-  }
-
-  function openScoringModal(id, title) {
-    document.getElementById('modal-project-id').value = id;
-    document.getElementById('modal-project-title').textContent = 'Evaluate: ' + title;
-    updateModalScore();
+  function openScoringModal(projectId, projectTitle) {
+    document.getElementById('modal-project-id').value = projectId;
+    document.getElementById('modal-project-title').textContent = 'Evaluate ' + projectTitle;
     document.getElementById('scoring-modal').style.display = 'flex';
+    updateModalScore();
   }
 
   function closeModal() {
     document.getElementById('scoring-modal').style.display = 'none';
   }
 
+  function updateModalScore() {
+    const f = parseFloat(document.getElementById('score-func').value) * 0.4;
+    const q = parseFloat(document.getElementById('score-qual').value) * 0.3;
+    const i = parseFloat(document.getElementById('score-inno').value) * 0.2;
+    const m = parseFloat(document.getElementById('score-imp').value) * 0.1;
+    const total = f + q + i + m;
+    document.getElementById('computed-raw-total').textContent = total.toFixed(2);
+  }
+
   async function submitScore(e) {
     e.preventDefault();
+    const btn = document.getElementById('btn-submit-score');
+    btn.disabled = true;
+    btn.textContent = 'Recording...';
+
     const projectId = document.getElementById('modal-project-id').value;
-    const func = parseInt(document.getElementById('score-func').value, 10);
-    const qual = parseInt(document.getElementById('score-qual').value, 10);
-    const innov = parseInt(document.getElementById('score-innov').value, 10);
-    const comment = document.getElementById('score-comment').value;
+    const scores = {
+      functionality: parseInt(document.getElementById('score-func').value, 10),
+      quality: parseInt(document.getElementById('score-qual').value, 10),
+      innovation: parseInt(document.getElementById('score-inno').value, 10),
+      impact: parseInt(document.getElementById('score-imp').value, 10)
+    };
 
-    const res = await fetch('/api/judge/scores', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        project_id: projectId,
-        criteria: { functionality: func, quality: qual, innovation: innov },
-        comment: comment
-      })
-    });
+    try {
+      const res = await fetch('/api/judge/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: projectId, scores: scores })
+      });
 
-    if (res.ok) {
-      window.location.reload();
-    } else {
-      const err = await res.json();
-      alert('Error saving score: ' + (err.error || 'Unknown error'));
+      if (res.ok) {
+        if (window.showToast) window.showToast('Evaluation recorded successfully!', 'success');
+        setTimeout(() => window.location.reload(), 300);
+      } else {
+        const err = await res.json();
+        if (window.showToast) {
+          window.showToast(err.error || 'Failed to submit evaluation', 'error');
+        } else {
+          alert('Error: ' + (err.error || 'Failed to submit score'));
+        }
+        btn.disabled = false;
+        btn.textContent = 'Submit Evaluation';
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Evaluation';
+      if (window.showToast) window.showToast('Network error while saving score', 'error');
     }
   }
 </script>

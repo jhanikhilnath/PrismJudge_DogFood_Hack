@@ -1,72 +1,204 @@
+<%
+  // Helper to map track to CSS class and vector SVG icon
+  function getTrackInfo(trackName) {
+    const t = (trackName || '').toLowerCase();
+    if (t.includes('sec')) return { cls: 'track-sec', icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' };
+    if (t.includes('clim')) return { cls: 'track-climate', icon: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>' };
+    if (t.includes('health')) return { cls: 'track-health', icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' };
+    if (t.includes('data')) return { cls: 'track-data', icon: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>' };
+    if (t.includes('hard') || t.includes('hw')) return { cls: 'track-hw', icon: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>' };
+    if (t.includes('edu')) return { cls: 'track-edu', icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' };
+    if (t.includes('dev') || t.includes('tool')) return { cls: 'track-dev', icon: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>' };
+    if (t.includes('access')) return { cls: 'track-access', icon: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>' };
+    return { cls: 'track-default', icon: '<circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 16 12 12 8"/>' };
+  }
+
+  const featuredProject = projects.length > 0 ? projects[0] : null;
+  const remainingProjects = projects;
+%>
+
 <div class="page-hero">
-  <div>
-    <div class="badge-role badge-participant" style="margin-bottom: 0.5rem; display: inline-block;">OPEN COMPETITION</div>
-    <h1 class="page-title">Project Submissions</h1>
+  <div class="hero-content">
+    <h1 class="page-title">Submissions Gallery</h1>
     <p class="page-subtitle">
-      Explore entries for <%= event ? event.name : 'Dogfood Hackathon 2026' %> · <%= projects.length %> verified submissions
+      Explore all <%= projects.length %> verified engineering submissions for <%= event ? event.name : 'Sample Hack 2026' %>. Review technical architectures, cryptographic records, and community evaluations.
     </p>
+    <div class="telemetry-strip">
+      <div class="telemetry-item">
+        <span class="telemetry-dot"></span>
+        <span>Submissions Active</span>
+      </div>
+      <div class="telemetry-divider"></div>
+      <div class="telemetry-item">
+        <strong><%= projects.length %></strong>&nbsp;Projects
+      </div>
+      <div class="telemetry-divider"></div>
+      <div class="telemetry-item">
+        <strong><%= tracks.length %></strong>&nbsp;Tracks
+      </div>
+      <div class="telemetry-divider"></div>
+      <div class="telemetry-item">
+        <span>SHA-256 Provenance</span>
+      </div>
+    </div>
   </div>
-  <div>
+  <div class="hero-actions">
     <a href="/projects/new" class="btn btn-primary">+ Submit Project</a>
   </div>
 </div>
 
-<!-- Refined Search & Filter Toolbar -->
-<div class="gallery-toolbar">
-  <div class="search-input-wrapper">
-    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"></circle>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-    <input 
-      type="text" 
-      id="gallery-search" 
-      placeholder="Search projects by title, keywords, or summary..." 
-      value="<%= query.q %>"
-      class="form-input search-input" 
-    >
-  </div>
+<% if (featuredProject) { 
+     const featTrack = getTrackInfo(featuredProject.track_name || featuredProject.track_id);
+%>
+  <!-- Asymmetric Spotlight Hero Card (AIDA Layout) -->
+  <div class="featured-spotlight-card">
+    <div class="spotlight-main">
+      <div>
+        <div class="spotlight-badge-row">
+          <span class="spotlight-featured-pill">FEATURED SUBMISSION</span>
+          <span class="card-track-name" style="margin: 0;"><%= featuredProject.track_name || 'General' %></span>
+        </div>
+        <h2 class="spotlight-title">
+          <a href="/projects/<%= featuredProject.id %>"><%= featuredProject.title %></a>
+        </h2>
+        <p class="spotlight-summary"><%= featuredProject.summary %></p>
+      </div>
 
-  <div class="filter-select-wrapper">
-    <select id="gallery-track" class="form-select">
-      <option value="">All Tracks (<%= tracks.length %>)</option>
+      <div class="spotlight-footer">
+        <div class="spotlight-team">
+          <span class="team-avatar-mini"><%= (featuredProject.team_name || 'T').charAt(0).toUpperCase() %></span>
+          <span><%= featuredProject.team_name || featuredProject.team_id %></span>
+        </div>
+        <a href="/projects/<%= featuredProject.id %>" class="btn btn-secondary btn-sm">
+          Inspect Architecture →
+        </a>
+      </div>
+    </div>
+
+    <div class="spotlight-meta-panel">
+      <div class="meta-panel-title">SYSTEM TELEMETRY</div>
+      <div class="meta-stats-grid">
+        <div class="meta-stat-item">
+          <span class="meta-stat-label">SUBMISSION ID</span>
+          <span class="meta-stat-value"><%= featuredProject.id %></span>
+        </div>
+        <div class="meta-stat-item">
+          <span class="meta-stat-label">TRACK DOMAIN</span>
+          <span class="meta-stat-value"><%= featuredProject.track_name || 'General' %></span>
+        </div>
+        <div class="meta-stat-item">
+          <span class="meta-stat-label">EVALUATIONS</span>
+          <span class="meta-stat-value"><%= featuredProject.review_count %> reviews</span>
+        </div>
+        <div class="meta-stat-item">
+          <span class="meta-stat-label">INTEGRITY RECORD</span>
+          <span class="meta-stat-value" style="color: #059669;">Verified Active</span>
+        </div>
+      </div>
+      <div>
+        <a href="/certificates/<%= featuredProject.id %>" class="btn btn-secondary btn-sm" style="width: 100%;">
+          View Participation Certificate
+        </a>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<!-- Filter Toolbar & Pills -->
+<div class="gallery-toolbar-section">
+  <div class="search-bar-row">
+    <div class="search-input-wrapper">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input 
+        type="text" 
+        id="gallery-search" 
+        placeholder="Search projects by title, keywords, or summary..." 
+        value="<%= query.q %>"
+        class="search-input" 
+      >
+      <kbd class="search-kbd">/</kbd>
+    </div>
+
+    <!-- Hidden native select synced for script compatibility -->
+    <select id="gallery-track" class="form-select" style="display: none;">
+      <option value="">All Tracks</option>
       <% tracks.forEach(function(t) { %>
         <option value="<%= t.id %>" <%= query.track === t.id ? 'selected' : '' %>><%= t.name %></option>
       <% }); %>
     </select>
   </div>
+
+  <!-- Interactive Track Pills -->
+  <div class="track-pills-container" id="track-pills-wrapper">
+    <button type="button" class="track-pill-btn <%= !query.track ? 'active' : '' %>" data-track-id="">
+      All Projects <span class="pill-count">(<%= projects.length %>)</span>
+    </button>
+    <% tracks.forEach(function(t) { 
+         const count = projects.filter(p => p.track_id === t.id).length;
+    %>
+      <button type="button" class="track-pill-btn <%= query.track === t.id ? 'active' : '' %>" data-track-id="<%= t.id %>">
+        <%= t.name %> <span class="pill-count">(<%= count %>)</span>
+      </button>
+    <% }); %>
+  </div>
 </div>
 
-<!-- Project Cards Bento Grid -->
+<!-- Project Cards Grid -->
 <div class="grid-cards">
-  <% projects.forEach(function(p) { %>
+  <% remainingProjects.forEach(function(p) { 
+       const info = getTrackInfo(p.track_name || p.track_id);
+  %>
     <div class="project-card" data-title="<%= p.title.toLowerCase() %>" data-summary="<%= p.summary.toLowerCase() %>" data-track="<%= p.track_id %>">
-      <div class="card-inner-shell">
-        <div class="card-header">
-          <h2 class="card-title">
-            <a href="/projects/<%= p.id %>"><%= p.title %></a>
-          </h2>
-          <span class="card-track"><%= p.track_name || p.track_id %></span>
+      <!-- Generative Artwork Header Band -->
+      <div class="card-header-banner <%= info.cls %>">
+        <svg class="card-pattern-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <pattern id="grid-<%= p.id %>" width="12" height="12" patternUnits="userSpaceOnUse">
+              <path d="M 12 0 L 0 0 0 12" fill="none" stroke="currentColor" stroke-width="0.75" />
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#grid-<%= p.id %>)" />
+        </svg>
+
+        <div class="card-track-glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <%- info.icon %>
+          </svg>
         </div>
 
+        <span class="card-id-tag"><%= p.id %></span>
+      </div>
+
+      <div class="card-body <%= info.cls %>">
+        <span class="card-track-name"><%= p.track_name || p.track_id %></span>
+        <h2 class="card-title">
+          <a href="/projects/<%= p.id %>"><%= p.title %></a>
+        </h2>
         <p class="card-summary"><%= p.summary %></p>
 
         <div class="card-footer">
           <div class="team-chip">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span class="team-avatar-mini"><%= (p.team_name || 'T').charAt(0).toUpperCase() %></span>
             <span><%= p.team_name || p.team_id %></span>
           </div>
-          <span class="review-count-badge"><%= p.review_count %> reviews</span>
+          <div class="review-badge-group">
+            <span class="review-count-badge"><%= p.review_count %> reviews</span>
+            <svg class="card-arrow-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
         </div>
       </div>
     </div>
   <% }); %>
 </div>
 
-<!-- Zero Matches State Banner -->
 <div id="no-projects-banner" class="empty-state-card" style="display: none;">
-  <div class="empty-state-icon">⬚</div>
-  <h3 class="empty-state-title">No projects found matching your search</h3>
-  <p class="empty-state-desc">Try clearing your search query or selecting a different track filter.</p>
-  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('gallery-search').value=''; document.getElementById('gallery-track').value=''; document.getElementById('gallery-search').dispatchEvent(new Event('input'));">Clear Filters</button>
+  <div class="empty-state-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+  </div>
+  <h3 class="empty-state-title">No matching submissions found</h3>
+  <p class="empty-state-desc">Try clearing your search query or switching to another track filter.</p>
+  <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-filters">Clear Filters</button>
 </div>
