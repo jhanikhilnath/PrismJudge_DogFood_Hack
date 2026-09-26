@@ -144,6 +144,10 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
       now
     );
 
+    if (req.headers.accept?.includes('text/html') || !req.headers['content-type']?.includes('application/json')) {
+      return reply.redirect(`/projects/${projectId}`);
+    }
+
     return reply.code(201).send({
       message: 'Comment posted',
       comment: { id: commentId, project_id: projectId, author_name: name, content: content.trim(), created_at: now },

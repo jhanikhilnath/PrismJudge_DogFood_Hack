@@ -64,7 +64,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
 
     const counts = {
       projects: (queryOne<{ c: number }>('SELECT count(*) as c FROM projects')?.c) || 0,
-      judges: (queryOne<{ c: number }>('SELECT count(*) as c FROM users WHERE role = "judge"')?.c) || 0,
+      judges: (queryOne<{ c: number }>("SELECT count(*) as c FROM users WHERE role = 'judge'")?.c) || 0,
       scores: (queryOne<{ c: number }>('SELECT count(*) as c FROM scores')?.c) || 0,
       votes: (queryOne<{ c: number }>('SELECT count(*) as c FROM community_votes')?.c) || 0,
     };

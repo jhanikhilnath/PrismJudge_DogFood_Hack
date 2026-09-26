@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const track = trackFilter ? trackFilter.value : '';
 
+    let visibleCount = 0;
     projectCards.forEach((card) => {
       const title = card.getAttribute('data-title') || '';
       const summary = card.getAttribute('data-summary') || '';
@@ -18,8 +19,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const matchesSearch = !query || title.includes(query) || summary.includes(query);
       const matchesTrack = !track || cardTrack === track;
 
-      card.style.display = matchesSearch && matchesTrack ? '' : 'none';
+      if (matchesSearch && matchesTrack) {
+        card.style.display = '';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
     });
+
+    const noProjectsBanner = document.getElementById('no-projects-banner');
+    if (noProjectsBanner) {
+      noProjectsBanner.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
   }
 
   if (searchInput) searchInput.addEventListener('input', filterProjects);
