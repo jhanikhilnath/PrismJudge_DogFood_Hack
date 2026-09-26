@@ -1,56 +1,72 @@
 <div class="page-hero">
   <div>
-    <h1 class="page-title">Pairwise Judging Mode</h1>
+    <div class="badge-role badge-judge" style="margin-bottom: 0.5rem; display: inline-block;">PAIRWISE ARENA</div>
+    <h1 class="page-title">Head-to-Head Comparison</h1>
     <p class="page-subtitle">Compare two projects side-by-side using the Bradley-Terry Minorization-Maximization (MM) model</p>
   </div>
 </div>
 
-<div class="alert alert-warning" style="margin-bottom: 2rem;">
-  <strong>★ Bradley-Terry Estimator Active:</strong> Pairwise comparisons fit latent project skill ratings λᵢ via Maximum Likelihood Estimation, effectively eliminating individual judge rubric scaling biases.
+<div class="normalization-card" style="margin-bottom: 2rem;">
+  <div class="normalization-header">
+    <div class="normalization-title-group">
+      <span class="norm-indicator-dot"></span>
+      <h3 class="normalization-title">Bradley-Terry Maximum Likelihood Estimator Active</h3>
+    </div>
+    <span class="norm-pill">PAIRWISE MLE</span>
+  </div>
+  <p class="normalization-desc">
+    Pairwise comparisons fit latent project skill ratings λᵢ via MM iterations, effectively neutralizing individual judge rubric scaling biases and strictness disparities.
+  </p>
 </div>
 
 <% if (project_a && project_b) { %>
-  <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 2rem; align-items: stretch; margin-bottom: 3rem;">
+  <div class="pairwise-arena-grid">
     <!-- Project A -->
-    <div style="background: var(--bg-card); border: 2px solid var(--border); border-radius: 8px; padding: 2rem; display: flex; flex-direction: column; justify-content: space-between;">
-      <div>
-        <span class="card-track"><%= project_a.track_name || 'Track' %></span>
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0.75rem 0; color: var(--text-main);"><%= project_a.title %></h2>
-        <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6;"><%= project_a.summary %></p>
-      </div>
-      <div style="margin-top: 2rem;">
-        <button class="btn btn-primary" style="width: 100%; font-size: 1rem; padding: 1rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_a')">
-          ★ Select <%= project_a.title %> as Better
-        </button>
+    <div class="pairwise-card">
+      <div class="card-inner-shell" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <span class="card-track"><%= project_a.track_name || 'Track' %></span>
+          <h2 class="pairwise-project-title"><%= project_a.title %></h2>
+          <p class="pairwise-project-summary"><%= project_a.summary %></p>
+        </div>
+        <div style="margin-top: 2rem;">
+          <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.85rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_a')">
+            ★ Select <%= project_a.title %>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- VS Divider -->
-    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem;">
-      <div style="width: 1px; height: 80px; background: var(--border);"></div>
-      <span style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: var(--accent-pink);">VS</span>
-      <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'tie')">
-        It's a Tie
+    <!-- Center VS Divider -->
+    <div class="pairwise-vs-divider">
+      <div class="vs-line"></div>
+      <span class="vs-label">VS</span>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'tie')">
+        Declare Tie
       </button>
-      <div style="width: 1px; height: 80px; background: var(--border);"></div>
+      <div class="vs-line"></div>
     </div>
 
     <!-- Project B -->
-    <div style="background: var(--bg-card); border: 2px solid var(--border); border-radius: 8px; padding: 2rem; display: flex; flex-direction: column; justify-content: space-between;">
-      <div>
-        <span class="card-track"><%= project_b.track_name || 'Track' %></span>
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin: 0.75rem 0; color: var(--text-main);"><%= project_b.title %></h2>
-        <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6;"><%= project_b.summary %></p>
-      </div>
-      <div style="margin-top: 2rem;">
-        <button class="btn btn-primary" style="width: 100%; font-size: 1rem; padding: 1rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_b')">
-          ★ Select <%= project_b.title %> as Better
-        </button>
+    <div class="pairwise-card">
+      <div class="card-inner-shell" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <span class="card-track"><%= project_b.track_name || 'Track' %></span>
+          <h2 class="pairwise-project-title"><%= project_b.title %></h2>
+          <p class="pairwise-project-summary"><%= project_b.summary %></p>
+        </div>
+        <div style="margin-top: 2rem;">
+          <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.85rem;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_b')">
+            ★ Select <%= project_b.title %>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 <% } else { %>
-  <p style="color: var(--text-muted);">Not enough projects to form a comparison pair.</p>
+  <div class="empty-state-card">
+    <p style="color: var(--text-muted);">Not enough active projects to generate a comparison match.</p>
+  </div>
 <% } %>
 
 <script>
@@ -65,7 +81,7 @@
       window.location.reload();
     } else {
       const err = await res.json();
-      alert('Pairwise error: ' + (err.error || 'Failed to submit'));
+      alert('Pairwise error: ' + (err.error || 'Failed to submit match'));
     }
   }
 </script>

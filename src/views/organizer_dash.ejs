@@ -1,83 +1,103 @@
 <div class="page-hero">
   <div>
-    <h1 class="page-title">Organizer Control Center</h1>
-    <p class="page-subtitle">Real-time review progress, cross-judge Bayesian normalization, and verifiable audit records</p>
+    <div class="badge-role badge-organizer" style="margin-bottom: 0.5rem; display: inline-block;">ORGANIZER CONSOLE</div>
+    <h1 class="page-title">Competition Operations Hub</h1>
+    <p class="page-subtitle">Real-time review completion, Bayesian cross-judge normalization, and immutable audit logs</p>
   </div>
-  <div style="display: flex; gap: 0.75rem;">
-    <a href="/api/export.csv" class="btn btn-primary" download="dogfood-results.csv">⬇ Download CSV Export (Check 7)</a>
-    <a href="/api/organizer/audit" class="btn btn-secondary" target="_blank">Audit Log JSON</a>
-  </div>
-</div>
-
-<!-- Metric Overview Cards -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
-  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
-    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Total Projects</div>
-    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent);"><%= counts.projects %></div>
-  </div>
-  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
-    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Active Judges</div>
-    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-pink);"><%= counts.judges %></div>
-  </div>
-  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
-    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Reviews Submitted</div>
-    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-gold);"><%= counts.scores %></div>
-  </div>
-  <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem;">
-    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Global Prior Mean</div>
-    <div style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-emerald);"><%= normalization.globalMean %> <span style="font-size: 1rem; color: var(--text-dim);">/ 5.0</span></div>
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <a href="/api/export.csv" class="btn btn-primary" download="dogfood-results.csv">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Download CSV Results
+    </a>
+    <a href="/api/organizer/audit" class="btn btn-secondary" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem;"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+      Audit Trail JSON
+    </a>
   </div>
 </div>
 
-<!-- Normalization Proof Banner (Bonus #1) -->
-<div style="background: rgba(0, 229, 208, 0.05); border: 1px solid var(--accent); border-radius: 6px; padding: 1.25rem; margin-bottom: 2rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-    <div>
-      <h3 style="font-family: var(--font-mono); font-size: 1rem; color: var(--accent); margin-bottom: 0.25rem;">
-        ★ Normalization Proof Active: Empirical Bayesian Shrinkage Z-Score
-      </h3>
-      <p style="font-size: 0.9rem; color: var(--text-muted);">
-        Global Prior: μ₀ = <%= normalization.globalMean %>, σ₀ = <%= normalization.globalStd %> | Shrinkage Weight m = 3.0.
-        Smoothly shrinks zero-variance judges (e.g. <code>jdg_07</code> with σ = 0) to eliminate singularities.
-      </p>
+<!-- Telemetry Metric Cards -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-header">TOTAL PROJECTS</div>
+    <div class="metric-value color-accent"><%= counts.projects %></div>
+    <div class="metric-subtext">Active submissions</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">ACTIVE JUDGES</div>
+    <div class="metric-value color-pink"><%= counts.judges %></div>
+    <div class="metric-subtext">Registered evaluators</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">EVALUATIONS CAST</div>
+    <div class="metric-value color-gold"><%= counts.scores %></div>
+    <div class="metric-subtext">Rubric scores submitted</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">GLOBAL PRIOR MEAN</div>
+    <div class="metric-value color-emerald"><%= normalization.globalMean %> <span style="font-size: 0.9rem; color: var(--text-dim); font-weight: 500;">/ 5.0</span></div>
+    <div class="metric-subtext">Baseline prior across panel</div>
+  </div>
+</div>
+
+<!-- Empirical Bayesian Normalization Banner -->
+<div class="normalization-card">
+  <div class="normalization-header">
+    <div class="normalization-title-group">
+      <span class="norm-indicator-dot"></span>
+      <h3 class="normalization-title">Empirical Bayesian Shrinkage Z-Score Normalizer Active</h3>
     </div>
+    <span class="norm-pill">WEIGHT m = 3.0</span>
   </div>
+  <p class="normalization-desc">
+    Prior Parameters: <code>μ₀ = <%= normalization.globalMean %></code>, <code>σ₀ = <%= normalization.globalStd %></code>.
+    The normalizer shrinks individual judge variance toward the global panel prior. Zero-variance judges (e.g. <code>jdg_07</code> with σ = 0) smoothly shrink to <code>σ_shrunk = 0.5105</code>, guaranteeing elimination of division-by-zero singularities.
+  </p>
 </div>
 
-<!-- Live Leaderboard Table -->
-<h2 style="font-family: var(--font-mono); font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-main);">
-  Competition Leaderboard (<%= leaderboard.length %> Submissions)
-</h2>
+<!-- Competition Leaderboard Table -->
+<div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: baseline;">
+  <h2 class="section-heading">Official Competition Standings (<%= leaderboard.length %> Entries)</h2>
+  <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);">Sorted by Normalized Score (0–100)</span>
+</div>
 
-<div class="table-wrapper" style="margin-bottom: 3rem;">
+<div class="table-wrapper" style="margin-bottom: 2.5rem;">
   <table class="data-table">
     <thead>
       <tr>
-        <th>Rank</th>
-        <th>Project ID</th>
+        <th style="width: 80px;">Rank</th>
+        <th style="width: 110px;">Project ID</th>
         <th>Project Title</th>
         <th>Track</th>
-        <th>Reviews</th>
-        <th>Raw Average</th>
-        <th>Normalized Score (0-100)</th>
-        <th>Composite Rating</th>
+        <th style="width: 100px; text-align: center;">Reviews</th>
+        <th style="width: 120px;">Raw Avg</th>
+        <th style="width: 160px;">Normalized (0–100)</th>
+        <th style="width: 140px; text-align: right;">Composite</th>
       </tr>
     </thead>
     <tbody>
       <% leaderboard.forEach(function(p) { %>
         <tr>
-          <td style="font-family: var(--font-mono); font-weight: 800; color: <%= p.rank <= 3 ? 'var(--accent-gold)' : 'var(--text-muted)' %>;">
-            #<%= p.rank %>
-          </td>
-          <td style="font-family: var(--font-mono);"><%= p.projectId %></td>
           <td>
-            <a href="/projects/<%= p.projectId %>" style="font-weight: 600;"><%= p.projectTitle %></a>
+            <% if (p.rank === 1) { %>
+              <span class="rank-badge rank-first">#1</span>
+            <% } else if (p.rank === 2) { %>
+              <span class="rank-badge rank-second">#2</span>
+            <% } else if (p.rank === 3) { %>
+              <span class="rank-badge rank-third">#3</span>
+            <% } else { %>
+              <span class="rank-badge rank-default">#<%= p.rank %></span>
+            <% } %>
+          </td>
+          <td style="font-family: var(--font-mono); font-weight: 700; color: var(--text-dim);"><%= p.projectId %></td>
+          <td>
+            <a href="/projects/<%= p.projectId %>" style="font-weight: 600; color: var(--text-main);"><%= p.projectTitle %></a>
           </td>
           <td><span class="card-track"><%= p.trackId %></span></td>
-          <td><%= p.reviewCount %></td>
+          <td style="text-align: center; font-family: var(--font-mono);"><%= p.reviewCount %></td>
           <td style="font-family: var(--font-mono);"><%= p.rawAverage.toFixed(2) %> / 5.0</td>
           <td style="font-family: var(--font-mono); font-weight: 700; color: var(--accent);"><%= p.normalizedScore.toFixed(2) %></td>
-          <td style="font-family: var(--font-mono); font-weight: 800; color: var(--text-main);"><%= p.compositeScore.toFixed(2) %></td>
+          <td style="font-family: var(--font-mono); font-weight: 800; color: var(--text-main); text-align: right;"><%= p.compositeScore.toFixed(2) %></td>
         </tr>
       <% }); %>
     </tbody>

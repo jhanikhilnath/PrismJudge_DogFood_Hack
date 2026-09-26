@@ -1,0 +1,174 @@
+<div class="login-container">
+  <div class="page-hero" style="border-bottom: none; margin-bottom: 1.5rem; text-align: center; justify-content: center;">
+    <div>
+      <div class="badge-role badge-organizer" style="display: inline-block; margin-bottom: 0.75rem;">SECURITY GATEWAY</div>
+      <h1 class="page-title" style="font-size: 2.25rem;">Sign In to Dogfood</h1>
+      <p class="page-subtitle" style="max-width: 500px; margin: 0.5rem auto 0;">
+        Access role-gated judging portals, submission consoles, and cryptographic verification logs.
+      </p>
+    </div>
+  </div>
+
+  <% if (error) { %>
+    <div class="alert alert-danger" style="max-width: 680px; margin: 0 auto 1.75rem;">
+      <strong>Authentication Notice:</strong> <%= error %>
+    </div>
+  <% } %>
+
+  <div class="auth-tabs" style="max-width: 680px; margin: 0 auto 1.5rem; display: flex; gap: 0.5rem; background: var(--bg-surface); padding: 0.35rem; border-radius: 8px; border: 1px solid var(--border);">
+    <button type="button" class="auth-tab-btn active" data-tab="tab-personas" onclick="switchAuthTab('tab-personas')">Demo Personas (1-Click)</button>
+    <button type="button" class="auth-tab-btn" data-tab="tab-credentials" onclick="switchAuthTab('tab-credentials')">Email &amp; Password</button>
+    <button type="button" class="auth-tab-btn" data-tab="tab-token" onclick="switchAuthTab('tab-token')">Direct Token</button>
+  </div>
+
+  <!-- Tab 1: Demo Personas -->
+  <div id="tab-personas" class="auth-tab-pane active" style="max-width: 680px; margin: 0 auto;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+      
+      <!-- Organizer -->
+      <div class="persona-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Lead Organizer</h3>
+            <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim);">organizer@example.org</span>
+          </div>
+          <span class="badge-role badge-organizer">ORGANIZER</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Control room access, live Bayesian Z-score normalization metrics, and CSV results export.
+        </p>
+        <form action="/login" method="POST">
+          <input type="hidden" name="persona" value="organizer">
+          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            Launch Organizer Console →
+          </button>
+        </form>
+      </div>
+
+      <!-- Judge A -->
+      <div class="persona-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Judge A (Lead)</h3>
+            <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim);">Tomas Varga · jdg_01</span>
+          </div>
+          <span class="badge-role badge-judge">JUDGE</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Review assigned projects, calibrate rubric sliders, and verify peer isolation defense.
+        </p>
+        <form action="/login" method="POST">
+          <input type="hidden" name="persona" value="judge_a">
+          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <button type="submit" class="btn btn-secondary" style="width: 100%;">
+            Launch Judge A Portal →
+          </button>
+        </form>
+      </div>
+
+      <!-- Judge B -->
+      <div class="persona-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Judge B (Peer)</h3>
+            <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim);">Elena Chen · jdg_02</span>
+          </div>
+          <span class="badge-role badge-judge">JUDGE</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Independent peer evaluator. Cryptographically blocked from inspecting Judge A's scores.
+        </p>
+        <form action="/login" method="POST">
+          <input type="hidden" name="persona" value="judge_b">
+          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <button type="submit" class="btn btn-secondary" style="width: 100%;">
+            Launch Judge B Portal →
+          </button>
+        </form>
+      </div>
+
+      <!-- Participant -->
+      <div class="persona-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Participant</h3>
+            <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim);">Team 01 · usr_part</span>
+          </div>
+          <span class="badge-role badge-participant">PARTICIPANT</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Hackathon submitter. Can view submission status, cast ballots, and test permission gates.
+        </p>
+        <form action="/login" method="POST">
+          <input type="hidden" name="persona" value="participant">
+          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <button type="submit" class="btn btn-secondary" style="width: 100%;">
+            Launch Participant View →
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Tab 2: Email & Password -->
+  <div id="tab-credentials" class="auth-tab-pane" style="display: none; max-width: 500px; margin: 0 auto;">
+    <div class="form-card" style="margin: 0;">
+      <form action="/login" method="POST">
+        <input type="hidden" name="redirect" value="<%= redirect %>">
+        
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email Address</label>
+          <input type="email" id="login-email" name="email" required class="form-input" placeholder="organizer@example.org" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" required class="form-input" placeholder="••••••••••••" autocomplete="current-password">
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In with Credentials</button>
+        </div>
+      </form>
+      <div style="margin-top: 1.25rem; font-size: 0.8rem; color: var(--text-dim); text-align: center; border-top: 1px solid var(--border); padding-top: 1rem;">
+        Demo accounts: <code>organizer@example.org</code>, <code>tomas.varga@example.org</code> (any password accepted for demo users)
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Direct Token -->
+  <div id="tab-token" class="auth-tab-pane" style="display: none; max-width: 500px; margin: 0 auto;">
+    <div class="form-card" style="margin: 0;">
+      <form action="/login" method="POST">
+        <input type="hidden" name="redirect" value="<%= redirect %>">
+
+        <div class="form-group">
+          <label class="form-label" for="login-token">Session Token</label>
+          <input type="text" id="login-token" name="token" required class="form-input" placeholder="org_7f2a or jdg_a_91bc">
+          <span style="font-size: 0.78rem; color: var(--text-dim); margin-top: 0.35rem; display: block;">
+            Paste an active session token directly from <code>.dogfood.toml</code> or <code>fixtures.json</code>.
+          </span>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Authenticate with Token</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchAuthTab(tabId) {
+    document.querySelectorAll('.auth-tab-pane').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.auth-tab-btn').forEach(el => el.classList.remove('active'));
+    
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+    
+    const btn = document.querySelector(`[data-tab="${tabId}"]`);
+    if (btn) btn.classList.add('active');
+  }
+</script>

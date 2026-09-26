@@ -1,18 +1,19 @@
-<div class="page-hero">
+<div class="page-hero" style="max-width: 760px; margin: 0 auto 2rem;">
   <div>
-    <h1 class="page-title">Project Submission</h1>
-    <p class="page-subtitle">Submit your hackathon project or edit your team's existing draft</p>
+    <div class="badge-role badge-participant" style="margin-bottom: 0.5rem; display: inline-block;">SUBMISSION ENGINE</div>
+    <h1 class="page-title">Project Registration</h1>
+    <p class="page-subtitle">Submit your team's hackathon project or update your active entry</p>
   </div>
 </div>
 
 <% if (isClosed) { %>
-  <div class="alert alert-danger">
-    <strong>⚠️ Submissions Closed:</strong> The submission deadline was <%= event ? event.submissions_close : 'in the past' %>.
-    The backend strictly refuses new submissions and draft modifications after the deadline has elapsed.
+  <div class="alert alert-danger" style="max-width: 760px; margin: 0 auto 2rem;">
+    <strong>⚠️ Submissions Closed:</strong> The event deadline passed at <code><%= event ? event.submissions_close : 'in the past' %></code>.
+    The backend strictly rejects new project submissions and draft edits after deadline expiration.
   </div>
 <% } %>
 
-<div class="form-card">
+<div class="form-card" style="max-width: 760px; margin: 0 auto;">
   <form action="/projects/new" method="POST">
     <div class="form-group">
       <label class="form-label" for="title">Project Title *</label>
@@ -20,12 +21,12 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="summary">One-line Summary *</label>
-      <textarea id="summary" name="summary" required rows="2" class="form-textarea" placeholder="One clear sentence explaining what you built..." <%= isClosed ? 'disabled' : '' %>></textarea>
+      <label class="form-label" for="summary">Executive Summary *</label>
+      <textarea id="summary" name="summary" required rows="3" class="form-textarea" placeholder="One or two clear sentences describing what you engineered and its impact..." <%= isClosed ? 'disabled' : '' %>></textarea>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="track_id">Hackathon Track *</label>
+      <label class="form-label" for="track_id">Competition Track *</label>
       <select id="track_id" name="track_id" required class="form-select" <%= isClosed ? 'disabled' : '' %>>
         <% tracks.forEach(function(t) { %>
           <option value="<%= t.id %>"><%= t.name %></option>
@@ -34,19 +35,19 @@
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="repo_url">Repository URL</label>
-      <input type="url" id="repo_url" name="repo_url" class="form-input" placeholder="https://github.com/..." <%= isClosed ? 'disabled' : '' %>>
+      <label class="form-label" for="repo_url">Source Code Repository URL</label>
+      <input type="url" id="repo_url" name="repo_url" class="form-input" placeholder="https://github.com/your-org/your-repo" <%= isClosed ? 'disabled' : '' %>>
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="demo_url">Demo or Live URL</label>
-      <input type="url" id="demo_url" name="demo_url" class="form-input" placeholder="https://..." <%= isClosed ? 'disabled' : '' %>>
+      <label class="form-label" for="demo_url">Live Demonstration URL (Optional)</label>
+      <input type="url" id="demo_url" name="demo_url" class="form-input" placeholder="https://your-demo-domain.com" <%= isClosed ? 'disabled' : '' %>>
     </div>
 
-    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
       <a href="/projects" class="btn btn-secondary">Cancel</a>
       <button type="submit" class="btn btn-primary" <%= isClosed ? 'disabled' : '' %>>
-        <%= isClosed ? 'Submissions Closed' : 'Submit Project' %>
+        <%= isClosed ? 'Deadline Passed' : 'Submit Project Entry →' %>
       </button>
     </div>
   </form>

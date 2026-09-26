@@ -1,24 +1,29 @@
-<div style="max-width: 800px; margin: 3rem auto; background: var(--bg-card); border: 2px solid var(--accent); border-radius: 12px; padding: 3rem; text-align: center; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-  <div style="display: inline-block; font-family: var(--font-mono); font-weight: 800; font-size: 0.9rem; letter-spacing: 0.2em; color: var(--accent-pink); border-bottom: 2px solid var(--accent-pink); padding-bottom: 0.25rem; margin-bottom: 1.5rem; text-transform: uppercase;">
-    DOGFOOD 2026 · VERIFIABLE PARTICIPATION RECORD
-  </div>
+<div class="certificate-container">
+  <div class="certificate-inner-border">
+    <div class="certificate-badge">
+      VERIFIABLE PARTICIPATION RECORD · 2026
+    </div>
 
-  <h1 style="font-family: var(--font-mono); font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">
-    <%= project.title %>
-  </h1>
+    <h1 class="certificate-title">
+      <%= project.title %>
+    </h1>
 
-  <p style="font-size: 1.15rem; color: var(--text-muted); margin-bottom: 2rem;">
-    Entered by team <strong><%= project.team_name || project.team_id %></strong> in the <strong><%= project.track_name || 'Hackathon' %></strong> track.
-  </p>
+    <p class="certificate-subtitle">
+      Engineered by <strong><%= project.team_name || project.team_id %></strong> within the <strong><%= project.track_name || 'General' %></strong> track.
+    </p>
 
-  <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px; padding: 1.25rem; text-align: left; font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 2rem; overflow-x: auto;">
-    <div style="color: var(--text-dim); margin-bottom: 0.25rem;">CRYPTOGRAPHIC VERIFICATION (HMAC-SHA256):</div>
-    <div style="color: var(--accent); word-break: break-all;"><%= signature %></div>
-    <div style="color: var(--text-dim); margin-top: 0.5rem;">TIMESTAMP (UTC): <%= project.submitted_at %></div>
-  </div>
+    <div class="crypto-signature-box">
+      <div class="crypto-label">CRYPTOGRAPHIC VERIFICATION RECORD (HMAC-SHA256):</div>
+      <code class="crypto-hash"><%= signature %></code>
+      <div class="crypto-timestamp">SUBMISSION TIMESTAMP (UTC): <%= project.submitted_at %></div>
+    </div>
 
-  <div style="display: flex; justify-content: center; gap: 1rem;">
-    <a href="/projects/<%= project.id %>" class="btn btn-secondary">← Back to Project</a>
-    <button onclick="window.print()" class="btn btn-primary">Print Certificate</button>
+    <div class="certificate-actions">
+      <a href="/projects/<%= project.id %>" class="btn btn-secondary">← Back to Project</a>
+      <button onclick="window.print()" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Print Certificate
+      </button>
+    </div>
   </div>
 </div>

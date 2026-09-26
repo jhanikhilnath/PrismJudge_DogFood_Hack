@@ -152,7 +152,7 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
   // Judge Dashboard (HTML)
   fastify.get('/judge/dashboard', async (req: FastifyRequest, reply: FastifyReply) => {
     if (!req.user || (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin')) {
-      return reply.redirect('/api/auth/switch/judge_a?redirect=/judge/dashboard');
+      return reply.redirect('/login?redirect=/judge/dashboard&error=Judge+or+Organizer+access+required');
     }
 
     const judgeId = req.user.userId;

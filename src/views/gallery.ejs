@@ -1,8 +1,9 @@
 <div class="page-hero">
   <div>
-    <h1 class="page-title">Project Gallery</h1>
+    <div class="badge-role badge-participant" style="margin-bottom: 0.5rem; display: inline-block;">OPEN COMPETITION</div>
+    <h1 class="page-title">Project Submissions</h1>
     <p class="page-subtitle">
-      Explore submissions for <%= event ? event.name : 'Sample Hack 2026' %> (<%= projects.length %> projects entered)
+      Explore entries for <%= event ? event.name : 'Dogfood Hackathon 2026' %> · <%= projects.length %> verified submissions
     </p>
   </div>
   <div>
@@ -10,45 +11,62 @@
   </div>
 </div>
 
-<div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
-  <input 
-    type="text" 
-    id="gallery-search" 
-    placeholder="Search by title or summary..." 
-    value="<%= query.q %>"
-    class="form-input" 
-    style="flex: 1; min-width: 260px;"
-  >
-  <select id="gallery-track" class="form-select" style="width: auto; min-width: 200px;">
-    <option value="">All Tracks (<%= tracks.length %>)</option>
-    <% tracks.forEach(function(t) { %>
-      <option value="<%= t.id %>" <%= query.track === t.id ? 'selected' : '' %>><%= t.name %></option>
-    <% }); %>
-  </select>
+<!-- Refined Search & Filter Toolbar -->
+<div class="gallery-toolbar">
+  <div class="search-input-wrapper">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input 
+      type="text" 
+      id="gallery-search" 
+      placeholder="Search projects by title, keywords, or summary..." 
+      value="<%= query.q %>"
+      class="form-input search-input" 
+    >
+  </div>
+
+  <div class="filter-select-wrapper">
+    <select id="gallery-track" class="form-select">
+      <option value="">All Tracks (<%= tracks.length %>)</option>
+      <% tracks.forEach(function(t) { %>
+        <option value="<%= t.id %>" <%= query.track === t.id ? 'selected' : '' %>><%= t.name %></option>
+      <% }); %>
+    </select>
+  </div>
 </div>
 
+<!-- Project Cards Bento Grid -->
 <div class="grid-cards">
   <% projects.forEach(function(p) { %>
     <div class="project-card" data-title="<%= p.title.toLowerCase() %>" data-summary="<%= p.summary.toLowerCase() %>" data-track="<%= p.track_id %>">
-      <div>
+      <div class="card-inner-shell">
         <div class="card-header">
           <h2 class="card-title">
             <a href="/projects/<%= p.id %>"><%= p.title %></a>
           </h2>
           <span class="card-track"><%= p.track_name || p.track_id %></span>
         </div>
-        <p class="card-summary"><%= p.summary %></p>
-      </div>
 
-      <div class="card-footer">
-        <span>Team: <%= p.team_name || p.team_id %></span>
-        <span><%= p.review_count %> reviews</span>
+        <p class="card-summary"><%= p.summary %></p>
+
+        <div class="card-footer">
+          <div class="team-chip">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span><%= p.team_name || p.team_id %></span>
+          </div>
+          <span class="review-count-badge"><%= p.review_count %> reviews</span>
+        </div>
       </div>
     </div>
   <% }); %>
 </div>
 
-<div id="no-projects-banner" style="display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 3rem; text-align: center; margin-top: 1.5rem;">
-  <p style="font-family: var(--font-mono); font-size: 1.1rem; color: var(--text-muted); margin-bottom: 0.5rem;">No projects found matching your search</p>
-  <p style="font-size: 0.9rem; color: var(--text-dim);">Try clearing your search query or selecting a different track filter.</p>
+<!-- Zero Matches State Banner -->
+<div id="no-projects-banner" class="empty-state-card" style="display: none;">
+  <div class="empty-state-icon">⬚</div>
+  <h3 class="empty-state-title">No projects found matching your search</h3>
+  <p class="empty-state-desc">Try clearing your search query or selecting a different track filter.</p>
+  <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('gallery-search').value=''; document.getElementById('gallery-track').value=''; document.getElementById('gallery-search').dispatchEvent(new Event('input'));">Clear Filters</button>
 </div>

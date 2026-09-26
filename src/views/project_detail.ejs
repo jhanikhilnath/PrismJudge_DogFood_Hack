@@ -1,73 +1,101 @@
 <div class="page-hero">
   <div>
-    <span class="card-track" style="font-size: 0.85rem;"><%= project.track_name || project.track_id %></span>
-    <h1 class="page-title" style="margin-top: 0.5rem;"><%= project.title %></h1>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+      <span class="card-track"><%= project.track_name || project.track_id %></span>
+      <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);">ID: <%= project.id %></span>
+    </div>
+    <h1 class="page-title"><%= project.title %></h1>
     <p class="page-subtitle">Submitted by <%= project.team_name || project.team_id %> on <%= new Date(project.submitted_at).toLocaleDateString() %></p>
   </div>
-  <div style="display: flex; gap: 0.75rem;">
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
     <% if (project.repo_url) { %>
-      <a href="<%= project.repo_url %>" target="_blank" class="btn btn-secondary">Source Code</a>
+      <a href="<%= project.repo_url %>" target="_blank" class="btn btn-secondary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.4rem;"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+        Source Code
+      </a>
     <% } %>
-    <a href="/certificates/<%= project.id %>" class="btn btn-secondary">View Certificate (T4)</a>
+    <a href="/certificates/<%= project.id %>" class="btn btn-secondary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.4rem;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+      Verifiable Certificate
+    </a>
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-  <div>
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; margin-bottom: 1.5rem;">
-      <h2 style="font-size: 1.1rem; font-family: var(--font-mono); margin-bottom: 0.75rem; color: var(--accent);">Project Summary</h2>
-      <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-main);"><%= project.summary %></p>
+<div class="project-layout-grid">
+  <!-- Main Project Content Column -->
+  <div class="project-main-col">
+    <!-- Overview Card -->
+    <div class="content-card">
+      <div class="card-inner-shell">
+        <h2 class="section-title">Overview &amp; Architecture</h2>
+        <p class="project-summary-text"><%= project.summary %></p>
+      </div>
     </div>
 
-    <!-- Comments Section (T3) -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem;">
-      <h2 style="font-size: 1.1rem; font-family: var(--font-mono); margin-bottom: 1rem; color: var(--accent);">Community Discussion</h2>
+    <!-- Community Discussion Stream -->
+    <div class="content-card" style="margin-top: 1.5rem;">
+      <div class="card-inner-shell">
+        <h2 class="section-title">Community Discussion</h2>
 
-      <form action="/api/comments/<%= project.id %>" method="POST" style="margin-bottom: 1.5rem;">
-        <div class="form-group">
-          <textarea name="content" rows="3" required class="form-textarea" placeholder="Leave constructive feedback or ask a question..."></textarea>
-        </div>
-        <button type="submit" class="btn btn-secondary btn-sm">Post Comment</button>
-      </form>
+        <form action="/api/comments/<%= project.id %>" method="POST" style="margin-bottom: 1.75rem;">
+          <div class="form-group">
+            <textarea name="content" rows="3" required class="form-textarea" placeholder="Leave constructive technical feedback, questions, or notes..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm">Post Comment</button>
+        </form>
 
-      <div class="comments-list">
-        <% if (comments && comments.length > 0) { %>
-          <% comments.forEach(function(c) { %>
-            <div style="border-top: 1px solid var(--border); padding: 0.85rem 0;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-dim); margin-bottom: 0.25rem;">
-                <span style="color: var(--text-muted);"><%= c.author_name %></span>
-                <span><%= new Date(c.created_at).toLocaleDateString() %></span>
+        <div class="comments-list">
+          <% if (comments && comments.length > 0) { %>
+            <% comments.forEach(function(c) { %>
+              <div class="comment-item">
+                <div class="comment-header">
+                  <span class="comment-author"><%= c.author_name %></span>
+                  <span class="comment-date"><%= new Date(c.created_at).toLocaleDateString() %></span>
+                </div>
+                <p class="comment-content"><%= c.content %></p>
               </div>
-              <p style="font-size: 0.95rem;"><%= c.content %></p>
+            <% }); %>
+          <% } else { %>
+            <div class="empty-comment-notice">
+              No comments yet. Share the first constructive question or review!
             </div>
-          <% }); %>
-        <% } else { %>
-          <p style="color: var(--text-dim); font-size: 0.9rem;">No comments yet. Be the first to share your thoughts!</p>
-        <% } %>
+          <% } %>
+        </div>
       </div>
     </div>
   </div>
 
-  <div>
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem; margin-bottom: 1.5rem;">
-      <h3 style="font-family: var(--font-mono); font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">Team Members</h3>
-      <ul style="list-style: none;">
-        <% members.forEach(function(m) { %>
-          <li style="padding: 0.4rem 0; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-main); border-bottom: 1px solid rgba(255,255,255,0.04);">
-            <%= m.email %>
-          </li>
-        <% }); %>
-      </ul>
+  <!-- Sidebar Column -->
+  <div class="project-sidebar-col">
+    <!-- Team Members Card -->
+    <div class="content-card">
+      <div class="card-inner-shell">
+        <h3 class="sidebar-title">Team Roster</h3>
+        <ul class="member-list">
+          <% members.forEach(function(m) { %>
+            <li class="member-item">
+              <span class="member-bullet"></span>
+              <span class="member-email"><%= m.email %></span>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
     </div>
 
-    <!-- Community Vote Widget (T3) -->
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem;">
-      <h3 style="font-family: var(--font-mono); font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem;">Community Vote (T3)</h3>
-      <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem;">Support this project in the community choice award.</p>
-      <form action="/api/vote" method="POST">
-        <input type="hidden" name="project_id" value="<%= project.id %>">
-        <button type="submit" class="btn btn-primary" style="width: 100%;">★ Vote For Project</button>
-      </form>
+    <!-- Community Vote Card -->
+    <div class="content-card" style="margin-top: 1.5rem;">
+      <div class="card-inner-shell">
+        <h3 class="sidebar-title">Community Ballot</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Support this project in the peer-voted community recognition award.
+        </p>
+        <form action="/api/vote" method="POST">
+          <input type="hidden" name="project_id" value="<%= project.id %>">
+          <button type="submit" class="btn btn-primary" style="width: 100%;">
+            ★ Cast Community Vote
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 </div>

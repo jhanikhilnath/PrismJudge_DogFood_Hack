@@ -56,7 +56,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
   // Organizer Dashboard (HTML)
   fastify.get('/organizer/dashboard', async (req: FastifyRequest, reply: FastifyReply) => {
     if (!req.user || (req.user.role !== 'organizer' && req.user.role !== 'admin')) {
-      return reply.redirect('/api/auth/switch/organizer?redirect=/organizer/dashboard');
+      return reply.redirect('/login?redirect=/organizer/dashboard&error=Organizer+access+required');
     }
 
     const leaderboard = generateLeaderboard();
