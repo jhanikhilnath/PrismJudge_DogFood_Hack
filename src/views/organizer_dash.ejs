@@ -5,10 +5,21 @@
       Real-time judging progression, empirical Bayesian normalization engine, and verifiable competition standings.
     </p>
   </div>
-  <div class="hero-actions">
+  <div class="hero-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
     <a href="/api/export.csv" class="btn btn-primary" download="dogfood-results.csv">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Download CSV Results
+    </a>
+    <select id="select-export-stage" onchange="if(this.value){window.location.href='/api/export.csv?stage='+this.value;}" class="btn btn-secondary" style="padding: 0.45rem 0.6rem; font-size: 0.8rem; cursor: pointer; background: var(--bg-surface);">
+      <option value="">Export Stage...</option>
+      <option value="composite">Composite Standings (Official)</option>
+      <option value="raw">Raw Evaluator Rubric Scores</option>
+      <option value="normalized">Bayesian Normalized Ratings</option>
+      <option value="pairwise">Pairwise Match Showdowns</option>
+      <option value="audit">System Audit Ledger</option>
+    </select>
+    <a href="/normalization-proof.txt" class="btn btn-secondary" target="_blank">
+      Proof Artifact (.txt) ↗
     </a>
     <a href="/api/organizer/audit" class="btn btn-secondary" target="_blank">
       Audit Trail JSON ↗
@@ -167,8 +178,8 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 70px;">Rank</th>
-        <th style="width: 100px;">ID</th>
+        <th style="width: 105px;">Rank &amp; Shift</th>
+        <th style="width: 90px;">ID</th>
         <th>Project Title</th>
         <th>Track</th>
         <th style="width: 90px; text-align: center;">Reviews</th>
@@ -181,15 +192,24 @@
       <% leaderboard.forEach(function(p) { %>
         <tr>
           <td>
-            <% if (p.rank === 1) { %>
-              <span class="rank-badge rank-first">#1</span>
-            <% } else if (p.rank === 2) { %>
-              <span class="rank-badge rank-second">#2</span>
-            <% } else if (p.rank === 3) { %>
-              <span class="rank-badge rank-third">#3</span>
-            <% } else { %>
-              <span class="rank-badge rank-default">#<%= p.rank %></span>
-            <% } %>
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <% if (p.rank === 1) { %>
+                <span class="rank-badge rank-first">#1</span>
+              <% } else if (p.rank === 2) { %>
+                <span class="rank-badge rank-second">#2</span>
+              <% } else if (p.rank === 3) { %>
+                <span class="rank-badge rank-third">#3</span>
+              <% } else { %>
+                <span class="rank-badge rank-default">#<%= p.rank %></span>
+              <% } %>
+              <% if (typeof p.rankDelta !== 'undefined' && p.rankDelta !== 0) { %>
+                <span class="badge-status <%= p.rankDelta > 0 ? 'badge-success' : 'badge-danger' %>" style="font-family: var(--font-mono); font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px;" title="Movement from raw rank (#<%= p.rawRank %> → #<%= p.rank %>)">
+                  <%= p.rankDelta > 0 ? '+' + p.rankDelta : p.rankDelta %>
+                </span>
+              <% } else { %>
+                <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted); padding: 0.1rem 0.2rem;" title="Rank unchanged from raw score">=</span>
+              <% } %>
+            </div>
           </td>
           <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);"><%= p.projectId %></td>
           <td>

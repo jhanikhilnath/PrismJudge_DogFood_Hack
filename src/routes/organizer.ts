@@ -1,31 +1,97 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
 import { requireRole } from '../core/rbac.js';
 import { generateCSVExport, generateLeaderboard } from '../engine/ranking.js';
-import { computeBayesianNormalization } from '../engine/normalization.js';
+import { computeBayesianNormalization, generateNormalizationProofArtifact } from '../engine/normalization.js';
+import { generateBalancedAssignments, getAssignmentStats } from '../engine/assignment.js';
 import { getJudgeProgressList, getRecentAuditLogs, getSystemStats } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
 
 export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
-  // 1. CSV Leaderboard Export Endpoint (T2 Check 7)
+  // 1. CSV Leaderboard Export Endpoint (T2 Check 7 & Multi-Stage Telemetry)
   fastify.get(
     '/api/export.csv',
     {
       preHandler: [requireRole(['organizer', 'admin'])],
     },
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const csv = generateCSVExport();
+      const query = (req.query || {}) as { stage?: string };
+      const stage = ['composite', 'raw', 'normalized', 'pairwise', 'audit'].includes(query.stage || '')
+        ? (query.stage as string)
+        : 'composite';
+
+      const csv = generateCSVExport(stage);
 
       logAuditEvent({
         actorId: req.user!.userId,
         actorRole: req.user!.role,
-        action: 'CSV_EXPORT_DOWNLOADED',
+        action: `CSV_EXPORT_DOWNLOADED_${stage.toUpperCase()}`,
         resourceType: 'export',
         ipAddress: req.ip,
       });
 
       reply.header('Content-Type', 'text/csv; charset=utf-8');
-      reply.header('Content-Disposition', 'attachment; filename="dogfood-2026-results.csv"');
+      reply.header('Content-Disposition', `attachment; filename="dogfood-2026-${stage}.csv"`);
       return reply.code(200).send(csv);
+    }
+  );
+
+  // 1b. Mathematical Normalization Proof Artifact (.txt)
+  fastify.get(
+    '/api/organizer/normalization-proof.txt',
+    {
+      preHandler: [requireRole(['organizer', 'admin'])],
+    },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const proof = generateNormalizationProofArtifact();
+      reply.header('Content-Type', 'text/plain; charset=utf-8');
+      return reply.code(200).send(proof);
+    }
+  );
+
+  fastify.get(
+    '/normalization-proof.txt',
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const proof = generateNormalizationProofArtifact();
+      reply.header('Content-Type', 'text/plain; charset=utf-8');
+      return reply.code(200).send(proof);
+    }
+  );
+
+  // 1c. Automated Balanced Workload Assignment APIs
+  fastify.post(
+    '/api/organizer/assignments/run',
+    {
+      preHandler: [requireRole(['organizer', 'admin'])],
+    },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const body = (req.body || {}) as { reviewsPerProject?: number; seed?: number };
+      const report = generateBalancedAssignments(body);
+
+      logAuditEvent({
+        actorId: req.user!.userId,
+        actorRole: req.user!.role,
+        action: 'JUDGE_WORKLOAD_ASSIGNED',
+        resourceType: 'assignments',
+        payload: report,
+        ipAddress: req.ip,
+      });
+
+      return reply.code(200).send({
+        ok: true,
+        message: 'Evaluator workloads balanced successfully',
+        report,
+      });
+    }
+  );
+
+  fastify.get(
+    '/api/organizer/assignments',
+    {
+      preHandler: [requireRole(['organizer', 'admin'])],
+    },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const stats = getAssignmentStats();
+      return reply.code(200).send({ stats });
     }
   );
 
@@ -41,14 +107,46 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     }
   );
 
-  // 3. System Audit Trail API
-  fastify.get(
+  interface AuditQuery {
+    actor?: string;
+    action?: string;
+    resource_type?: string;
+    limit?: string;
+  }
+
+  // 3. System Audit Trail API with Multi-Parameter Query Filtering
+  fastify.get<{ Querystring: AuditQuery }>(
     '/api/organizer/audit',
     {
       preHandler: [requireRole(['organizer', 'admin'])],
     },
-    async (_req: FastifyRequest, reply: FastifyReply) => {
-      const logs = getRecentAuditLogs(100);
+    async (req: FastifyRequest<{ Querystring: AuditQuery }>, reply: FastifyReply) => {
+      const q = req.query || {};
+      const limit = Math.min(1000, parseInt(q.limit || '100', 10) || 100);
+
+      const conditions: string[] = [];
+      const params: any[] = [];
+
+      if (q.actor) {
+        conditions.push('(actor_id = ? OR actor_role = ?)');
+        params.push(q.actor, q.actor);
+      }
+      if (q.action) {
+        conditions.push('action LIKE ?');
+        params.push(`%${q.action}%`);
+      }
+      if (q.resource_type) {
+        conditions.push('resource_type = ?');
+        params.push(q.resource_type);
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      const sql = `SELECT id, created_at, actor_id, actor_role, action, resource_type, resource_id, payload, ip_address
+                   FROM audit_logs ${whereClause} ORDER BY created_at DESC LIMIT ?`;
+      params.push(limit);
+
+      const { queryAll } = await import('../db/index.js');
+      const logs = queryAll(sql, ...params);
       return reply.send({ count: logs.length, logs });
     }
   );
@@ -319,5 +417,53 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     });
 
     return reply.send({ success: deleted });
+  });
+
+  // 10. Webhook Delivery Inspection API
+  fastify.get('/api/organizer/webhooks/deliveries', {
+    preHandler: [requireRole(['organizer', 'admin'])],
+  }, async (_req: FastifyRequest, reply: FastifyReply) => {
+    const { getRecentWebhookDeliveries } = await import('../core/webhooks.js');
+    const deliveries = getRecentWebhookDeliveries(50);
+    return reply.code(200).send({ count: deliveries.length, deliveries });
+  });
+
+  // 11. Online SQLite Hot Snapshot Backup API
+  fastify.post('/api/organizer/backup', {
+    preHandler: [requireRole(['organizer', 'admin'])],
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const { db } = await import('../db/index.js');
+
+    const backupsDir = path.join(process.cwd(), 'backups');
+    if (!fs.existsSync(backupsDir)) {
+      fs.mkdirSync(backupsDir, { recursive: true });
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `dogfood-backup-${timestamp}.sqlite`;
+    const targetPath = path.join(backupsDir, filename);
+
+    // Online zero-downtime hot snapshot via SQLite VACUUM INTO
+    db.exec(`VACUUM INTO '${targetPath}';`);
+    const stats = fs.statSync(targetPath);
+
+    logAuditEvent({
+      actorId: req.user!.userId,
+      actorRole: req.user!.role,
+      action: 'DATABASE_BACKUP_CREATED',
+      resourceType: 'backup',
+      payload: { filename, sizeBytes: stats.size },
+      ipAddress: req.ip,
+    });
+
+    return reply.code(200).send({
+      ok: true,
+      message: 'Hot SQLite database snapshot created successfully',
+      filename,
+      sizeBytes: stats.size,
+      createdAt: new Date().toISOString(),
+    });
   });
 }

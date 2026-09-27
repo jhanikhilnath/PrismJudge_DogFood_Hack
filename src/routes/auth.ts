@@ -10,6 +10,7 @@ import {
 } from '../core/auth.js';
 import { queryOne, queryAll } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
+import { rateLimit } from '../core/rateLimit.js';
 
 interface LoginBody {
   email?: string;
@@ -26,7 +27,12 @@ interface AuthQuery {
 
 export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
   // 1. JSON API Login Endpoint (email & password)
-  fastify.post('/api/auth/login', async (req: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) => {
+  fastify.post<{ Body: LoginBody }>(
+    '/api/auth/login',
+    {
+      preHandler: [rateLimit('auth')],
+    },
+    async (req: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) => {
     const { email, password } = req.body || {};
     if (!email || !password) {
       return reply.code(400).send({ error: 'Email and password are required' });

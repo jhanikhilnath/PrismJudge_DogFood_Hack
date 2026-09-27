@@ -3,6 +3,7 @@ import { enforceJudgePeerIsolation, requireRole, resolveJudgeAlias } from '../co
 import { execute, getAllTracks, getJudgeScores, getProjectsForComparison, queryOne, ScoreRecord } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
 import { calculateWeightedScore } from '../engine/normalization.js';
+import { hasConflictOfInterest, markAssignmentCompleted, getAssignmentsForJudge } from '../engine/assignment.js';
 
 interface JudgeScoresQuery {
   judge?: string;
@@ -86,6 +87,15 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
 
       const rawTotal = calculateWeightedScore(criteria);
       const judgeId = req.user!.userId;
+
+      // Conflict of Interest (COI) Defense
+      if (hasConflictOfInterest(judgeId, project_id)) {
+        return reply.code(403).send({
+          error: 'ConflictOfInterest',
+          message: 'Conflict of Interest: Evaluators are strictly prohibited from scoring submissions belonging to their own team.',
+        });
+      }
+
       const scoreId = `sc_${judgeId}_${project_id}`;
       const now = new Date().toISOString();
 
@@ -100,6 +110,9 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         comment ? String(comment).trim() : null,
         now
       );
+
+      // Mark assignment completed if assigned
+      markAssignmentCompleted(judgeId, project_id);
 
       logAuditEvent({
         actorId: judgeId,
@@ -143,12 +156,28 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const tracks = getAllTracks();
 
     const scoreMap = new Map<string, ScoreRecord>(scores.map((s) => [s.project_id, s]));
+    const judgeAssignments = getAssignmentsForJudge(judgeId);
+    const assignedProjectIds = new Set(judgeAssignments.map((a) => a.projectId));
 
     const assigned = allProjects.map((p) => ({
       ...p,
       hasScored: scoredProjectIds.has(p.id),
       score: scoreMap.get(p.id),
+      isDirectlyAssigned: assignedProjectIds.size > 0 ? assignedProjectIds.has(p.id) : true,
     }));
+
+    // If balanced assignments exist, sort directly assigned items first
+    if (assignedProjectIds.size > 0) {
+      assigned.sort((a, b) => {
+        if (a.isDirectlyAssigned !== b.isDirectlyAssigned) {
+          return a.isDirectlyAssigned ? -1 : 1;
+        }
+        if (a.hasScored !== b.hasScored) {
+          return a.hasScored ? 1 : -1;
+        }
+        return a.title.localeCompare(b.title);
+      });
+    }
 
     return reply.view('judge_dashboard.ejs', {
       title: 'Judge Evaluation Dashboard — DOGFOOD 2026',
@@ -156,7 +185,8 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       assigned,
       tracks,
       completedCount: scores.length,
-      totalAssigned: allProjects.length,
+      totalAssigned: assignedProjectIds.size > 0 ? assignedProjectIds.size : allProjects.length,
+      assignments: judgeAssignments,
     });
   });
 }

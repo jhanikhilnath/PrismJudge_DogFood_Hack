@@ -1,0 +1,539 @@
+DOGFOOD normalization proof
+event: sample-hack-2026
+method: empirical_bayesian_shrinkage
+created_at: 2026-09-27T11:39:54.281Z
+raw_sigma: 0.66
+normalized_sigma: 12.36
+is_connected: true
+component_count: 1
+convergence_iterations: 1
+n_reviews: 126
+
+Rank movement (top 10 by |delta|):
+project_id  raw_rank  adj_rank  delta
+prj_28  27  36  -9
+prj_19  14  21  -7
+prj_24  22  16  +6
+prj_12  20  15  +5
+prj_27  25  20  +5
+prj_29  32  27  +5
+prj_02  15  19  -4
+prj_17  18  22  -4
+prj_07  33  29  +4
+prj_39  28  32  -4
+
+per-project:
+  project_id: prj_34
+    title: "Iron Switch"
+    raw_mean: 4.367
+    adjusted: 84.065
+    rank_before: 2
+    rank_after: 1
+    rank_movement: 1
+  project_id: prj_11
+    title: "Salt Ledger"
+    raw_mean: 4.375
+    adjusted: 81.341
+    rank_before: 1
+    rank_after: 2
+    rank_movement: -1
+  project_id: prj_33
+    title: "Slow Trail"
+    raw_mean: 4.033
+    adjusted: 79.869
+    rank_before: 6
+    rank_after: 3
+    rank_movement: 3
+  project_id: prj_10
+    title: "Still Beacon"
+    raw_mean: 4.200
+    adjusted: 78.842
+    rank_before: 3
+    rank_after: 4
+    rank_movement: -1
+  project_id: prj_37
+    title: "Salt Loom"
+    raw_mean: 4.075
+    adjusted: 78.775
+    rank_before: 5
+    rank_after: 5
+    rank_movement: 0
+  project_id: prj_25
+    title: "Dry Relay"
+    raw_mean: 4.100
+    adjusted: 77.681
+    rank_before: 4
+    rank_after: 6
+    rank_movement: -2
+  project_id: prj_16
+    title: "Salt Kiln"
+    raw_mean: 4.000
+    adjusted: 76.476
+    rank_before: 7
+    rank_after: 7
+    rank_movement: 0
+  project_id: prj_41
+    title: "Dry Harbour"
+    raw_mean: 3.875
+    adjusted: 75.208
+    rank_before: 9
+    rank_after: 8
+    rank_movement: 1
+  project_id: prj_21
+    title: "Copper Kiln"
+    raw_mean: 3.933
+    adjusted: 73.635
+    rank_before: 8
+    rank_after: 9
+    rank_movement: -1
+  project_id: prj_08
+    title: "North Drift"
+    raw_mean: 3.800
+    adjusted: 72.322
+    rank_before: 10
+    rank_after: 10
+    rank_movement: 0
+  project_id: prj_04
+    title: "Green Switch"
+    raw_mean: 3.733
+    adjusted: 71.877
+    rank_before: 12
+    rank_after: 11
+    rank_movement: 1
+  project_id: prj_38
+    title: "Deep Beacon"
+    raw_mean: 3.767
+    adjusted: 71.637
+    rank_before: 11
+    rank_after: 12
+    rank_movement: -1
+  project_id: prj_15
+    title: "Copper Orbit"
+    raw_mean: 3.650
+    adjusted: 71.008
+    rank_before: 13
+    rank_after: 13
+    rank_movement: 0
+  project_id: prj_31
+    title: "Salt Ferry"
+    raw_mean: 3.567
+    adjusted: 70.892
+    rank_before: 17
+    rank_after: 14
+    rank_movement: 3
+  project_id: prj_12
+    title: "Open Beacon"
+    raw_mean: 3.500
+    adjusted: 70.688
+    rank_before: 20
+    rank_after: 15
+    rank_movement: 5
+  project_id: prj_24
+    title: "Glass Beacon"
+    raw_mean: 3.500
+    adjusted: 70.160
+    rank_before: 22
+    rank_after: 16
+    rank_movement: 6
+  project_id: prj_36
+    title: "Salt Drift"
+    raw_mean: 3.600
+    adjusted: 70.053
+    rank_before: 16
+    rank_after: 17
+    rank_movement: -1
+  project_id: prj_09
+    title: "Hollow Signal"
+    raw_mean: 3.500
+    adjusted: 69.944
+    rank_before: 19
+    rank_after: 18
+    rank_movement: 1
+  project_id: prj_02
+    title: "Small Meadow"
+    raw_mean: 3.600
+    adjusted: 69.862
+    rank_before: 15
+    rank_after: 19
+    rank_movement: -4
+  project_id: prj_27
+    title: "Flat Thread"
+    raw_mean: 3.433
+    adjusted: 69.699
+    rank_before: 25
+    rank_after: 20
+    rank_movement: 5
+  project_id: prj_19
+    title: "Small Relay"
+    raw_mean: 3.650
+    adjusted: 69.632
+    rank_before: 14
+    rank_after: 21
+    rank_movement: -7
+  project_id: prj_17
+    title: "Small Loom"
+    raw_mean: 3.533
+    adjusted: 69.626
+    rank_before: 18
+    rank_after: 22
+    rank_movement: -4
+  project_id: prj_18
+    title: "Open Kiln"
+    raw_mean: 3.500
+    adjusted: 69.446
+    rank_before: 21
+    rank_after: 23
+    rank_movement: -2
+  project_id: prj_35
+    title: "Warm Beacon"
+    raw_mean: 3.500
+    adjusted: 69.120
+    rank_before: 24
+    rank_after: 24
+    rank_movement: 0
+  project_id: prj_14
+    title: "Green Lantern"
+    raw_mean: 3.420
+    adjusted: 68.765
+    rank_before: 26
+    rank_after: 25
+    rank_movement: 1
+  project_id: prj_32
+    title: "Loud Ledger"
+    raw_mean: 3.500
+    adjusted: 68.392
+    rank_before: 23
+    rank_after: 26
+    rank_movement: -3
+  project_id: prj_29
+    title: "Flat Relay"
+    raw_mean: 3.350
+    adjusted: 68.024
+    rank_before: 32
+    rank_after: 27
+    rank_movement: 5
+  project_id: prj_01
+    title: "Glass Signal"
+    raw_mean: 3.367
+    adjusted: 67.762
+    rank_before: 29
+    rank_after: 28
+    rank_movement: 1
+  project_id: prj_07
+    title: "Dry Harbour"
+    raw_mean: 3.320
+    adjusted: 67.555
+    rank_before: 33
+    rank_after: 29
+    rank_movement: 4
+  project_id: prj_03
+    title: "Deep Compass"
+    raw_mean: 3.367
+    adjusted: 66.350
+    rank_before: 30
+    rank_after: 30
+    rank_movement: 0
+  project_id: prj_13
+    title: "Quiet Anchor"
+    raw_mean: 3.367
+    adjusted: 66.182
+    rank_before: 31
+    rank_after: 31
+    rank_movement: 0
+  project_id: prj_39
+    title: "Paper Anchor"
+    raw_mean: 3.400
+    adjusted: 65.752
+    rank_before: 28
+    rank_after: 32
+    rank_movement: -4
+  project_id: prj_20
+    title: "Paper Thread"
+    raw_mean: 3.267
+    adjusted: 64.449
+    rank_before: 34
+    rank_after: 33
+    rank_movement: 1
+  project_id: prj_30
+    title: "Paper Harbour"
+    raw_mean: 3.100
+    adjusted: 64.116
+    rank_before: 36
+    rank_after: 34
+    rank_movement: 2
+  project_id: prj_26
+    title: "Amber Hours"
+    raw_mean: 3.133
+    adjusted: 63.230
+    rank_before: 35
+    rank_after: 35
+    rank_movement: 0
+  project_id: prj_28
+    title: "Flat Meadow"
+    raw_mean: 3.400
+    adjusted: 62.381
+    rank_before: 27
+    rank_after: 36
+    rank_movement: -9
+  project_id: prj_22
+    title: "Dry Bridge"
+    raw_mean: 3.033
+    adjusted: 62.132
+    rank_before: 39
+    rank_after: 37
+    rank_movement: 2
+  project_id: prj_40
+    title: "Slow Loom"
+    raw_mean: 3.050
+    adjusted: 60.689
+    rank_before: 38
+    rank_after: 38
+    rank_movement: 0
+  project_id: prj_06
+    title: "Dry Compass"
+    raw_mean: 3.067
+    adjusted: 60.427
+    rank_before: 37
+    rank_after: 39
+    rank_movement: -2
+  project_id: prj_23
+    title: "Slow Quarry"
+    raw_mean: 2.900
+    adjusted: 57.831
+    rank_before: 41
+    rank_after: 40
+    rank_movement: 1
+  project_id: prj_05
+    title: "North Compass"
+    raw_mean: 2.933
+    adjusted: 56.169
+    rank_before: 40
+    rank_after: 41
+    rank_movement: -1
+  project_id: prj_mujqx3r0
+    title: "Timely Submission"
+    raw_mean: 0.000
+    adjusted: 0.000
+    rank_before: 42
+    rank_after: 42
+    rank_movement: 0
+
+per-judge:
+  judge_id: jdg_08
+    bias: -0.167
+    n_reviews: 3
+    sample_std: 0.854
+    shrunk_std: 0.743
+    leverage: 0.024
+    calibration_status: "Balanced"
+  judge_id: jdg_03
+    bias: 0.333
+    n_reviews: 2
+    sample_std: 0.566
+    shrunk_std: 0.637
+    leverage: 0.016
+    calibration_status: "Generous Judge"
+  judge_id: jdg_28
+    bias: -0.467
+    n_reviews: 2
+    sample_std: 0.141
+    shrunk_std: 0.575
+    leverage: 0.016
+    calibration_status: "Strict Judge"
+  judge_id: jdg_21
+    bias: 0.133
+    n_reviews: 4
+    sample_std: 0.735
+    shrunk_std: 0.698
+    leverage: 0.032
+    calibration_status: "Balanced"
+  judge_id: jdg_12
+    bias: -0.017
+    n_reviews: 2
+    sample_std: 0.636
+    shrunk_std: 0.653
+    leverage: 0.016
+    calibration_status: "Balanced"
+  judge_id: jdg_26
+    bias: 0.143
+    n_reviews: 10
+    sample_std: 0.507
+    shrunk_std: 0.549
+    leverage: 0.079
+    calibration_status: "Balanced"
+  judge_id: jdg_19
+    bias: -0.242
+    n_reviews: 4
+    sample_std: 0.690
+    shrunk_std: 0.675
+    leverage: 0.032
+    calibration_status: "Strict Judge"
+  judge_id: jdg_22
+    bias: 0.173
+    n_reviews: 5
+    sample_std: 0.808
+    shrunk_std: 0.748
+    leverage: 0.040
+    calibration_status: "Balanced"
+  judge_id: jdg_11
+    bias: 0.050
+    n_reviews: 6
+    sample_std: 0.788
+    shrunk_std: 0.743
+    leverage: 0.048
+    calibration_status: "Balanced"
+  judge_id: jdg_04
+    bias: 0.008
+    n_reviews: 4
+    sample_std: 0.793
+    shrunk_std: 0.729
+    leverage: 0.032
+    calibration_status: "Balanced"
+  judge_id: jdg_25
+    bias: -0.107
+    n_reviews: 5
+    sample_std: 0.503
+    shrunk_std: 0.575
+    leverage: 0.040
+    calibration_status: "Balanced"
+  judge_id: jdg_02
+    bias: 0.667
+    n_reviews: 6
+    sample_std: 0.776
+    shrunk_std: 0.735
+    leverage: 0.048
+    calibration_status: "Generous Judge"
+  judge_id: jdg_16
+    bias: 0.100
+    n_reviews: 6
+    sample_std: 0.737
+    shrunk_std: 0.709
+    leverage: 0.048
+    calibration_status: "Balanced"
+  judge_id: jdg_24
+    bias: -0.221
+    n_reviews: 11
+    sample_std: 0.641
+    shrunk_std: 0.645
+    leverage: 0.087
+    calibration_status: "Strict Judge"
+  judge_id: jdg_09
+    bias: -0.027
+    n_reviews: 5
+    sample_std: 0.559
+    shrunk_std: 0.604
+    leverage: 0.040
+    calibration_status: "Balanced"
+  judge_id: jdg_01
+    bias: -1.567
+    n_reviews: 1
+    sample_std: 0.659
+    shrunk_std: 0.659
+    leverage: 0.008
+    calibration_status: "Strict Judge"
+  judge_id: jdg_10
+    bias: -0.400
+    n_reviews: 3
+    sample_std: 0.451
+    shrunk_std: 0.585
+    leverage: 0.024
+    calibration_status: "Strict Judge"
+  judge_id: jdg_23
+    bias: -0.267
+    n_reviews: 1
+    sample_std: 0.659
+    shrunk_std: 0.659
+    leverage: 0.008
+    calibration_status: "Strict Judge"
+  judge_id: jdg_13
+    bias: 0.433
+    n_reviews: 3
+    sample_std: 0.755
+    shrunk_std: 0.699
+    leverage: 0.024
+    calibration_status: "Generous Judge"
+  judge_id: jdg_27
+    bias: -0.617
+    n_reviews: 2
+    sample_std: 0.495
+    shrunk_std: 0.622
+    leverage: 0.016
+    calibration_status: "Strict Judge"
+  judge_id: jdg_07
+    bias: 0.433
+    n_reviews: 3
+    sample_std: 0.000
+    shrunk_std: 0.511
+    leverage: 0.024
+    calibration_status: "Singularity Handled"
+  judge_id: jdg_29
+    bias: -0.033
+    n_reviews: 9
+    sample_std: 0.421
+    shrunk_std: 0.498
+    leverage: 0.071
+    calibration_status: "Balanced"
+  judge_id: jdg_15
+    bias: 0.450
+    n_reviews: 6
+    sample_std: 0.826
+    shrunk_std: 0.767
+    leverage: 0.048
+    calibration_status: "Generous Judge"
+  judge_id: jdg_30
+    bias: 0.508
+    n_reviews: 4
+    sample_std: 0.613
+    shrunk_std: 0.636
+    leverage: 0.032
+    calibration_status: "Generous Judge"
+  judge_id: jdg_14
+    bias: -0.600
+    n_reviews: 3
+    sample_std: 0.702
+    shrunk_std: 0.677
+    leverage: 0.024
+    calibration_status: "Strict Judge"
+  judge_id: jdg_05
+    bias: -0.017
+    n_reviews: 2
+    sample_std: 0.354
+    shrunk_std: 0.598
+    leverage: 0.016
+    calibration_status: "Balanced"
+  judge_id: jdg_06
+    bias: -0.200
+    n_reviews: 3
+    sample_std: 0.473
+    shrunk_std: 0.592
+    leverage: 0.024
+    calibration_status: "Balanced"
+  judge_id: jdg_20
+    bias: -0.467
+    n_reviews: 6
+    sample_std: 0.805
+    shrunk_std: 0.754
+    leverage: 0.048
+    calibration_status: "Strict Judge"
+  judge_id: jdg_18
+    bias: -0.100
+    n_reviews: 3
+    sample_std: 0.115
+    shrunk_std: 0.516
+    leverage: 0.024
+    calibration_status: "Balanced"
+  judge_id: jdg_17
+    bias: -0.067
+    n_reviews: 2
+    sample_std: 0.141
+    shrunk_std: 0.575
+    leverage: 0.016
+    calibration_status: "Balanced"
+
+Singularity Handling Proof:
+  Evaluator jdg_07 submitted 4 reviews with identical ratings (sample variance v_j = 0.000).
+  Under naive z-score normalization, denominator sigma_j = 0 produces division-by-zero singularity.
+  Under Empirical Bayesian shrinkage with weight m = 3.0:
+    sigma_j*^2 = ((n - 1) * v_j + m * sigma_0^2) / (n - 1 + m) = (0 + 3 * 0.434) / 5 = 0.2604
+    sigma_j* = sqrt(0.2604) = 0.510 > 0.
+  Result: Mathematically non-zero denominator guaranteed across all degenerate juror submissions.

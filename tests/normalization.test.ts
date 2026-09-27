@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { seedDatabase } from '../src/db/seed.js';
-import { computeBayesianNormalization } from '../src/engine/normalization.js';
+import { computeBayesianNormalization, generateNormalizationProofArtifact } from '../src/engine/normalization.js';
 
 test('Bayesian Normalization Engine & Math Proof Tests', async (t) => {
   seedDatabase();
@@ -45,5 +45,13 @@ test('Bayesian Normalization Engine & Math Proof Tests', async (t) => {
         `Ranking violation at rank ${curr.rank}: ${curr.normalizedScore} < ${next.normalizedScore}`
       );
     }
+  });
+
+  await t.test('Bipartite graph connectivity and normalization proof generation', () => {
+    const proof = generateNormalizationProofArtifact();
+    assert.ok(proof.includes('DOGFOOD normalization proof'), 'Must include header');
+    assert.ok(proof.includes('is_connected: true'), 'Bipartite graph must be connected');
+    assert.ok(proof.includes('Rank movement'), 'Must include rank movement breakdown');
+    assert.ok(proof.includes('jdg_07'), 'Must include singularity resolution proof');
   });
 });

@@ -80,6 +80,35 @@ export async function buildApp(): Promise<FastifyInstance> {
   // 5. Global session resolver hook
   fastify.addHook('preHandler', resolveUserHook);
 
+  // 5b. Enterprise Security Headers Hook
+  fastify.addHook('onSend', async (_request, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('X-Frame-Options', 'SAMEORIGIN');
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    reply.header('X-XSS-Protection', '1; mode=block');
+  });
+
+  // 5c. Liveness and Readiness Probes
+  fastify.get('/healthz', async (_req, reply) => {
+    return reply.code(200).send({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  fastify.get('/readyz', async (_req, reply) => {
+    const stats = getSystemStats();
+    return reply.code(200).send({
+      status: 'ready',
+      database: 'connected',
+      projects: stats.projectCount,
+      judges: stats.judgeCount,
+      scores: stats.scoreCount,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // 6. Register Application Routes
   await fastify.register(authRoutes);
   await fastify.register(projectRoutes);

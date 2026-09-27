@@ -20,3 +20,6 @@ submit       = "/projects/new"
 judge_scores = "/api/judge/scores"
 peer_scores  = "/api/judge/scores?judge=judge_a"
 csv_export   = "/api/export.csv"
+
+[bonuses]
+claimed = ["normalization_proof", "pairwise_mode", "threat_model", "api_first"]

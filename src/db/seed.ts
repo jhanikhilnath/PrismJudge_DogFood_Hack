@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execute, transaction } from './index.js';
 import { initializeSchema } from './schema.js';
 import { config } from '../config.js';
+import { generateBalancedAssignments } from '../engine/assignment.js';
 
 export interface FixtureData {
   event: {
@@ -230,6 +231,9 @@ export function seedDatabase(fixtures?: FixtureData): void {
       new Date().toISOString()
     );
   });
+
+  // 9. Generate balanced conflict-free evaluator assignments
+  generateBalancedAssignments({ reviewsPerProject: 3, seed: 42 });
 }
 
 export function printSeededLogins(): void {

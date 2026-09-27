@@ -1,0 +1,303 @@
+openapi: 3.1.0
+info:
+  title: DOGFOOD 2026 Hackathon Platform API
+  description: Complete, typed REST API for hackathon submissions, judging,
+    normalization, and community voting.
+  version: 1.0.0
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas: {}
+paths:
+  /healthz:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /readyz:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/auth/login:
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /login:
+    get:
+      responses:
+        "200":
+          description: Default Response
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /api/auth/switch/{roleOrToken}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: roleOrToken
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /logout:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/auth/logout:
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /api/auth/me:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/test-sessions:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /projects:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /projects/new:
+    get:
+      responses:
+        "200":
+          description: Default Response
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /projects/{id}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /api/judge/scores:
+    get:
+      responses:
+        "200":
+          description: Default Response
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /judge/dashboard:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/export.csv:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/normalization-proof.txt:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /normalization-proof.txt:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/assignments/run:
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/assignments:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/normalization:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/audit:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /organizer/dashboard:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /organizer/teams:
+    get:
+      responses:
+        "200":
+          description: Default Response
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/teams/import:
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/teams/credentials.csv:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/webhooks:
+    get:
+      responses:
+        "200":
+          description: Default Response
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/webhooks/{id}:
+    delete:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/webhooks/deliveries:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/organizer/backup:
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /vote:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/vote:
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /api/comments/{projectId}:
+    post:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: projectId
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /api/pairwise/ratings:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/pairwise/match:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /api/pairwise/vote:
+    post:
+      responses:
+        "200":
+          description: Default Response
+  /judge/pairwise:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /certificates/{projectId}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: projectId
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /certificates/{projectId}/verify:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: projectId
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /certificates/judge/{judgeId}:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: judgeId
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /certificates/judge/{judgeId}/verify:
+    get:
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: judgeId
+          required: true
+      responses:
+        "200":
+          description: Default Response
+  /embed/gallery:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /health:
+    get:
+      responses:
+        "200":
+          description: Default Response
+  /:
+    get:
+      responses:
+        "200":
+          description: Default Response
+servers:
+  - url: http://localhost:8080
+    description: Default Portal

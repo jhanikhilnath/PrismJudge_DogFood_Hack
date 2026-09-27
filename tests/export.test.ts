@@ -27,4 +27,26 @@ test('CSV Export & Leaderboard Integrity Tests', async (t) => {
     const row1 = lines[1]!.split(',');
     assert.equal(row1[0], '1', 'First project must have rank 1');
   });
+
+  await t.test('Multi-stage exports return valid formatted CSV streams', () => {
+    // 1. Raw scores
+    const rawCsv = generateCSVExport('raw');
+    const rawLines = rawCsv.trim().split('\r\n');
+    assert.ok(rawLines[0]!.includes('score_id,judge_id,judge_name'), 'Raw CSV has expected header');
+    assert.equal(rawLines.length, 127, 'Expected 1 header + 126 fixture scores');
+
+    // 2. Normalized ratings
+    const normCsv = generateCSVExport('normalized');
+    const normLines = normCsv.trim().split('\r\n');
+    assert.ok(normLines[0]!.includes('rank,raw_rank,rank_delta'), 'Normalized CSV has expected header');
+    assert.equal(normLines.length, 42, 'Expected 1 header + 41 projects');
+
+    // 3. Pairwise
+    const pwCsv = generateCSVExport('pairwise');
+    assert.ok(pwCsv.startsWith('comparison_id,judge_id'), 'Pairwise CSV header valid');
+
+    // 4. Audit
+    const auditCsv = generateCSVExport('audit');
+    assert.ok(auditCsv.startsWith('id,timestamp,actor_id'), 'Audit CSV header valid');
+  });
 });

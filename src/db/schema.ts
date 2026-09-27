@@ -154,6 +154,30 @@ export function initializeSchema(): void {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS webhook_deliveries (
+      id TEXT PRIMARY KEY,
+      webhook_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      response_status INTEGER,
+      response_body TEXT,
+      error_message TEXT,
+      delivered_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS judge_assignments (
+      id TEXT PRIMARY KEY,
+      judge_id TEXT NOT NULL,
+      project_id TEXT NOT NULL,
+      batch_id TEXT,
+      status TEXT NOT NULL DEFAULT 'assigned',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(judge_id, project_id),
+      FOREIGN KEY (judge_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_projects_track ON projects(track_id);
     CREATE INDEX IF NOT EXISTS idx_projects_team ON projects(team_id);
     CREATE INDEX IF NOT EXISTS idx_scores_judge ON scores(judge_id);
@@ -162,5 +186,8 @@ export function initializeSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_team_members_user ON team_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
     CREATE INDEX IF NOT EXISTS idx_team_credentials_team ON team_credentials(team_id);
+    CREATE INDEX IF NOT EXISTS idx_judge_assignments_judge ON judge_assignments(judge_id);
+    CREATE INDEX IF NOT EXISTS idx_judge_assignments_project ON judge_assignments(project_id);
+    CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id);
   `);
 }

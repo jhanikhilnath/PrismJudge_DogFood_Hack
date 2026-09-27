@@ -15,6 +15,7 @@ build/
 *.sqlite-wal
 *.log
 data/*.sqlite
+backups/
 
 # Environment variables
 .env
