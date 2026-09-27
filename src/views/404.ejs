@@ -1,0 +1,41 @@
+<div class="breadcrumb-nav" style="max-width: 720px; margin: 0 auto 1.5rem auto;">
+  <a href="/" class="breadcrumb-link">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    Back to Portal Home
+  </a>
+</div>
+
+<div class="restricted-container" style="max-width: 640px; margin: 2rem auto; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 3rem 2.5rem; text-align: center; box-shadow: var(--shadow-sm);">
+  <div style="width: 56px; height: 56px; border-radius: 50%; background: #F8FAFC; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; color: var(--text-secondary);">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+  </div>
+
+  <span class="badge-status badge-default" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 0.75rem; display: inline-block;">
+    HTTP 404 · Not Found
+  </span>
+
+  <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; letter-spacing: -0.02em;">
+    Page or Project Not Found
+  </h1>
+
+  <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.75rem;">
+    The requested page or submission resource does not exist or has been relocated.
+  </p>
+
+  <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem 1.25rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2rem; text-align: left; font-family: var(--font-mono);">
+    <span style="color: var(--text-primary); font-weight: 600;">Resource path:</span> <%= typeof path !== 'undefined' ? path : 'unknown' %>
+  </div>
+
+  <div style="display: flex; justify-content: center; gap: 0.75rem;">
+    <a href="/" class="btn btn-secondary">
+      Return Home
+    </a>
+    <a href="/projects" class="btn btn-primary">
+      Explore Submissions Gallery
+    </a>
+  </div>
+</div>

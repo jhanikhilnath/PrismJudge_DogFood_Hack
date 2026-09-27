@@ -2,11 +2,11 @@ import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } f
 import { requireRole } from '../core/rbac.js';
 import { generateCSVExport, generateLeaderboard } from '../engine/ranking.js';
 import { computeBayesianNormalization } from '../engine/normalization.js';
-import { queryAll, queryOne } from '../db/index.js';
+import { getJudgeProgressList, getRecentAuditLogs, getSystemStats } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
 
 export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
-  // Check 7: CSV Export Endpoint
+  // 1. CSV Leaderboard Export Endpoint (T2 Check 7)
   fastify.get(
     '/api/export.csv',
     {
@@ -29,7 +29,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     }
   );
 
-  // Live Normalization Stats API
+  // 2. Bayesian Normalization Telemetry API
   fastify.get(
     '/api/organizer/normalization',
     {
@@ -41,48 +41,46 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     }
   );
 
-  // Audit Trail API
+  // 3. System Audit Trail API
   fastify.get(
     '/api/organizer/audit',
     {
       preHandler: [requireRole(['organizer', 'admin'])],
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
-      const logs = queryAll('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100');
+      const logs = getRecentAuditLogs(100);
       return reply.send({ count: logs.length, logs });
     }
   );
 
-  // Organizer Dashboard (HTML)
+  // 4. Operations Console (HTML)
   fastify.get('/organizer/dashboard', async (req: FastifyRequest, reply: FastifyReply) => {
-    if (!req.user || (req.user.role !== 'organizer' && req.user.role !== 'admin')) {
+    if (!req.user) {
       return reply.redirect('/login?redirect=/organizer/dashboard&error=Organizer+access+required');
+    }
+
+    if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
+      return reply.code(403).view('403.ejs', {
+        title: 'Access Restricted — DOGFOOD 2026',
+        user: req.user,
+        message: `The Operations Console is restricted to event administrators and organizers. Your current active role is ${req.user.role}.`,
+      });
     }
 
     const leaderboard = generateLeaderboard();
     const normalization = computeBayesianNormalization();
+    const stats = getSystemStats();
 
     const counts = {
-      projects: (queryOne<{ c: number }>('SELECT count(*) as c FROM projects')?.c) || 0,
-      judges: (queryOne<{ c: number }>("SELECT count(*) as c FROM users WHERE role = 'judge'")?.c) || 0,
-      scores: (queryOne<{ c: number }>('SELECT count(*) as c FROM scores')?.c) || 0,
-      votes: (queryOne<{ c: number }>('SELECT count(*) as c FROM community_votes')?.c) || 0,
+      projects: stats.projectCount,
+      judges: stats.judgeCount,
+      scores: stats.scoreCount,
+      votes: stats.voteCount,
     };
 
-    // Review completion progress per judge
-    const judgeProgress = queryAll<{ id: string; name: string; email: string; reviews: number }>(`
-      SELECT 
-        u.id, 
-        u.name, 
-        u.email,
-        (SELECT COUNT(*) FROM scores s WHERE s.judge_id = u.id) as reviews
-      FROM users u
-      WHERE u.role = 'judge'
-      ORDER BY reviews ASC, u.name ASC
-    `);
-
-    // Projects with fewest reviews
+    const judgeProgress = getJudgeProgressList();
     const underservedProjects = leaderboard.filter((p) => p.reviewCount < 3);
+    const recentAuditLogs = getRecentAuditLogs(15);
 
     return reply.view('organizer_dash.ejs', {
       title: 'Organizer Live Dashboard — DOGFOOD 2026',
@@ -92,6 +90,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
       normalization,
       judgeProgress,
       underservedProjects,
+      recentAuditLogs,
     });
   });
 }

@@ -2,7 +2,7 @@
   <div class="hero-content">
     <h1 class="page-title">Pairwise Arena</h1>
     <p class="page-subtitle">
-      Compare two projects side-by-side using the Bradley-Terry Maximum Likelihood model.
+      Compare two projects side-by-side using the Bradley-Terry Maximum Likelihood model. Keyboard shortcuts enabled: <kbd class="search-kbd">1</kbd> Select Left, <kbd class="search-kbd">2</kbd> Select Right, <kbd class="search-kbd">T</kbd> Declare Tie, <kbd class="search-kbd">S</kbd> Skip.
     </p>
   </div>
 </div>
@@ -24,14 +24,37 @@
   <div class="pairwise-arena-grid">
     <!-- Project A -->
     <div class="pairwise-card">
-      <div>
-        <span class="card-track-name" style="margin-bottom: 0.5rem;"><%= project_a.track_name || 'Track' %></span>
-        <h2 style="font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: var(--text-primary);"><%= project_a.title %></h2>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55;"><%= project_a.summary %></p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+        <span class="card-track-name" style="margin: 0;"><%= project_a.track_name || 'Track' %></span>
+        <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);"><%= project_a.id %></span>
       </div>
-      <div style="margin-top: 2rem;">
-        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_a')">
-          Select <%= project_a.title %> →
+
+      <h2 style="font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: var(--text-primary);">
+        <a href="/projects/<%= project_a.id %>" target="_blank" style="color: inherit; text-decoration: none;" class="hover-underline">
+          <%= project_a.title %> ↗
+        </a>
+      </h2>
+
+      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 1.25rem;">
+        <%= project_a.summary %>
+      </p>
+
+      <div style="margin-bottom: 1.5rem;">
+        <a href="/projects/<%= project_a.id %>" target="_blank" class="btn btn-secondary btn-sm">
+          Inspect Architecture &amp; Code ↗
+        </a>
+      </div>
+
+      <div style="margin-top: auto;">
+        <button 
+          type="button" 
+          id="btn-select-a" 
+          class="btn btn-primary" 
+          style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;" 
+          onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_a')"
+        >
+          <span>Select <%= project_a.title %></span>
+          <kbd style="background: rgba(255,255,255,0.25); color: #fff; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono);">1</kbd>
         </button>
       </div>
     </div>
@@ -40,22 +63,65 @@
     <div class="pairwise-vs-divider">
       <div class="vs-line"></div>
       <span class="vs-label">VS</span>
-      <button type="button" class="btn btn-secondary btn-sm" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'tie')">
-        Declare Tie
+      
+      <button 
+        type="button" 
+        id="btn-select-tie" 
+        class="btn btn-secondary btn-sm" 
+        style="display: flex; align-items: center; gap: 0.4rem;" 
+        onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'tie')"
+      >
+        <span>Equal / Tie</span>
+        <kbd class="search-kbd" style="font-size: 0.7rem;">T</kbd>
       </button>
+
+      <button 
+        type="button" 
+        id="btn-skip-match" 
+        class="btn btn-secondary btn-sm" 
+        style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;" 
+        onclick="window.location.reload()"
+      >
+        <span>Skip Pair</span>
+        <kbd class="search-kbd" style="font-size: 0.7rem;">S</kbd>
+      </button>
+
       <div class="vs-line"></div>
     </div>
 
     <!-- Project B -->
     <div class="pairwise-card">
-      <div>
-        <span class="card-track-name" style="margin-bottom: 0.5rem;"><%= project_b.track_name || 'Track' %></span>
-        <h2 style="font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: var(--text-primary);"><%= project_b.title %></h2>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55;"><%= project_b.summary %></p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+        <span class="card-track-name" style="margin: 0;"><%= project_b.track_name || 'Track' %></span>
+        <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);"><%= project_b.id %></span>
       </div>
-      <div style="margin-top: 2rem;">
-        <button type="button" class="btn btn-primary" style="width: 100%;" onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_b')">
-          Select <%= project_b.title %> →
+
+      <h2 style="font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: var(--text-primary);">
+        <a href="/projects/<%= project_b.id %>" target="_blank" style="color: inherit; text-decoration: none;" class="hover-underline">
+          <%= project_b.title %> ↗
+        </a>
+      </h2>
+
+      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 1.25rem;">
+        <%= project_b.summary %>
+      </p>
+
+      <div style="margin-bottom: 1.5rem;">
+        <a href="/projects/<%= project_b.id %>" target="_blank" class="btn btn-secondary btn-sm">
+          Inspect Architecture &amp; Code ↗
+        </a>
+      </div>
+
+      <div style="margin-top: auto;">
+        <button 
+          type="button" 
+          id="btn-select-b" 
+          class="btn btn-primary" 
+          style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 0.5rem;" 
+          onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'project_b')"
+        >
+          <span>Select <%= project_b.title %></span>
+          <kbd style="background: rgba(255,255,255,0.25); color: #fff; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-family: var(--font-mono);">2</kbd>
         </button>
       </div>
     </div>
@@ -71,7 +137,12 @@
 <% } %>
 
 <script>
+  let isSubmitting = false;
+
   async function submitPairwiseVote(projA, projB, winner) {
+    if (isSubmitting) return;
+    isSubmitting = true;
+
     try {
       const res = await fetch('/api/pairwise/vote', {
         method: 'POST',
@@ -83,6 +154,7 @@
         if (window.showToast) window.showToast('Comparison recorded!', 'success');
         setTimeout(() => window.location.reload(), 250);
       } else {
+        isSubmitting = false;
         const err = await res.json();
         if (window.showToast) {
           window.showToast(err.error || 'Failed to submit match', 'error');
@@ -91,7 +163,28 @@
         }
       }
     } catch (e) {
+      isSubmitting = false;
       if (window.showToast) window.showToast('Network error while recording comparison', 'error');
     }
   }
+
+  // Keyboard navigation shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Avoid triggering when user is in input/textarea
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+    if (e.key === '1') {
+      const btnA = document.getElementById('btn-select-a');
+      if (btnA) btnA.click();
+    } else if (e.key === '2') {
+      const btnB = document.getElementById('btn-select-b');
+      if (btnB) btnB.click();
+    } else if (e.key === 't' || e.key === 'T') {
+      const btnTie = document.getElementById('btn-select-tie');
+      if (btnTie) btnTie.click();
+    } else if (e.key === 's' || e.key === 'S') {
+      const btnSkip = document.getElementById('btn-skip-match');
+      if (btnSkip) btnSkip.click();
+    }
+  });
 </script>

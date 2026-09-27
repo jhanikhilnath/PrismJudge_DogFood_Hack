@@ -74,6 +74,12 @@
     <div class="content-card">
       <h2 class="section-title">Peer Review &amp; Discussion</h2>
 
+      <% if (typeof formError !== 'undefined' && formError) { %>
+        <div style="background: #FEF2F2; border: 1px solid #FECDD3; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1rem; color: #DC2626; font-size: 0.85rem;">
+          <%= formError %>
+        </div>
+      <% } %>
+
       <form action="/api/comments/<%= project.id %>" method="POST" class="comment-form">
         <div class="form-group">
           <textarea 
@@ -128,10 +134,17 @@
     <div class="content-card">
       <h3 class="section-title" style="font-size: 0.95rem;">Team Roster</h3>
       <ul class="member-list">
-        <% members.forEach(function(m) { %>
+        <% members.forEach(function(m) { 
+             const displayName = m.name || m.email.split('@')[0];
+             const parts = m.email.split('@');
+             const maskedEmail = parts[0].substring(0, 2) + '***@' + (parts[1] || 'example.com');
+        %>
           <li class="member-item">
-            <span class="member-avatar"><%= (m.email || 'U').charAt(0).toUpperCase() %></span>
-            <span style="font-family: var(--font-mono); font-size: 0.78rem; word-break: break-all;"><%= m.email %></span>
+            <span class="member-avatar"><%= displayName.charAt(0).toUpperCase() %></span>
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);"><%= displayName %></span>
+              <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);"><%= maskedEmail %> · <%= m.role || 'Member' %></span>
+            </div>
           </li>
         <% }); %>
       </ul>
@@ -166,12 +179,57 @@
       <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 1.1rem; line-height: 1.5;">
         Cast your peer vote for this project in the community recognition award.
       </p>
-      <form action="/api/vote" method="POST" id="detail-vote-form">
-        <input type="hidden" name="project_id" value="<%= project.id %>">
-        <button type="submit" class="btn btn-primary" style="width: 100%;">
-          Vote for Project
+      <% if (typeof hasVotedForThis !== 'undefined' && hasVotedForThis) { %>
+        <button class="btn btn-secondary" disabled style="width: 100%; border-color: #A7F3D0; color: #065F46; background: #ECFDF5; cursor: default;">
+          ✓ You Voted For This
         </button>
-      </form>
+      <% } else { %>
+        <form onsubmit="castDetailVote(event, '<%= project.id %>')">
+          <button type="submit" id="btn-detail-vote" class="btn btn-primary" style="width: 100%;">
+            Vote for Project
+          </button>
+        </form>
+        <script>
+          async function castDetailVote(e, projectId) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-detail-vote');
+            if (btn) {
+              btn.disabled = true;
+              btn.textContent = 'Recording ballot...';
+            }
+            try {
+              const res = await fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_id: projectId })
+              });
+              if (res.ok) {
+                if (window.showToast) window.showToast('Your ballot has been securely cast!', 'success');
+                if (btn) {
+                  btn.outerHTML = '<button class="btn btn-secondary" disabled style="width: 100%; border-color: #A7F3D0; color: #065F46; background: #ECFDF5; cursor: default;">✓ You Voted For This</button>';
+                }
+              } else {
+                if (btn) {
+                  btn.disabled = false;
+                  btn.textContent = 'Vote for Project';
+                }
+                const err = await res.json();
+                if (window.showToast) {
+                  window.showToast(err.error || 'Failed to record vote', 'error');
+                } else {
+                  alert('Error: ' + (err.error || 'Failed to record vote'));
+                }
+              }
+            } catch (err) {
+              if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Vote for Project';
+              }
+              if (window.showToast) window.showToast('Network error while casting ballot', 'error');
+            }
+          }
+        </script>
+      <% } %>
     </div>
   </div>
 </div>

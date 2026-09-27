@@ -1,7 +1,4 @@
 import Fastify, { FastifyInstance } from 'fastify';
-import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 import fastifyFormbody from '@fastify/formbody';
@@ -20,10 +17,7 @@ import { organizerRoutes } from './routes/organizer.js';
 import { communityRoutes } from './routes/community.js';
 import { pairwiseRoutes } from './routes/pairwise.js';
 import { webhookRoutes } from './routes/webhooks.js';
-import { queryOne, queryAll } from './db/index.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { getAllTracks, getEvent, getProjects, getSystemStats, isSubmissionsClosed } from './db/index.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({
@@ -36,20 +30,16 @@ export async function buildApp(): Promise<FastifyInstance> {
   await fastify.register(fastifyCookie, { secret: config.sessionSecret });
   await fastify.register(fastifyFormbody);
 
-  // 2. Static files
-  const publicCandidates = [path.join(__dirname, 'public'), path.join(config.rootDir, 'src', 'public')];
-  const publicDir = publicCandidates.find((p) => fs.existsSync(p)) || publicCandidates[0]!;
+  // 2. Static asset serving
   await fastify.register(fastifyStatic, {
-    root: publicDir,
+    root: config.publicDir,
     prefix: '/static/',
   });
 
   // 3. Server-side templates (EJS)
-  const viewsCandidates = [path.join(__dirname, 'views'), path.join(config.rootDir, 'src', 'views')];
-  const viewsDir = viewsCandidates.find((p) => fs.existsSync(p)) || viewsCandidates[0]!;
   await fastify.register(fastifyView, {
     engine: { ejs },
-    root: viewsDir,
+    root: config.viewsDir,
     layout: 'layout.ejs',
   });
 
@@ -90,7 +80,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // 5. Global session resolver hook
   fastify.addHook('preHandler', resolveUserHook);
 
-  // 6. Register Routes
+  // 6. Register Application Routes
   await fastify.register(authRoutes);
   await fastify.register(projectRoutes);
   await fastify.register(judgingRoutes);
@@ -99,43 +89,25 @@ export async function buildApp(): Promise<FastifyInstance> {
   await fastify.register(pairwiseRoutes);
   await fastify.register(webhookRoutes);
 
-  // Official Landing & Home Portal
+  // 7. Official Landing & Home Portal
   fastify.get('/', async (req, reply) => {
-    const event = queryOne<{ id: string; name: string; submissions_close: string }>(
-      'SELECT id, name, submissions_close FROM events LIMIT 1'
-    );
-    const tracks = queryAll<{ id: string; name: string; description?: string }>(
-      'SELECT id, name, description FROM tracks ORDER BY id ASC'
-    );
-    const stats = {
-      projectCount: (queryOne<{ count: number }>('SELECT COUNT(*) as count FROM projects WHERE is_draft = 0') || { count: 41 }).count,
-      judgeCount: (queryOne<{ count: number }>("SELECT COUNT(*) as count FROM users WHERE role = 'judge'") || { count: 30 }).count,
-      trackCount: tracks.length || 8,
-      scoreCount: (queryOne<{ count: number }>('SELECT COUNT(*) as count FROM scores') || { count: 126 }).count,
-    };
-    const featuredProjects = queryAll<{
-      id: string;
-      title: string;
-      summary: string;
-      track_name: string;
-      team_name: string;
-    }>(
-      `SELECT p.id, p.title, p.summary, tr.name as track_name, t.name as team_name
-       FROM projects p
-       LEFT JOIN tracks tr ON p.track_id = tr.id
-       LEFT JOIN teams t ON p.team_id = t.id
-       WHERE p.is_draft = 0
-       ORDER BY p.id ASC
-       LIMIT 3`
-    );
+    const event = getEvent();
+    const tracks = getAllTracks();
+    const stats = getSystemStats();
+    const featuredProjects = getProjects({ limit: 3 });
+    const isClosed = isSubmissionsClosed(event);
 
-    const now = new Date().toISOString();
-    const isClosed = event ? now > event.submissions_close : false;
+    const publicStats = {
+      projectCount: stats.projectCount,
+      judgeCount: stats.judgeCount,
+      trackCount: stats.trackCount,
+      scoreCount: stats.scoreCount,
+    };
 
     if (req.headers.accept?.includes('application/json') && !req.headers.accept?.includes('text/html')) {
       return reply.send({
         event,
-        stats,
+        stats: publicStats,
         tracks,
         featuredProjects,
         isClosed,
@@ -146,10 +118,36 @@ export async function buildApp(): Promise<FastifyInstance> {
       title: 'DOGFOOD 2026 — Self-Hostable Hackathon & Evaluation Platform',
       event,
       tracks,
-      stats,
+      stats: publicStats,
       featuredProjects,
       isClosed,
       user: req.user,
+    });
+  });
+
+  // 8. Custom 404 (Not Found) & Branded Error Handlers
+  fastify.setNotFoundHandler(async (req, reply) => {
+    if (req.headers.accept?.includes('text/html')) {
+      return reply.code(404).view('404.ejs', {
+        title: 'Page Not Found — DOGFOOD 2026',
+        user: req.user,
+        path: req.url,
+      });
+    }
+    return reply.code(404).send({ error: 'Not Found', path: req.url });
+  });
+
+  fastify.setErrorHandler(async (error: any, req, reply) => {
+    if (error?.statusCode === 403 && req.headers.accept?.includes('text/html')) {
+      return reply.code(403).view('403.ejs', {
+        title: 'Access Restricted — DOGFOOD 2026',
+        user: req.user,
+        message: error.message || 'You do not have permission to access this resource.',
+      });
+    }
+    return reply.code(error?.statusCode || 500).send({
+      error: error?.name || 'InternalServerError',
+      message: error?.message || 'An error occurred',
     });
   });
 

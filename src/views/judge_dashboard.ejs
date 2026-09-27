@@ -2,17 +2,18 @@
   <div class="hero-content">
     <h1 class="page-title">Judging Portal</h1>
     <p class="page-subtitle">
-      Logged in as <strong><%= user.name %></strong> (<%= user.userId %>) · <%= completedCount %> of <%= totalAssigned %> assigned reviews completed.
+      Logged in as <strong><%= user.name %></strong> (<%= user.userId %>) · <span id="queue-completed-count"><%= completedCount %></span> of <span id="queue-total-count"><%= totalAssigned %></span> assigned reviews completed.
     </p>
 
-    <!-- Progress Bar -->
+    <!-- Progress Bar with Clean Rounded Percentage -->
+    <% const progressPct = totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 0; %>
     <div style="margin-top: 1rem; max-width: 480px;">
       <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-family: var(--font-mono); margin-bottom: 0.35rem; color: var(--text-secondary);">
         <span>Evaluation Progress</span>
-        <span><%= totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 0 %>%</span>
+        <span id="queue-progress-text"><%= progressPct %>%</span>
       </div>
-      <div style="height: 6px; background: var(--bg-subtle); border-radius: 9999px; overflow: hidden; border: 1px solid var(--border);">
-        <div style="height: 100%; width: <%= totalAssigned > 0 ? (completedCount / totalAssigned) * 100 : 0 %>%; background: #059669; border-radius: 9999px; transition: width 0.3s ease;"></div>
+      <div style="height: 8px; background: var(--bg-subtle); border-radius: 9999px; overflow: hidden; border: 1px solid var(--border);">
+        <div id="queue-progress-bar" style="height: 100%; width: <%= progressPct %>%; background: #059669; border-radius: 9999px; transition: width 0.3s ease;"></div>
       </div>
     </div>
   </div>
@@ -27,12 +28,45 @@
 <div class="security-banner">
   <svg class="security-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
   <div class="security-text">
-    <strong>Peer Isolation Enforcement Active:</strong> Role-based access control guarantees that your scoring records are completely isolated. Attempts to inspect scores submitted by peer judges are blocked by the backend.
+    <strong>Peer Isolation Active:</strong> Your scoring records are strictly isolated. Attempts to inspect scores submitted by peer judges are blocked with HTTP 403 Forbidden.
+  </div>
+</div>
+
+<!-- Judge Queue Filter Toolbar -->
+<div class="gallery-toolbar-section" style="margin-bottom: 1.25rem;">
+  <div class="search-bar-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <div class="search-input-wrapper" style="flex: 1; min-width: 240px;">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input 
+        type="text" 
+        id="judge-queue-search" 
+        placeholder="Search assigned queue by title or ID..." 
+        class="search-input"
+        oninput="filterJudgeQueue()"
+      >
+    </div>
+
+    <% if (typeof tracks !== 'undefined' && tracks.length > 0) { %>
+      <div style="min-width: 180px;">
+        <select id="judge-track-select" class="form-select" onchange="filterJudgeQueue()">
+          <option value="">All Tracks (<%= totalAssigned %>)</option>
+          <% tracks.forEach(function(t) { %>
+            <option value="<%= t.name %>"><%= t.name %></option>
+          <% }); %>
+        </select>
+      </div>
+    <% } %>
+
+    <div class="btn-group" style="display: flex; gap: 0.35rem;">
+      <button type="button" class="btn btn-secondary btn-sm active-status-btn" id="filter-all-btn" onclick="setJudgeStatusFilter('all')">All (<%= totalAssigned %>)</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="filter-pending-btn" onclick="setJudgeStatusFilter('pending')">Pending (<%= totalAssigned - completedCount %>)</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="filter-scored-btn" onclick="setJudgeStatusFilter('scored')">Scored (<%= completedCount %>)</button>
+    </div>
   </div>
 </div>
 
 <div class="table-wrapper">
-  <table class="data-table">
+  <table class="data-table" id="judge-projects-table">
     <thead>
       <tr>
         <th style="width: 110px;">ID</th>
@@ -40,36 +74,51 @@
         <th>Track</th>
         <th style="width: 130px;">Status</th>
         <th style="width: 120px;">Score</th>
-        <th style="width: 120px; text-align: right;">Action</th>
+        <th style="width: 130px; text-align: right;">Action</th>
       </tr>
     </thead>
-    <tbody>
-      <% assigned.forEach(function(p) { %>
+    <tbody id="judge-tbody">
+      <% assigned.forEach(function(p) { 
+           let crit = {};
+           if (p.score && p.score.criteria) {
+             try {
+               crit = typeof p.score.criteria === 'string' ? JSON.parse(p.score.criteria) : p.score.criteria;
+             } catch(e) {}
+           }
+      %>
         <tr>
-          <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);"><%= p.id %></td>
+          <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);" id="row-<%= p.id %>" class="queue-row" data-project-id="<%= p.id.toLowerCase() %>" data-title="<%= p.title.toLowerCase() %>" data-track="<%= (p.track_name || '').toLowerCase() %>" data-status="<%= p.hasScored ? 'scored' : 'pending' %>"><%= p.id %></td>
           <td>
-            <a href="/projects/<%= p.id %>" style="font-weight: 600; color: var(--text-primary);"><%= p.title %></a>
+            <a href="/projects/<%= p.id %>" style="font-weight: 600; color: var(--text-primary); text-decoration: none;" class="hover-underline">
+              <%= p.title %>
+            </a>
           </td>
           <td>
             <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);"><%= p.track_name || 'General' %></span>
           </td>
-          <td>
+          <td class="status-cell">
             <% if (p.hasScored) { %>
               <span class="status-pill status-completed">SCORED</span>
             <% } else { %>
               <span class="status-pill status-pending">PENDING</span>
             <% } %>
           </td>
-          <td style="font-family: var(--font-mono); font-size: 0.84rem; font-weight: 600;">
+          <td class="score-cell" style="font-family: var(--font-mono); font-size: 0.84rem; font-weight: 600;">
             <%= p.hasScored && p.score ? p.score.raw_total.toFixed(2) + ' / 5.0' : '—' %>
           </td>
           <td style="text-align: right;">
             <button 
               type="button"
+              id="btn-evaluate-<%= p.id %>"
               class="btn <%= p.hasScored ? 'btn-secondary' : 'btn-primary' %> btn-sm" 
               data-project-id="<%= p.id %>"
               data-project-title="<%= p.title %>"
-              onclick="openScoringModal(this.dataset.projectId, this.dataset.projectTitle)"
+              data-func="<%= crit.functionality || 3 %>"
+              data-qual="<%= crit.quality || 3 %>"
+              data-inno="<%= crit.innovation || 3 %>"
+              data-imp="<%= crit.impact || 3 %>"
+              data-comment="<%= (p.score && p.score.comment) ? p.score.comment : '' %>"
+              onclick="openScoringModal(this.dataset.projectId, this.dataset.projectTitle, this.dataset.func, this.dataset.qual, this.dataset.inno, this.dataset.imp, this.dataset.comment)"
             >
               <%= p.hasScored ? 'Update' : 'Evaluate' %>
             </button>
@@ -78,6 +127,10 @@
       <% }); %>
     </tbody>
   </table>
+
+  <div id="no-queue-results" style="display: none; padding: 3rem 1rem; text-align: center; color: var(--text-muted);">
+    <p style="margin: 0; font-size: 0.95rem;">No projects match your current filter criteria.</p>
+  </div>
 </div>
 
 <!-- Scoring Modal Dialog -->
@@ -124,27 +177,38 @@
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-inno" class="rubric-input" data-weight="0.2" oninput="document.getElementById('val-inno').textContent = this.value; updateModalScore();">
         <div class="slider-scale-labels">
-          <span>1 Derivative</span>
-          <span>3 Novel</span>
-          <span>5 Groundbreaking</span>
+          <span>1 Generic</span>
+          <span>3 Creative</span>
+          <span>5 Novel</span>
         </div>
       </div>
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-          <label class="form-label" style="margin: 0;">Impact (10% Weight)</label>
+          <label class="form-label" style="margin: 0;">Impact &amp; Practicality (10% Weight)</label>
           <span id="val-imp" class="rubric-val-chip">3</span>
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-imp" class="rubric-input" data-weight="0.1" oninput="document.getElementById('val-imp').textContent = this.value; updateModalScore();">
         <div class="slider-scale-labels">
-          <span>1 Minimal</span>
+          <span>1 Trivial</span>
           <span>3 Useful</span>
           <span>5 Transformative</span>
         </div>
       </div>
 
-      <!-- Live Calculated Total Score Card -->
-      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0;">
+      <!-- Deliberation Notes (Optional) -->
+      <div class="form-group" style="margin-top: 1rem;">
+        <label class="form-label" for="modal-judge-comment" style="margin-bottom: 0.35rem;">Deliberation Notes (Optional)</label>
+        <textarea 
+          id="modal-judge-comment" 
+          rows="2" 
+          placeholder="Private evaluator notes, observations, or rationale..." 
+          style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); padding: 0.65rem; font-family: inherit; font-size: 0.85rem; box-sizing: border-box; background: var(--bg-surface); color: var(--text-primary);"
+        ></textarea>
+      </div>
+
+      <!-- Computed Score Readout -->
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center; margin: 1.25rem 0;">
         <span style="font-weight: 600; font-size: 0.85rem;">Calculated Weighted Total</span>
         <span style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
           <span id="computed-raw-total">3.00</span> <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">/ 5.0</span>
@@ -160,9 +224,26 @@
 </div>
 
 <script>
-  function openScoringModal(projectId, projectTitle) {
+  let currentStatusFilter = 'all';
+
+  function openScoringModal(projectId, projectTitle, func = 3, qual = 3, inno = 3, imp = 3, comment = '') {
     document.getElementById('modal-project-id').value = projectId;
     document.getElementById('modal-project-title').textContent = 'Evaluate ' + projectTitle;
+    
+    document.getElementById('score-func').value = func;
+    document.getElementById('val-func').textContent = func;
+    
+    document.getElementById('score-qual').value = qual;
+    document.getElementById('val-qual').textContent = qual;
+    
+    document.getElementById('score-inno').value = inno;
+    document.getElementById('val-inno').textContent = inno;
+    
+    document.getElementById('score-imp').value = imp;
+    document.getElementById('val-imp').textContent = imp;
+    
+    document.getElementById('modal-judge-comment').value = comment || '';
+    
     document.getElementById('scoring-modal').style.display = 'flex';
     updateModalScore();
   }
@@ -180,6 +261,47 @@
     document.getElementById('computed-raw-total').textContent = total.toFixed(2);
   }
 
+  function setJudgeStatusFilter(status) {
+    currentStatusFilter = status;
+    document.getElementById('filter-all-btn').classList.toggle('active-status-btn', status === 'all');
+    document.getElementById('filter-pending-btn').classList.toggle('active-status-btn', status === 'pending');
+    document.getElementById('filter-scored-btn').classList.toggle('active-status-btn', status === 'scored');
+    filterJudgeQueue();
+  }
+
+  function filterJudgeQueue() {
+    const q = (document.getElementById('judge-queue-search')?.value || '').toLowerCase().trim();
+    const trackSelect = document.getElementById('judge-track-select');
+    const selectedTrack = (trackSelect ? trackSelect.value : '').toLowerCase().trim();
+
+    const cells = document.querySelectorAll('.queue-row');
+    let visibleCount = 0;
+
+    cells.forEach(cell => {
+      const tr = cell.closest('tr') || cell;
+      const title = cell.getAttribute('data-title') || '';
+      const pid = cell.getAttribute('data-project-id') || '';
+      const track = cell.getAttribute('data-track') || '';
+      const status = cell.getAttribute('data-status') || '';
+
+      const matchesSearch = !q || title.includes(q) || pid.includes(q);
+      const matchesTrack = !selectedTrack || track === selectedTrack;
+      const matchesStatus = currentStatusFilter === 'all' || status === currentStatusFilter;
+
+      if (matchesSearch && matchesTrack && matchesStatus) {
+        tr.style.display = '';
+        visibleCount++;
+      } else {
+        tr.style.display = 'none';
+      }
+    });
+
+    const noResults = document.getElementById('no-queue-results');
+    if (noResults) {
+      noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+  }
+
   async function submitScore(e) {
     e.preventDefault();
     const btn = document.getElementById('btn-submit-score');
@@ -187,23 +309,68 @@
     btn.textContent = 'Recording...';
 
     const projectId = document.getElementById('modal-project-id').value;
-    const scores = {
+    const criteria = {
       functionality: parseInt(document.getElementById('score-func').value, 10),
       quality: parseInt(document.getElementById('score-qual').value, 10),
       innovation: parseInt(document.getElementById('score-inno').value, 10),
       impact: parseInt(document.getElementById('score-imp').value, 10)
     };
+    const comment = document.getElementById('modal-judge-comment').value;
 
     try {
       const res = await fetch('/api/judge/scores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_id: projectId, scores: scores })
+        body: JSON.stringify({ 
+          project_id: projectId, 
+          criteria: criteria,
+          scores: criteria,
+          comment: comment 
+        })
       });
 
       if (res.ok) {
+        const data = await res.json();
         if (window.showToast) window.showToast('Evaluation recorded successfully!', 'success');
-        setTimeout(() => window.location.reload(), 300);
+        
+        // Dynamic in-place row update (no page refresh / scroll loss)
+        const cell = document.getElementById('row-' + projectId);
+        const tr = cell?.closest('tr');
+        if (cell && tr) {
+          cell.setAttribute('data-status', 'scored');
+          const statusCell = tr.querySelector('.status-cell');
+          if (statusCell) {
+            statusCell.innerHTML = '<span class="status-pill status-completed">SCORED</span>';
+          }
+          const scoreCell = tr.querySelector('.score-cell');
+          if (scoreCell) {
+            const rawScore = data.raw_total !== undefined ? Number(data.raw_total).toFixed(2) : (criteria.functionality*0.4 + criteria.quality*0.3 + criteria.innovation*0.2 + criteria.impact*0.1).toFixed(2);
+            scoreCell.textContent = rawScore + ' / 5.0';
+          }
+          const evalBtn = document.getElementById('btn-evaluate-' + projectId);
+          if (evalBtn) {
+            evalBtn.textContent = 'Update';
+            evalBtn.className = 'btn btn-secondary btn-sm';
+            evalBtn.dataset.func = criteria.functionality;
+            evalBtn.dataset.qual = criteria.quality;
+            evalBtn.dataset.inno = criteria.innovation;
+            evalBtn.dataset.imp = criteria.impact;
+            evalBtn.dataset.comment = comment;
+          }
+        }
+
+        // Update progress bar counter
+        const scoredRows = document.querySelectorAll('.queue-row[data-status="scored"]').length;
+        const totalRows = document.querySelectorAll('.queue-row').length;
+        const compElem = document.getElementById('queue-completed-count');
+        if (compElem) compElem.textContent = scoredRows;
+        const pct = Math.round((scoredRows / totalRows) * 100);
+        const pText = document.getElementById('queue-progress-text');
+        if (pText) pText.textContent = pct + '%';
+        const pBar = document.getElementById('queue-progress-bar');
+        if (pBar) pBar.style.width = pct + '%';
+
+        closeModal();
       } else {
         const err = await res.json();
         if (window.showToast) {
@@ -211,13 +378,12 @@
         } else {
           alert('Error: ' + (err.error || 'Failed to submit score'));
         }
-        btn.disabled = false;
-        btn.textContent = 'Submit Evaluation';
       }
     } catch (err) {
+      if (window.showToast) window.showToast('Network error while saving score', 'error');
+    } finally {
       btn.disabled = false;
       btn.textContent = 'Submit Evaluation';
-      if (window.showToast) window.showToast('Network error while saving score', 'error');
     }
   }
 </script>

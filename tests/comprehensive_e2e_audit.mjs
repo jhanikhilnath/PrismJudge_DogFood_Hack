@@ -260,7 +260,10 @@ async function runEndToEndVerification() {
     resOrgDash.body.includes('INTER-RATER RELIABILITY') && resOrgDash.body.includes('ICC(1,1) consensus'),
     'ICC metric present');
 
-  const jurorRows = resOrgDash.body.match(/<td style="font-family: var\(--font-mono\); font-weight: 600;">(jdg_[0-9]+)<\/td>/g) || [];
+  const jurorTableMatch = resOrgDash.body.match(/Juror Calibration &amp; Severity Index[\s\S]*?<\/table>/);
+  const jurorRows = jurorTableMatch 
+    ? (jurorTableMatch[0].match(/<td style="font-family: var\(--font-mono\); font-weight: 600;">(jdg_[0-9]+)<\/td>/g) || [])
+    : (resOrgDash.body.match(/<td style="font-family: var\(--font-mono\); font-weight: 600;">(jdg_[0-9]+)<\/td>/g) || []);
   recordTest('T2.8.7', 'Juror Calibration Diagnostics table lists 30 active jurors', jurorRows.length === 30, `Listed ${jurorRows.length} jurors`);
   recordTest('T2.8.8', 'Juror jdg_07 zero-variance singularity handled badge displayed',
     resOrgDash.body.includes('jdg_07') && resOrgDash.body.includes('Singularity Handled'),

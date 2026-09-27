@@ -1,70 +1,46 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
-import { enforceJudgePeerIsolation, requireRole } from '../core/rbac.js';
-import { queryAll, queryOne, execute } from '../db/index.js';
+import { enforceJudgePeerIsolation, requireRole, resolveJudgeAlias } from '../core/rbac.js';
+import { execute, getAllTracks, getJudgeScores, getProjectsForComparison, queryOne, ScoreRecord } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
+import { calculateWeightedScore } from '../engine/normalization.js';
 
-interface ScoreDetails {
-  id: string;
-  judge_id: string;
-  project_id: string;
-  project_title: string;
-  criteria: any;
-  raw_total: number;
-  comment: string | null;
-  submitted_at: string;
+interface JudgeScoresQuery {
+  judge?: string;
+  judge_id?: string;
+  project_id?: string;
+}
+
+interface SubmitScoreBody {
+  project_id?: string;
+  criteria?: Record<string, number>;
+  scores?: Record<string, number>;
+  comment?: string;
 }
 
 export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
-  // Judge Scores API (Checks 4, 5, 6)
-  fastify.get(
+  // 1. Judge Scores API (T2 Checks 4, 5, 6: Peer Isolation & Score Inspection)
+  fastify.get<{ Querystring: JudgeScoresQuery }>(
     '/api/judge/scores',
     {
       preHandler: [enforceJudgePeerIsolation],
     },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      // At this point, enforceJudgePeerIsolation has already verified:
-      // 1. User is authenticated (or 401)
-      // 2. User is not a participant (or 403)
-      // 3. User is not snooping on another judge (or 403)
+    async (req: FastifyRequest<{ Querystring: JudgeScoresQuery }>, reply: FastifyReply) => {
+      // Access control verified by enforceJudgePeerIsolation:
+      // - Authenticated: 200/403
+      // - Participant: blocked with 403
+      // - Peer judge snooping: blocked with 403
       const currentUser = req.user!;
-      const query = req.query as { judge?: string; judge_id?: string; project_id?: string };
+      const query = req.query || {};
 
-      // Determine which judge's scores to query
       let targetJudgeId = currentUser.userId;
-
-      // Organizer or admin can inspect any judge
       if (currentUser.role === 'organizer' || currentUser.role === 'admin') {
-        if (query.judge) {
-          if (query.judge === 'judge_a') targetJudgeId = 'jdg_01';
-          else if (query.judge === 'judge_b') targetJudgeId = 'jdg_02';
-          else targetJudgeId = query.judge;
+        const requestedJudge = query.judge || query.judge_id;
+        if (requestedJudge) {
+          targetJudgeId = resolveJudgeAlias(requestedJudge);
         }
       }
 
-      let sql = `
-        SELECT 
-          s.id,
-          s.judge_id,
-          s.project_id,
-          p.title as project_title,
-          s.criteria,
-          s.raw_total,
-          s.comment,
-          s.submitted_at
-        FROM scores s
-        JOIN projects p ON s.project_id = p.id
-        WHERE s.judge_id = ?
-      `;
-
-      const params: any[] = [targetJudgeId];
-      if (query.project_id) {
-        sql += ' AND s.project_id = ?';
-        params.push(query.project_id);
-      }
-
-      sql += ' ORDER BY s.submitted_at DESC';
-
-      const scores = queryAll<ScoreDetails>(sql, ...params);
+      const scores = getJudgeScores(targetJudgeId, query.project_id);
 
       // Parse JSON criteria for clean response
       const parsedScores = scores.map((s) => ({
@@ -80,15 +56,16 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     }
   );
 
-  // Submit / update score
-  fastify.post(
+  // 2. Submit / Update Rubric Score (T2: Weighted 4-Criterion Evaluation)
+  fastify.post<{ Body: SubmitScoreBody }>(
     '/api/judge/scores',
     {
       preHandler: [requireRole(['judge', 'organizer', 'admin'])],
     },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const body = (req.body as any) || {};
-      const { project_id, criteria, comment } = body;
+    async (req: FastifyRequest<{ Body: SubmitScoreBody }>, reply: FastifyReply) => {
+      const body = req.body || {};
+      const criteria = body.criteria || body.scores;
+      const { project_id, comment } = body;
 
       if (!project_id || !criteria || typeof criteria !== 'object') {
         return reply.code(400).send({ error: 'project_id and criteria object are required' });
@@ -99,21 +76,15 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         return reply.code(404).send({ error: 'Project not found' });
       }
 
-      const event = queryOne<{ rubric_weights: string }>('SELECT rubric_weights FROM events LIMIT 1');
-      let weights: Record<string, number> = { functionality: 0.4, quality: 0.3, innovation: 0.3 };
-      if (event?.rubric_weights) {
-        try {
-          weights = JSON.parse(event.rubric_weights);
-        } catch {}
-      }
-
-      let rawTotal = 0;
-      for (const [k, w] of Object.entries(weights)) {
-        if (criteria[k] !== undefined) {
-          rawTotal += Number(criteria[k]) * w;
+      // Validate criteria values: must be numbers between 1 and 5
+      for (const [key, val] of Object.entries(criteria)) {
+        const num = Number(val);
+        if (isNaN(num) || num < 1 || num > 5) {
+          return reply.code(400).send({ error: `Criteria ${key} must be a number between 1 and 5` });
         }
       }
 
+      const rawTotal = calculateWeightedScore(criteria);
       const judgeId = req.user!.userId;
       const scoreId = `sc_${judgeId}_${project_id}`;
       const now = new Date().toISOString();
@@ -126,7 +97,7 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         project_id,
         JSON.stringify(criteria),
         rawTotal,
-        comment || null,
+        comment ? String(comment).trim() : null,
         now
       );
 
@@ -136,60 +107,54 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         action: 'SCORE_SUBMITTED',
         resourceType: 'score',
         resourceId: scoreId,
-        payload: { project_id, rawTotal, criteria },
+        payload: { project_id, rawTotal, criteria, comment },
         ipAddress: req.ip,
       });
 
       return reply.code(200).send({
         message: 'Score submitted successfully',
         scoreId,
-        rawTotal,
-        submitted_at: now,
+        project_id,
+        raw_total: rawTotal,
+        criteria,
+        comment: comment ? String(comment).trim() : null,
       });
     }
   );
 
-  // Judge Dashboard (HTML)
+  // 3. Judge Dashboard (T2: Assigned Workload Queue & Real-Time Scoring)
   fastify.get('/judge/dashboard', async (req: FastifyRequest, reply: FastifyReply) => {
-    if (!req.user || (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin')) {
+    if (!req.user) {
       return reply.redirect('/login?redirect=/judge/dashboard&error=Judge+or+Organizer+access+required');
     }
 
-    const judgeId = req.user.userId;
-    const scores = queryAll<ScoreDetails>(
-      `SELECT 
-        s.id,
-        s.judge_id,
-        s.project_id,
-        p.title as project_title,
-        s.criteria,
-        s.raw_total,
-        s.comment,
-        s.submitted_at
-      FROM scores s
-      JOIN projects p ON s.project_id = p.id
-      WHERE s.judge_id = ?`,
-      judgeId
-    );
+    if (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin') {
+      return reply.code(403).view('403.ejs', {
+        title: 'Access Restricted — DOGFOOD 2026',
+        user: req.user,
+        message: `The Judging Dashboard is reserved for registered technical evaluators. Your current active role is ${req.user.role}.`,
+      });
+    }
 
+    const judgeId = req.user.userId;
+    const scores = getJudgeScores(judgeId);
     const scoredProjectIds = new Set(scores.map((s) => s.project_id));
-    const allProjects = queryAll<{ id: string; title: string; track_name: string; summary: string }>(`
-      SELECT p.id, p.title, tr.name as track_name, p.summary
-      FROM projects p
-      LEFT JOIN tracks tr ON p.track_id = tr.id
-      ORDER BY p.id ASC
-    `);
+    const allProjects = getProjectsForComparison();
+    const tracks = getAllTracks();
+
+    const scoreMap = new Map<string, ScoreRecord>(scores.map((s) => [s.project_id, s]));
 
     const assigned = allProjects.map((p) => ({
       ...p,
       hasScored: scoredProjectIds.has(p.id),
-      score: scores.find((s) => s.project_id === p.id),
+      score: scoreMap.get(p.id),
     }));
 
     return reply.view('judge_dashboard.ejs', {
       title: 'Judge Evaluation Dashboard — DOGFOOD 2026',
       user: req.user,
       assigned,
+      tracks,
       completedCount: scores.length,
       totalAssigned: allProjects.length,
     });

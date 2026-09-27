@@ -1,61 +1,70 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'node:crypto';
 import { requireRole } from '../core/rbac.js';
-import { solveBradleyTerry } from '../engine/pairwise.js';
-import { queryAll, execute } from '../db/index.js';
+import { selectActivePair, solveBradleyTerry } from '../engine/pairwise.js';
+import { execute, getProjectsForComparison, queryOne } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
 
+interface PairwiseVoteBody {
+  project_a?: string;
+  project_b?: string;
+  winner?: 'project_a' | 'project_b' | 'tie';
+}
+
 export async function pairwiseRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
-  // Fetch Bradley-Terry model output
+  // 1. Fetch Bradley-Terry Model Output & Latent Skills
   fastify.get('/api/pairwise/ratings', async (_req: FastifyRequest, reply: FastifyReply) => {
     const results = solveBradleyTerry();
     return reply.send(results);
   });
 
-  // Get Next Pair for Judging
+  // 2. Active Learning: Get Next Pair for Comparison via Fisher Information
   fastify.get(
     '/api/pairwise/match',
     {
       preHandler: [requireRole(['judge', 'organizer', 'admin'])],
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
-      // Pick two distinct projects with fewest comparisons
-      const projects = queryAll<{ id: string; title: string; track_name: string; summary: string }>(`
-        SELECT p.id, p.title, tr.name as track_name, p.summary
-        FROM projects p
-        LEFT JOIN tracks tr ON p.track_id = tr.id
-        WHERE p.is_draft = 0
-        ORDER BY RANDOM()
-        LIMIT 2
-      `);
+      const allProjects = getProjectsForComparison();
 
-      if (projects.length < 2) {
+      if (allProjects.length < 2) {
         return reply.code(400).send({ error: 'Not enough projects available for pairwise comparison' });
       }
 
+      const [projectA, projectB] = selectActivePair(allProjects);
+
       return reply.send({
-        project_a: projects[0],
-        project_b: projects[1],
+        project_a: projectA,
+        project_b: projectB,
       });
     }
   );
 
-  // Submit Pairwise Comparison Decision
-  fastify.post(
+  // 3. Record Pairwise Comparison Decision
+  fastify.post<{ Body: PairwiseVoteBody }>(
     '/api/pairwise/vote',
     {
       preHandler: [requireRole(['judge', 'organizer', 'admin'])],
     },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const body = (req.body as any) || {};
-      const { project_a, project_b, winner } = body;
+    async (req: FastifyRequest<{ Body: PairwiseVoteBody }>, reply: FastifyReply) => {
+      const { project_a, project_b, winner } = req.body || {};
 
       if (!project_a || !project_b || !winner) {
         return reply.code(400).send({ error: 'project_a, project_b, and winner are required' });
       }
 
+      if (project_a === project_b) {
+        return reply.code(400).send({ error: 'Cannot compare a project to itself' });
+      }
+
       if (!['project_a', 'project_b', 'tie'].includes(winner)) {
         return reply.code(400).send({ error: 'winner must be "project_a", "project_b", or "tie"' });
+      }
+
+      const projA = queryOne<{ id: string }>('SELECT id FROM projects WHERE id = ?', project_a);
+      const projB = queryOne<{ id: string }>('SELECT id FROM projects WHERE id = ?', project_b);
+      if (!projA || !projB) {
+        return reply.code(404).send({ error: 'One or both projects not found' });
       }
 
       const matchId = `pw_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
@@ -91,28 +100,29 @@ export async function pairwiseRoutes(fastify: FastifyInstance, _opts: FastifyPlu
     }
   );
 
-  // Pairwise judging interactive HTML view
+  // 4. Pairwise Judging Interactive HTML View
   fastify.get('/judge/pairwise', async (req: FastifyRequest, reply: FastifyReply) => {
-    if (!req.user || (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin')) {
+    if (!req.user) {
       return reply.redirect('/login?redirect=/judge/pairwise&error=Judge+access+required');
     }
 
-    const projects = queryAll<{ id: string; title: string; track_name: string; summary: string }>(`
-      SELECT p.id, p.title, tr.name as track_name, p.summary
-      FROM projects p
-      LEFT JOIN tracks tr ON p.track_id = tr.id
-      WHERE p.is_draft = 0
-      ORDER BY RANDOM()
-      LIMIT 2
-    `);
+    if (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin') {
+      return reply.code(403).view('403.ejs', {
+        title: 'Access Restricted — DOGFOOD 2026',
+        user: req.user,
+        message: `The Pairwise Arena is reserved for registered technical evaluators. Your current active role is ${req.user.role}.`,
+      });
+    }
 
+    const allProjects = getProjectsForComparison();
+    const [projectA, projectB] = selectActivePair(allProjects);
     const ratings = solveBradleyTerry();
 
     return reply.view('pairwise.ejs', {
       title: 'Pairwise Judging Mode — DOGFOOD 2026',
       user: req.user,
-      project_a: projects[0],
-      project_b: projects[1],
+      project_a: projectA,
+      project_b: projectB,
       ratings,
     });
   });

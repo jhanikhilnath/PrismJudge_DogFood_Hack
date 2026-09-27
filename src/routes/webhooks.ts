@@ -1,35 +1,20 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'node:crypto';
-import { queryOne, queryAll } from '../db/index.js';
+import { getProjectById, getTeamMembers, queryOne } from '../db/index.js';
 import { config } from '../config.js';
 
 export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
-  // Verifiable Certificate & Participation Record (T4 Stretch)
-  // Access is strictly restricted to project team members and event organizers
-  fastify.get('/certificates/:projectId', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { projectId } = req.params as { projectId: string };
-
-    const project = queryOne<{
-      id: string;
-      title: string;
-      team_id: string;
-      team_name: string;
-      track_name: string;
-      submitted_at: string;
-    }>(
-      `SELECT p.id, p.title, p.team_id, t.name as team_name, tr.name as track_name, p.submitted_at
-       FROM projects p
-       LEFT JOIN teams t ON p.team_id = t.id
-       LEFT JOIN tracks tr ON p.track_id = tr.id
-       WHERE p.id = ?`,
-      projectId
-    );
+  // 1. Verifiable Certificate & Participation Diploma (T4 Stretch)
+  // Strictly restricted to project team members and event organizers
+  fastify.get('/certificates/:projectId', async (req: FastifyRequest<{ Params: { projectId: string } }>, reply: FastifyReply) => {
+    const { projectId } = req.params;
+    const project = getProjectById(projectId);
 
     if (!project) {
       return reply.code(404).send({ error: 'Project certificate not found' });
     }
 
-    // 1. Authentication check
+    // A. Authentication check
     if (!req.user) {
       if (req.headers.accept?.includes('application/json')) {
         return reply.code(401).send({ error: 'Unauthorized', message: 'Authentication required' });
@@ -37,7 +22,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       return reply.redirect(`/login?redirect=/certificates/${projectId}&error=Please+sign+in+to+view+your+certificate`);
     }
 
-    // 2. Authorization check: Must be event staff (organizer/admin) OR a registered member of this team
+    // B. Authorization check: Event staff (organizer/admin) OR registered team member
     const isStaff = req.user.role === 'organizer' || req.user.role === 'admin';
     const isTeamMember = queryOne(
       'SELECT 1 FROM team_members WHERE team_id = ? AND user_id = ?',
@@ -59,11 +44,8 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       });
     }
 
-    // 3. Authorized: Fetch team members to feature on certificate
-    const members = queryAll<{ user_id: string; email: string; role: string }>(
-      'SELECT user_id, email, role FROM team_members WHERE team_id = ?',
-      project.team_id
-    );
+    // C. Fetch team members to feature on certificate
+    const members = getTeamMembers(project.team_id);
 
     // Cryptographic signature of participation
     const payload = `${project.id}:${project.team_id}:${project.submitted_at}`;
@@ -92,23 +74,10 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     });
   });
 
-  // Public Credential Verification Endpoint
-  fastify.get('/certificates/:projectId/verify', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { projectId } = req.params as { projectId: string };
-    const project = queryOne<{
-      id: string;
-      title: string;
-      team_name: string;
-      track_name: string;
-      submitted_at: string;
-    }>(
-      `SELECT p.id, p.title, t.name as team_name, tr.name as track_name, p.submitted_at
-       FROM projects p
-       LEFT JOIN teams t ON p.team_id = t.id
-       LEFT JOIN tracks tr ON p.track_id = tr.id
-       WHERE p.id = ?`,
-      projectId
-    );
+  // 2. Public Credential Verification Endpoint
+  fastify.get('/certificates/:projectId/verify', async (req: FastifyRequest<{ Params: { projectId: string } }>, reply: FastifyReply) => {
+    const { projectId } = req.params;
+    const project = getProjectById(projectId);
 
     if (!project) {
       return reply.code(404).send({ verified: false, error: 'Certificate record not found' });
@@ -124,7 +93,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     });
   });
 
-  // Health check endpoint
+  // 3. Health Check
   fastify.get('/health', async (_req: FastifyRequest, reply: FastifyReply) => {
     return reply.send({ status: 'ok', time: new Date().toISOString() });
   });

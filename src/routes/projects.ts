@@ -1,73 +1,48 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
-import { queryAll, queryOne, execute } from '../db/index.js';
+import crypto from 'node:crypto';
+import {
+  execute,
+  getAllTracks,
+  getEvent,
+  getProjectById,
+  getProjectComments,
+  getProjects,
+  getTeamMembers,
+  getTrackCounts,
+  isSubmissionsClosed,
+  queryOne,
+} from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
 
-interface ProjectRow {
-  id: string;
-  team_id: string;
-  team_name: string;
-  track_id: string;
-  track_name: string;
-  title: string;
-  summary: string;
-  repo_url: string | null;
-  demo_url: string | null;
-  submitted_at: string;
-  is_draft: number;
-  is_duplicate: number;
-  review_count: number;
+interface GalleryQuery {
+  q?: string;
+  track?: string;
+  format?: string;
+}
+
+interface NewProjectBody {
+  title?: string;
+  summary?: string;
+  track_id?: string;
+  repo_url?: string;
+  demo_url?: string;
+  is_draft?: boolean | number;
+}
+
+interface ProjectDetailQuery {
+  error?: string;
 }
 
 export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
-  // Public project gallery (Check 1 & Check 2)
-  fastify.get('/projects', async (req: FastifyRequest, reply: FastifyReply) => {
-    const query = req.query as { q?: string; track?: string; format?: string };
-    const searchTerm = query.q ? `%${query.q.trim()}%` : null;
-    const trackFilter = query.track || null;
+  // 1. Public Project Gallery (T1: Public Gallery & Seeded Fixtures)
+  fastify.get('/projects', async (req: FastifyRequest<{ Querystring: GalleryQuery }>, reply: FastifyReply) => {
+    const query = req.query || {};
+    const event = getEvent();
+    const isClosed = isSubmissionsClosed(event);
+    const projects = getProjects({ q: query.q, track: query.track });
+    const tracks = getAllTracks();
+    const trackCounts = getTrackCounts();
 
-    let sql = `
-      SELECT 
-        p.id,
-        p.team_id,
-        t.name as team_name,
-        p.track_id,
-        tr.name as track_name,
-        p.title,
-        p.summary,
-        p.repo_url,
-        p.demo_url,
-        p.submitted_at,
-        p.is_draft,
-        p.is_duplicate,
-        (SELECT COUNT(*) FROM scores s WHERE s.project_id = p.id) as review_count
-      FROM projects p
-      LEFT JOIN teams t ON p.team_id = t.id
-      LEFT JOIN tracks tr ON p.track_id = tr.id
-      WHERE p.is_draft = 0
-    `;
-
-    const params: any[] = [];
-    if (searchTerm) {
-      sql += ' AND (p.title LIKE ? OR p.summary LIKE ?)';
-      params.push(searchTerm, searchTerm);
-    }
-    if (trackFilter) {
-      sql += ' AND p.track_id = ?';
-      params.push(trackFilter);
-    }
-
-    sql += ' ORDER BY p.submitted_at ASC, p.id ASC';
-
-    const projects = queryAll<ProjectRow>(sql, ...params);
-    const tracks = queryAll<{ id: string; name: string }>('SELECT id, name FROM tracks ORDER BY id ASC');
-    const event = queryOne<{ id: string; name: string; submissions_close: string }>(
-      'SELECT id, name, submissions_close FROM events LIMIT 1'
-    );
-
-    const now = new Date().toISOString();
-    const isClosed = event ? now > event.submissions_close : false;
-
-    // If client specifically requests JSON
     const acceptsHtml = req.headers.accept?.includes('text/html');
     if (query.format === 'json' || (!acceptsHtml && req.headers.accept?.includes('application/json'))) {
       return reply.send({
@@ -82,6 +57,7 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       title: 'Project Gallery — DOGFOOD 2026',
       projects,
       tracks,
+      trackCounts,
       event,
       user: req.user,
       isClosed,
@@ -89,15 +65,11 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     });
   });
 
-  // Project submission form
+  // 2. Project Submission Form (T1: Submissions View)
   fastify.get('/projects/new', async (req: FastifyRequest, reply: FastifyReply) => {
-    const tracks = queryAll<{ id: string; name: string }>('SELECT id, name FROM tracks ORDER BY id ASC');
-    const event = queryOne<{ id: string; name: string; submissions_close: string }>(
-      'SELECT id, name, submissions_close FROM events LIMIT 1'
-    );
-
-    const now = new Date().toISOString();
-    const isClosed = event ? now > event.submissions_close : false;
+    const event = getEvent();
+    const isClosed = isSubmissionsClosed(event);
+    const tracks = getAllTracks();
 
     return reply.view('submit.ejs', {
       title: 'Submit Project — DOGFOOD 2026',
@@ -109,52 +81,45 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     });
   });
 
-  // Project submission endpoint (Check 3: closed event refuses submissions)
-  fastify.post('/projects/new', async (req: FastifyRequest, reply: FastifyReply) => {
-    const event = queryOne<{ id: string; name: string; submissions_close: string }>(
-      'SELECT id, name, submissions_close FROM events LIMIT 1'
-    );
-
+  // 3. Project Submission Endpoint (T1 Check 3: Closed event refuses submissions with HTTP 403)
+  fastify.post('/projects/new', async (req: FastifyRequest<{ Body: NewProjectBody }>, reply: FastifyReply) => {
+    const event = getEvent();
     const now = new Date().toISOString();
+    const deadlineClosed = isSubmissionsClosed(event);
 
-    // Check 3 verification: Deadline enforcement
-    if (event && now > event.submissions_close) {
+    if (deadlineClosed) {
       logAuditEvent({
-        actorId: req.user ? req.user.userId : 'unauthenticated',
-        actorRole: req.user ? req.user.role : 'visitor',
+        actorId: req.user?.userId || 'unauthenticated',
+        actorRole: req.user?.role || 'visitor',
         action: 'SUBMISSION_REJECTED_DEADLINE',
         resourceType: 'project',
-        payload: { attemptTime: now, submissionsClose: event.submissions_close },
+        payload: { attemptTime: now, submissionsClose: event?.submissions_close },
         ipAddress: req.ip,
       });
 
       return reply.code(403).send({
         error: 'Submissions closed',
-        detail: `The event closed for submissions at ${event.submissions_close}. Late submissions are refused.`,
-        closed_at: event.submissions_close,
+        detail: `The event closed for submissions at ${event?.submissions_close}. Late submissions are refused.`,
+        closed_at: event?.submissions_close,
         attempted_at: now,
       });
     }
 
-    // Role check: Only participants, organizers, or admins can submit
     if (!req.user) {
       return reply.code(401).send({ error: 'Authentication required to submit a project' });
     }
 
-    const body = (req.body as any) || {};
-    const { title, summary, track_id, repo_url, demo_url, is_draft } = body;
-
-    if (!title || !summary) {
+    const { title, summary, track_id, repo_url, demo_url, is_draft } = req.body || {};
+    if (!title || !title.trim() || !summary || !summary.trim()) {
       return reply.code(400).send({ error: 'Title and summary are required' });
     }
 
-    // Find participant's team
     const teamMember = queryOne<{ team_id: string }>(
       'SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1',
       req.user.userId
     );
 
-    const teamId = teamMember ? teamMember.team_id : 'tm_standalone';
+    const teamId = teamMember?.team_id || 'tm_standalone';
     const chosenTrackId = track_id || 'trk_01';
     const projectId = `prj_${Date.now().toString(36)}`;
 
@@ -180,7 +145,7 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       action: 'PROJECT_SUBMITTED',
       resourceType: 'project',
       resourceId: projectId,
-      payload: { title, track_id: chosenTrackId, teamId },
+      payload: { title: title.trim(), track_id: chosenTrackId, teamId },
       ipAddress: req.ip,
     });
 
@@ -191,50 +156,38 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     return reply.code(201).send({
       message: 'Project submitted successfully',
       projectId,
-      title,
+      title: title.trim(),
       submitted_at: now,
     });
   });
 
-  // Single project details
-  fastify.get('/projects/:id', async (req: FastifyRequest, reply: FastifyReply) => {
-    const { id } = req.params as { id: string };
-
-    const project = queryOne<ProjectRow>(
-      `SELECT 
-        p.id,
-        p.team_id,
-        t.name as team_name,
-        p.track_id,
-        tr.name as track_name,
-        p.title,
-        p.summary,
-        p.repo_url,
-        p.demo_url,
-        p.submitted_at,
-        p.is_draft,
-        p.is_duplicate,
-        (SELECT COUNT(*) FROM scores s WHERE s.project_id = p.id) as review_count
-      FROM projects p
-      LEFT JOIN teams t ON p.team_id = t.id
-      LEFT JOIN tracks tr ON p.track_id = tr.id
-      WHERE p.id = ?`,
-      id
-    );
+  // 4. Single Project Details & Discussion Stream
+  fastify.get('/projects/:id', async (req: FastifyRequest<{ Params: { id: string }; Querystring: ProjectDetailQuery }>, reply: FastifyReply) => {
+    const { id } = req.params;
+    const project = getProjectById(id);
 
     if (!project) {
       return reply.code(404).send({ error: 'Project not found' });
     }
 
-    const members = queryAll<{ user_id: string; email: string; role: string }>(
-      'SELECT user_id, email, role FROM team_members WHERE team_id = ?',
-      project.team_id
-    );
+    const members = getTeamMembers(project.team_id);
+    const comments = getProjectComments(id);
 
-    const comments = queryAll<{ id: string; author_name: string; content: string; created_at: string }>(
-      'SELECT id, author_name, content, created_at FROM comments WHERE project_id = ? ORDER BY created_at DESC',
-      id
-    );
+    let hasVotedForThis = false;
+    if (req.user) {
+      const userHash = crypto.createHash('sha256').update(req.user.userId).digest('hex').substring(0, 16);
+      const vote = queryOne<{ id: string }>(
+        'SELECT id FROM community_votes WHERE project_id = ? AND (voter_hash = ? OR voter_hash = ?)',
+        id,
+        userHash,
+        req.user.userId
+      );
+      hasVotedForThis = Boolean(vote);
+    }
+
+    const formError = req.query?.error === 'empty_comment'
+      ? 'Comment content cannot be empty. Please enter your feedback.'
+      : null;
 
     if (req.headers.accept?.includes('application/json')) {
       return reply.send({ project, members, comments });
@@ -246,6 +199,8 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       members,
       comments,
       user: req.user,
+      hasVotedForThis,
+      formError,
     });
   });
 }

@@ -38,6 +38,44 @@ export interface NormalizationStats {
   projectRatings: ProjectRating[];
 }
 
+/**
+ * Calculate the weighted raw score from a criteria evaluation object.
+ * Reconciles the standard 4-criterion model (40% functionality, 30% quality, 20% innovation, 10% impact)
+ * with graceful fallback for legacy 3-criterion seeds without impact (40% functionality, 30% quality, 30% innovation).
+ */
+export function calculateWeightedScore(
+  criteria: Record<string, any>,
+  customWeights?: Record<string, number>
+): number {
+  if (customWeights && Object.keys(customWeights).length > 0) {
+    let computed = 0;
+    let weightSum = 0;
+    for (const [k, w] of Object.entries(customWeights)) {
+      if (criteria[k] !== undefined) {
+        computed += Number(criteria[k]) * w;
+        weightSum += w;
+      }
+    }
+    if (weightSum > 0) {
+      return Math.round((computed / weightSum) * 100) / 100;
+    }
+  }
+
+  const func = Number(criteria.functionality ?? 3);
+  const qual = Number(criteria.quality ?? 3);
+  const inno = Number(criteria.innovation ?? 3);
+
+  let rawTotal = 0;
+  if (criteria.impact !== undefined) {
+    const imp = Number(criteria.impact);
+    rawTotal = func * 0.40 + qual * 0.30 + inno * 0.20 + imp * 0.10;
+  } else {
+    rawTotal = func * 0.40 + qual * 0.30 + inno * 0.30;
+  }
+
+  return Math.round(rawTotal * 100) / 100;
+}
+
 export function computeBayesianNormalization(
   rubricWeights: Record<string, number> = { functionality: 0.4, quality: 0.3, innovation: 0.3 },
   shrinkageWeight = 3.0
@@ -69,17 +107,7 @@ export function computeBayesianNormalization(
     let scoreVal = s.raw_total;
     try {
       const criteriaObj = typeof s.criteria === 'string' ? JSON.parse(s.criteria) : s.criteria;
-      let computed = 0;
-      let weightSum = 0;
-      for (const [k, w] of Object.entries(rubricWeights)) {
-        if (criteriaObj[k] !== undefined) {
-          computed += criteriaObj[k] * w;
-          weightSum += w;
-        }
-      }
-      if (weightSum > 0) {
-        scoreVal = computed / weightSum;
-      }
+      scoreVal = calculateWeightedScore(criteriaObj, rubricWeights);
     } catch {
       // fallback to s.raw_total
     }
@@ -210,23 +238,27 @@ export function computeBayesianNormalization(
   if (multiReviewed.length > 0) {
     const kSum = multiReviewed.reduce((acc, p) => acc + p.raw.length, 0);
     const kAvg = kSum / multiReviewed.length;
-    let ssBetween = 0;
-    let ssWithin = 0;
+    // Two-Way Random Effects ANOVA (Shrout & Fleiss 1979): separates judge severity effects from evaluation error
+    let ssProjects = 0;
     for (const p of multiReviewed) {
       const pMean = p.raw.reduce((a, b) => a + b, 0) / p.raw.length;
-      ssBetween += p.raw.length * Math.pow(pMean - globalMean, 2);
-      for (const r of p.raw) {
-        ssWithin += Math.pow(r - pMean, 2);
-      }
+      ssProjects += p.raw.length * Math.pow(pMean - globalMean, 2);
     }
-    const dfBetween = multiReviewed.length - 1;
-    const dfWithin = kSum - multiReviewed.length;
-    const msBetween = dfBetween > 0 ? ssBetween / dfBetween : 1.0;
-    const msWithin = dfWithin > 0 ? ssWithin / dfWithin : 1.0;
-    const denom = msBetween + (kAvg - 1) * msWithin;
+    let ssJudges = 0;
+    for (const j of Object.values(judgeStats)) {
+      ssJudges += j.reviewCount * Math.pow(j.sampleMean - globalMean, 2);
+    }
+    const ssTotal = allValues.reduce((acc, v) => acc + Math.pow(v - globalMean, 2), 0);
+    const ssError = Math.max(0, ssTotal - ssProjects - ssJudges);
+    const dfProjects = multiReviewed.length - 1;
+    const dfJudges = Object.keys(judgeStats).length - 1;
+    const dfError = Math.max(1, N - 1 - dfProjects - dfJudges);
+    const msProjects = dfProjects > 0 ? ssProjects / dfProjects : 1.0;
+    const msError = ssError / dfError;
+    const denom = msProjects + (kAvg - 1) * msError;
     if (denom > 0) {
-      const rawIcc = (msBetween - msWithin) / denom;
-      interRaterReliability = parseFloat(Math.max(0.1, Math.min(0.99, rawIcc)).toFixed(3));
+      const twoWayIcc = (msProjects - msError) / denom;
+      interRaterReliability = parseFloat(Math.max(0, Math.min(1.0, twoWayIcc)).toFixed(3));
     }
   }
 

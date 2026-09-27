@@ -117,12 +117,20 @@ Under the Bradley-Terry model, the probability that project $i$ is preferred ove
 $$P(i \succ j) = \frac{\pi_i}{\pi_i + \pi_j} = \frac{e^{\lambda_i}}{e^{\lambda_i} + e^{\lambda_j}}$$
 where $\lambda_i = \ln \pi_i$ is the latent capability of project $i$.
 
-We solve for the maximum likelihood estimator $\hat{\pi}$ using the iterative **Minorization-Maximization (MM)** algorithm:
-$$\pi_i^{(t+1)} = \frac{W_i}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}}}$$
+We solve for the maximum likelihood estimator $\hat{\pi}$ using the iterative **Minorization-Maximization (MM)** algorithm with a conjugate $\text{Gamma}(1 + \epsilon, \epsilon)$ prior ($\epsilon = 0.10$):
+$$\pi_i^{(t+1)} = \frac{W_i + \epsilon}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}} + \epsilon}$$
 where:
 - $W_i$ is the total wins for project $i$ (ties count as $0.5$).
 - $N_{ij}$ is the number of pairwise matches between $i$ and $j$.
+- $\epsilon = 0.10$ acts as a conjugate prior anchor, connecting disjoint comparison subgraphs and strictly guaranteeing a unique, strictly positive global MLE even under single losses.
 - Scaling condition: $\sum_{i=1}^n \pi_i = n$.
+
+#### Active Pairing Selection via Fisher Information
+Rather than sampling pairs uniformly at random, the platform implements an active acquisition policy that maximizes the expected Fisher Information about relative project rank:
+$$\mathcal{I}(\theta_{ij}) = \frac{\pi_i \pi_j}{(\pi_i + \pi_j)^2} = \frac{1}{1 + 10^{|R_i - R_j|/400}}$$
+Candidate pairs are selected according to:
+$$(i^*, j^*) = \arg\max_{i < j} \left[ \mathcal{I}(\theta_{ij}) + \frac{0.35}{\sqrt{1 + N_i + N_j}} + 0.25 \cdot \mathbf{1}_{\{N_{ij} = 0\}} \right]$$
+This optimizes judge evaluation efficiency, prioritizing high-information close matchups for podium contenders while rapidly exploring unreviewed submissions.
 
 Convergence is guaranteed monotonically due to log-concavity of the Bradley-Terry likelihood function. Tested and verified in `tests/pairwise.test.ts`.
 

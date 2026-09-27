@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { getSessionUser, UserSession } from './auth.js';
+import { getSessionUser, UserRole, UserSession } from './auth.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -7,19 +7,38 @@ declare module 'fastify' {
   }
 }
 
+/**
+ * Resolve judge aliases ('judge_a', 'judge_b') to canonical user IDs ('jdg_01', 'jdg_02').
+ */
+export function resolveJudgeAlias(aliasOrId: string): string {
+  if (aliasOrId === 'judge_a') return 'jdg_01';
+  if (aliasOrId === 'judge_b') return 'jdg_02';
+  return aliasOrId;
+}
+
+/**
+ * Check if the requested judge identifier matches the currently authenticated judge.
+ */
+export function isJudgeSelf(requestedJudge: string, currentJudgeId: string): boolean {
+  return resolveJudgeAlias(requestedJudge) === currentJudgeId;
+}
+
+/**
+ * Extract session token from cookie, Authorization bearer header, or query param fallback.
+ */
 export function extractSessionToken(req: FastifyRequest): string | null {
-  // 1. Check Fastify parsed cookie
-  if (req.cookies && req.cookies.session) {
+  // 1. Fastify parsed cookie
+  if (req.cookies?.session) {
     return req.cookies.session;
   }
 
-  // 2. Check Authorization Bearer header
+  // 2. Authorization Bearer header
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     return authHeader.substring(7).trim();
   }
 
-  // 3. Check raw Cookie header
+  // 3. Raw Cookie header fallback
   const rawCookie = req.headers.cookie;
   if (rawCookie) {
     const match = rawCookie.match(/(?:^|;\s*)session=([^;]+)/);
@@ -28,26 +47,27 @@ export function extractSessionToken(req: FastifyRequest): string | null {
     }
   }
 
-  // 4. Query token fallback (useful for testing & link authentication)
+  // 4. Query token parameter fallback (for test automation and deep-linking)
   const query = req.query as Record<string, string | undefined>;
-  if (query && query.token) {
+  if (query?.token) {
     return query.token;
   }
 
   return null;
 }
 
+/**
+ * Global Fastify preHandler hook: resolves session token to req.user.
+ */
 export async function resolveUserHook(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
   const token = extractSessionToken(req);
-  if (!token) {
-    req.user = null;
-    return;
-  }
-
-  req.user = getSessionUser(token);
+  req.user = token ? getSessionUser(token) : null;
 }
 
-export function requireRole(allowedRoles: Array<'visitor' | 'participant' | 'judge' | 'organizer' | 'admin'>) {
+/**
+ * RBAC route protection middleware: gates access to specific roles.
+ */
+export function requireRole(allowedRoles: UserRole[]) {
   return async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
     if (!req.user) {
       reply.code(401).send({ error: 'Unauthorized: Authentication required' });
@@ -61,36 +81,34 @@ export function requireRole(allowedRoles: Array<'visitor' | 'participant' | 'jud
   };
 }
 
+/**
+ * Enforce hard peer isolation: prevents judges from snooping on peer evaluations.
+ * Organizers and administrators have full auditing privileges.
+ */
 export async function enforceJudgePeerIsolation(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   if (!req.user) {
     reply.code(401).send({ error: 'Unauthorized: Authentication required' });
     return;
   }
 
-  // If user is organizer or admin, allow viewing any judge's scores
+  // Organizers and admins have unrestricted read access to audit scores
   if (req.user.role === 'organizer' || req.user.role === 'admin') {
     return;
   }
 
-  // If user is not even a judge, block immediately
+  // Non-judges (e.g. participants) are strictly forbidden
   if (req.user.role !== 'judge') {
     reply.code(403).send({ error: 'Forbidden: Participant cannot view judge scores' });
     return;
   }
 
-  // If judge is inspecting via query parameter (?judge=... or ?judge_id=...)
+  // If a judge queries a specific target judge via query parameters (?judge=... or ?judge_id=...)
   const query = req.query as Record<string, string | undefined>;
   const requestedJudge = query.judge || query.judge_id;
 
   if (requestedJudge) {
-    // Normalization check: allow 'judge_a' if current user is jdg_01, or 'judge_b' if current user is jdg_02
     const currentJudgeId = req.user.userId;
-    const isSelfAlias =
-      (requestedJudge === 'judge_a' && currentJudgeId === 'jdg_01') ||
-      (requestedJudge === 'judge_b' && currentJudgeId === 'jdg_02') ||
-      requestedJudge === currentJudgeId;
-
-    if (!isSelfAlias) {
+    if (!isJudgeSelf(requestedJudge, currentJudgeId)) {
       reply.code(403).send({
         error: 'Forbidden: Judges are strictly prohibited from inspecting peer scores',
         detail: `Sent as ${currentJudgeId}; requested peer scores for ${requestedJudge}`,

@@ -61,12 +61,15 @@
         <p class="card-summary"><%= p.summary %></p>
 
         <div class="card-footer" style="flex-direction: column; align-items: stretch; gap: 0.5rem; padding-top: 1rem;">
-          <% if (userVotedProjectId === p.id) { %>
+          <% 
+            const hasVoted = typeof userVotedProjectIds !== 'undefined' ? userVotedProjectIds.includes(p.id) : (userVotedProjectId === p.id);
+            if (hasVoted) { 
+          %>
             <button class="btn btn-secondary" disabled style="width: 100%; border-color: #A7F3D0; color: #065F46; background: #ECFDF5; cursor: default;">
               ✓ You Voted For This
             </button>
           <% } else { %>
-            <form action="/api/vote" method="POST" onsubmit="castVote(event, '<%= p.id %>')">
+            <form onsubmit="castVote(event, '<%= p.id %>')">
               <button type="submit" class="btn btn-primary" style="width: 100%;" <%= isVotingClosed ? 'disabled' : '' %>>
                 <%= isVotingClosed ? 'Voting Closed' : 'Vote for Project' %>
               </button>
@@ -81,6 +84,11 @@
 <script>
   async function castVote(e, projectId) {
     e.preventDefault();
+    const btn = e.target.querySelector('button');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Recording ballot...';
+    }
     try {
       const res = await fetch('/api/vote', {
         method: 'POST',
@@ -90,8 +98,14 @@
 
       if (res.ok) {
         if (window.showToast) window.showToast('Your ballot has been securely cast!', 'success');
-        setTimeout(() => window.location.reload(), 300);
+        if (btn) {
+          btn.outerHTML = '<button class="btn btn-secondary" disabled style="width: 100%; border-color: #A7F3D0; color: #065F46; background: #ECFDF5; cursor: default;">✓ You Voted For This</button>';
+        }
       } else {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Vote for Project';
+        }
         const err = await res.json();
         if (window.showToast) {
           window.showToast(err.error || 'Failed to record vote', 'error');
@@ -100,6 +114,10 @@
         }
       }
     } catch (e) {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Vote for Project';
+      }
       if (window.showToast) window.showToast('Network error while casting ballot', 'error');
     }
   }

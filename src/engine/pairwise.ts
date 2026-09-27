@@ -50,7 +50,7 @@ export function solveBradleyTerry(
   const projectIdx = new Map(projects.map((id, idx) => [id, idx]));
 
   // Build win vector and match count matrix
-  const wins = new Array<number>(n).fill(0.01); // small Laplacian smoothing
+  const wins = new Array<number>(n).fill(0);
   const matches = Array.from({ length: n }, () => new Array<number>(n).fill(0));
 
   for (const c of data) {
@@ -71,7 +71,9 @@ export function solveBradleyTerry(
     }
   }
 
-  // Minorization-Maximization (MM) Iterative Algorithm
+  // Regularized Minorization-Maximization (MM) Iterative Algorithm
+  // Prior: pi_i ~ Gamma(1 + epsilon, epsilon) guarantees unique, strictly positive MLE and handles disconnected graphs
+  const epsilon = 0.10;
   let pi = new Array<number>(n).fill(1.0);
   let converged = false;
   let iter = 0;
@@ -85,7 +87,7 @@ export function solveBradleyTerry(
           denom += matches[i]![j]! / (pi[i]! + pi[j]!);
         }
       }
-      nextPi[i] = denom > 0 ? wins[i]! / denom : pi[i]!;
+      nextPi[i] = (wins[i]! + epsilon) / (denom + epsilon);
     }
 
     // Normalize so sum(pi) = n
@@ -113,7 +115,7 @@ export function solveBradleyTerry(
   for (let i = 0; i < n; i++) {
     const id = projects[i]!;
     const totalMatches = matches[i]!.reduce((a, b) => a + b, 0);
-    const winRate = totalMatches > 0 ? (wins[i]! - 0.01) / totalMatches : 0;
+    const winRate = totalMatches > 0 ? wins[i]! / totalMatches : 0;
     const skill = parseFloat(Math.log(pi[i]!).toFixed(4));
     const elo = Math.round(1500 + 400 * Math.log10(Math.max(1e-4, pi[i]!)));
     results.push({ id, skill, elo, winRate: parseFloat(winRate.toFixed(3)) });
@@ -136,3 +138,57 @@ export function solveBradleyTerry(
     converged,
   };
 }
+
+/**
+ * Active Pairing Selection: Fisher Information + Uncertainty Exploration
+ * Maximizes information gain for latent Bradley-Terry skill convergence.
+ */
+export function selectActivePair<T extends { id: string }>(allProjects: T[]): [T, T] {
+  if (allProjects.length < 2) return [allProjects[0]!, allProjects[1]!];
+
+  const pairRecords = queryAll<{ project_a: string; project_b: string }>(
+    'SELECT project_a, project_b FROM pairwise_comparisons'
+  );
+  const matchCounts: Record<string, number> = {};
+  const comparedPairs = new Set<string>();
+  for (const c of pairRecords) {
+    matchCounts[c.project_a] = (matchCounts[c.project_a] || 0) + 1;
+    matchCounts[c.project_b] = (matchCounts[c.project_b] || 0) + 1;
+    comparedPairs.add(`${c.project_a}:${c.project_b}`);
+    comparedPairs.add(`${c.project_b}:${c.project_a}`);
+  }
+
+  const bt = solveBradleyTerry();
+
+  let bestPair: [T, T] = [allProjects[0]!, allProjects[1]!];
+  let maxScore = -Infinity;
+
+  // Sample candidate pairs across projects
+  const shuffled = [...allProjects].sort(() => Math.random() - 0.5);
+  const candidates: Array<[T, T]> = [];
+  for (let i = 0; i < Math.min(shuffled.length, 12); i++) {
+    for (let j = i + 1; j < Math.min(shuffled.length, i + 6); j++) {
+      candidates.push([shuffled[i]!, shuffled[j]!]);
+    }
+  }
+
+  for (const [pA, pB] of candidates) {
+    const rA = bt.ratings[pA.id]?.elo || 1500;
+    const rB = bt.ratings[pB.id]?.elo || 1500;
+    const diff = Math.abs(rA - rB);
+    const fisherInfo = 1 / (1 + Math.pow(10, diff / 400));
+    const nA = matchCounts[pA.id] || 0;
+    const nB = matchCounts[pB.id] || 0;
+    const explorationBonus = 0.35 / Math.sqrt(1 + nA + nB);
+    const noveltyBonus = comparedPairs.has(`${pA.id}:${pB.id}`) ? 0 : 0.25;
+    const score = fisherInfo + explorationBonus + noveltyBonus;
+
+    if (score > maxScore) {
+      maxScore = score;
+      bestPair = [pA, pB];
+    }
+  }
+
+  return bestPair;
+}
+

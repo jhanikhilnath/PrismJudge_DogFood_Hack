@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 3. Dropdowns (Profile & Demo)
+  // 4. Dropdowns (Profile & Demo)
   const profileBtn = document.getElementById('profile-dropdown-btn');
   const profileDropdown = document.getElementById('profile-dropdown-content');
 
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4. Live Search & Track Filter
+  // 5. Live Search & Track Filter
   const searchInput = document.getElementById('gallery-search');
   const trackFilter = document.getElementById('gallery-track');
   const trackPillButtons = document.querySelectorAll('.track-pill-btn');
@@ -141,6 +141,17 @@ document.addEventListener('DOMContentLoaded', () => {
   trackPillButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const selectedTrack = btn.getAttribute('data-track-id') || '';
+
+      // If page was rendered via server-side filter query, navigate to target track or base
+      if (window.location.search) {
+        if (!selectedTrack) {
+          window.location.href = '/projects';
+        } else {
+          window.location.href = '/projects?track=' + encodeURIComponent(selectedTrack);
+        }
+        return;
+      }
+
       trackPillButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -154,6 +165,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (trackFilter) {
     trackFilter.addEventListener('change', () => {
       const val = trackFilter.value;
+      if (window.location.search) {
+        if (!val) {
+          window.location.href = '/projects';
+        } else {
+          window.location.href = '/projects?track=' + encodeURIComponent(val);
+        }
+        return;
+      }
       trackPillButtons.forEach(b => {
         b.classList.toggle('active', (b.getAttribute('data-track-id') || '') === val);
       });
@@ -163,6 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (clearFiltersBtn) {
     clearFiltersBtn.addEventListener('click', () => {
+      if (window.location.search) {
+        window.location.href = '/projects';
+        return;
+      }
       if (searchInput) searchInput.value = '';
       if (trackFilter) trackFilter.value = '';
       trackPillButtons.forEach((b, i) => b.classList.toggle('active', i === 0));

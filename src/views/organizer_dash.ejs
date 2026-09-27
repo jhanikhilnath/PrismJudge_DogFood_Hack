@@ -41,18 +41,34 @@
   </div>
   <div class="metric-card">
     <div class="metric-header">INTER-RATER RELIABILITY</div>
-    <div class="metric-value" style="color: #059669;">
-      <%= normalization.interRaterReliability || 0.85 %>
+    <div class="metric-value" style="color: <%= normalization.interRaterReliability >= 0.75 ? '#059669' : (normalization.interRaterReliability >= 0.5 ? '#D97706' : '#DC2626') %>;">
+      <%= normalization.interRaterReliability.toFixed(2) %>
     </div>
-    <div class="metric-subtext">Two-way random effects ICC(1,1) consensus</div>
+    <div class="metric-subtext">
+      <% if (normalization.interRaterReliability >= 0.75) { %>
+        Two-way random effects ICC(1,1) consensus: Good
+      <% } else if (normalization.interRaterReliability >= 0.5) { %>
+        Two-way random effects ICC(1,1) consensus: Moderate
+      <% } else { %>
+        Two-way random effects ICC(1,1) consensus: Low (Normalizer Active)
+      <% } %>
+    </div>
   </div>
 </div>
 
 <% if (normalization.underservedProjectsCount > 0) { %>
-  <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    <div style="font-size: 0.88rem; color: #92400E;">
-      <strong>Workload Attention Needed:</strong> <%= normalization.underservedProjectsCount %> project(s) have fewer than 3 reviews. Reallocate available jurors to guarantee statistical convergence.
+  <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 0.85rem;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div style="font-size: 0.88rem; color: #92400E; width: 100%;">
+      <div style="font-weight: 700; margin-bottom: 0.35rem;">Workload Attention Needed: <%= normalization.underservedProjectsCount %> project(s) have fewer than 3 reviews</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.4rem;">
+        <% leaderboard.filter(p => p.reviewCount < 3).forEach(p => { %>
+          <a href="/projects/<%= p.projectId %>" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.55rem; background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; font-family: var(--font-mono); font-size: 0.75rem; color: #78350F; text-decoration: none;">
+            <strong><%= p.projectId %></strong> <%= p.projectTitle %> <span style="background: #FDE68A; padding: 0.05rem 0.3rem; border-radius: 3px; font-weight: 700;"><%= p.reviewCount %>/3</span>
+          </a>
+        <% }) %>
+      </div>
+      <div style="font-size: 0.8rem; color: #B45309;">Reallocate available jurors to guarantee statistical convergence across all submissions.</div>
     </div>
   </div>
 <% } %>
@@ -125,10 +141,10 @@
 
 <div style="margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: baseline;">
   <h2 style="font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;">Competition Standings (<%= leaderboard.length %> Submissions)</h2>
-  <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">Ranked by Normalized Score (0–100)</span>
+  <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">Ranked by Composite Score (80% Bayesian Norm + 20% Pairwise Arena)</span>
 </div>
 
-<div class="table-wrapper" style="margin-bottom: 2rem;">
+<div class="table-wrapper" style="margin-bottom: 2.5rem;">
   <table class="data-table">
     <thead>
       <tr>
@@ -138,8 +154,8 @@
         <th>Track</th>
         <th style="width: 90px; text-align: center;">Reviews</th>
         <th style="width: 110px;">Raw Avg</th>
-        <th style="width: 150px;">Normalized (0–100)</th>
-        <th style="width: 130px; text-align: right;">Composite</th>
+        <th style="width: 140px;">Normalized</th>
+        <th style="width: 130px; text-align: right;">Composite Score</th>
       </tr>
     </thead>
     <tbody>
@@ -159,14 +175,67 @@
           <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);"><%= p.projectId %></td>
           <td>
             <a href="/projects/<%= p.projectId %>" style="font-weight: 600; color: var(--text-primary);"><%= p.projectTitle %></a>
+            <% if (p.reviewCount < 3) { %>
+              <span class="badge-status badge-warning" style="font-size: 0.68rem; margin-left: 0.4rem;" title="Fewer than 3 reviews">Needs Review (<%= p.reviewCount %>/3)</span>
+            <% } %>
           </td>
           <td><span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);"><%= p.trackId %></span></td>
           <td style="text-align: center; font-family: var(--font-mono); font-size: 0.82rem;"><%= p.reviewCount %></td>
           <td style="font-family: var(--font-mono); font-size: 0.82rem;"><%= p.rawAverage.toFixed(2) %></td>
-          <td style="font-family: var(--font-mono); font-size: 0.88rem; font-weight: 700; color: var(--text-primary);"><%= p.normalizedScore.toFixed(2) %></td>
-          <td style="font-family: var(--font-mono); font-size: 0.88rem; font-weight: 800; text-align: right; color: var(--text-primary);"><%= p.compositeScore.toFixed(2) %></td>
+          <td style="font-family: var(--font-mono); font-size: 0.88rem; font-weight: 600; color: var(--text-primary);"><%= p.normalizedScore.toFixed(2) %></td>
+          <td style="font-family: var(--font-mono); font-size: 0.92rem; font-weight: 800; text-align: right; color: var(--accent-blue);"><%= p.compositeScore.toFixed(2) %></td>
         </tr>
       <% }); %>
     </tbody>
   </table>
+</div>
+
+<!-- Embedded Immutable Audit Ledger -->
+<div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+    <div>
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem;">System Audit Ledger</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Append-only cryptographic mutation log for compliance and verification</p>
+    </div>
+    <a href="/api/organizer/audit" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+      Full JSON Feed ↗
+    </a>
+  </div>
+
+  <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+    <table class="data-table" style="font-size: 0.8rem;">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Actor</th>
+          <th>Role</th>
+          <th>Action</th>
+          <th>Resource</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (typeof recentAuditLogs !== 'undefined' && recentAuditLogs.length > 0) { %>
+          <% recentAuditLogs.forEach(function(log) { %>
+            <tr>
+              <td style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">
+                <%= new Date(log.created_at).toLocaleString() %>
+              </td>
+              <td style="font-family: var(--font-mono); font-weight: 600;"><%= log.actor_id %></td>
+              <td><span class="badge-status badge-default" style="font-size: 0.68rem;"><%= log.actor_role %></span></td>
+              <td style="font-family: var(--font-mono); font-weight: 600; color: var(--text-primary);"><%= log.action %></td>
+              <td style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);">
+                <%= log.resource_type %><%= log.resource_id ? ' (' + log.resource_id + ')' : '' %>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No audit events recorded in current session.
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
 </div>

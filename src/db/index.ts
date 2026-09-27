@@ -12,9 +12,9 @@ if (!fs.existsSync(dbDir)) {
 export const db = new DatabaseSync(config.dbPath);
 
 // Performance & data integrity pragmas
+db.exec('PRAGMA busy_timeout = 10000;');
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA foreign_keys = ON;');
-db.exec('PRAGMA busy_timeout = 5000;');
 db.exec('PRAGMA synchronous = NORMAL;');
 
 export function queryAll<T = Record<string, any>>(sql: string, ...params: any[]): T[] {
@@ -44,3 +44,5 @@ export function transaction<T>(fn: () => T): T {
     throw error;
   }
 }
+
+export * from './queries.js';
