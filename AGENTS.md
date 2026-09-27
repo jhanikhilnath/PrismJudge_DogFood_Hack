@@ -25,6 +25,7 @@ The portal must boot in under 1 second with the physical host network disconnect
 ├── run.py                      # Official competition acceptance verification runner
 ├── fixtures.json               # Seed fixtures (41 projects, 30 judges, 8 tracks, 126 scores)
 ├── AGENTS.md                   # This agent operating manual
+├── CONTEXT.md                  # Living inter-agent handoff ledger & comprehensive tour
 ├── README.md                   # Primary public repository documentation
 ├── ARCHITECTURE.md             # System architecture & Fastify pipeline lifecycle
 ├── JUDGING.md                  # Mathematical proofs for Bayesian shrinkage & Bradley-Terry
@@ -177,11 +178,31 @@ npm test
 # 3. Route & role verification matrix (619/619 assertions)
 node tests/audit_script.mjs
 
-# 4. Rebuild & boot local Docker container
+# 4. Comprehensive E2E container audit (89/89 assertions)
+node tests/comprehensive_e2e_audit.mjs
+
+# 5. Rebuild & boot local Docker container
 docker compose build && docker compose up -d
 
-# 5. Official acceptance suite (7/7 PASS)
+# 6. Official acceptance suite (7/7 PASS)
 python3 run.py .dogfood.toml
 ```
 
-All 5 commands must pass with zero errors.
+All 6 commands must pass with zero errors.
+
+---
+
+## 8. Inter-Agent Communication & Living Handoff: The CONTEXT.md Rule
+
+> **CRITICAL PROTOCOL FOR ALL AUTONOMOUS AGENTS:**  
+> When multiple AI agents work consecutively on this codebase, **`CONTEXT.md` serves as the single source of truth and living handoff bridge.**
+
+### Rules for Incoming & Outgoing Agents:
+1. **Mandatory Ingestion**: Before modifying any code, reading schemas, or adjusting configuration, every agent **MUST read `CONTEXT.md` in full** to understand active state, mathematical proofs, security invariants, and persona tokens.
+2. **Mandatory Append-Only Logging**: Every agent **MUST append an entry to Section 6 of `CONTEXT.md`** before concluding its session. The entry must record:
+   - **Timestamp & Agent Persona/Role**.
+   - **Specific Changes Made**: Detail any files modified, added, or removed.
+   - **Rationale & Architectural Impact**: Why the change was made and any ADR implications.
+   - **Test & Verification Results**: Exact pass/fail counts from `npm test`, `comprehensive_e2e_audit.mjs`, and `run.py`.
+   - **Handoff Notes for the Next Agent**: Any open items, suggestions, or edge cases to watch.
+3. **No Stealth Edits**: Never modify or remove existing entries in the `CONTEXT.md` ledger. It is an append-only historical audit trail.

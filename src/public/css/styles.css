@@ -2678,39 +2678,224 @@ footer.app-footer {
 }
 
 /* ==========================================================================
-   PRINT SPECIFICATION FOR DIPLOMAS
+   PRINT SPECIFICATION FOR DIPLOMAS (STRICT SINGLE-PAGE LANDSCAPE FIT)
    ========================================================================== */
 
 @media print {
   @page {
     size: landscape;
-    margin: 10mm;
+    margin: 6mm 8mm;
   }
 
+  html,
   body {
     background: #FFFFFF !important;
-    color: #000000 !important;
+    color: #0F172A !important;
+    margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  main.app-main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    flex: none !important;
   }
 
   .app-header,
   .app-footer,
   .no-print,
   .cert-action-bar,
-  .breadcrumb-nav {
+  .breadcrumb-nav,
+  #toast-container {
     display: none !important;
   }
 
   .diploma-wrapper {
     max-width: 100% !important;
-    margin: 0 !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
   .diploma-sheet {
     box-shadow: none !important;
+    border-radius: 0 !important;
     padding: 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 1020px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .diploma-frame-outer {
+    padding: 4px !important;
+    border-width: 2px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .diploma-frame-inner {
+    padding: 1.5rem 2rem 2rem 2rem !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .diploma-watermark svg {
+    width: 320px !important;
+    height: 320px !important;
+  }
+
+  .diploma-header {
+    margin-bottom: 0.65rem !important;
+  }
+
+  .diploma-logo-mark {
+    margin-bottom: 0.25rem !important;
+  }
+
+  .diploma-logo-mark svg {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .diploma-issuer {
+    font-size: 0.68rem !important;
+    margin-bottom: 0.2rem !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  .diploma-title {
+    font-size: 1.95rem !important;
+    margin-bottom: 0.15rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .diploma-subtitle {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  .diploma-divider-line {
+    width: 100px !important;
+    height: 1.5px !important;
+    margin: 0.5rem auto 0.75rem auto !important;
+  }
+
+  .diploma-body {
+    margin-bottom: 1.15rem !important;
+  }
+
+  .diploma-present-text {
+    font-size: 0.82rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .diploma-recipient-name {
+    font-size: 1.75rem !important;
+    margin-bottom: 0.25rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .diploma-team-roster {
+    font-size: 0.72rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .diploma-achievement-statement {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+
+  .diploma-project-card {
+    padding: 0.4rem 1.25rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+
+  .diploma-project-title {
+    font-size: 1.15rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  .diploma-track-tag {
+    font-size: 0.65rem !important;
+  }
+
+  .diploma-footer-grid {
+    margin-bottom: 1rem !important;
+    gap: 1rem !important;
+    padding: 0 1rem !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .sig-script {
+    font-size: 1.4rem !important;
+    margin-bottom: 0.15rem !important;
+  }
+
+  .sig-line {
+    margin: 0.2rem auto 0.25rem auto !important;
+    max-width: 140px !important;
+  }
+
+  .sig-name {
+    font-size: 0.75rem !important;
+  }
+
+  .sig-title {
+    font-size: 0.62rem !important;
+  }
+
+  .cert-gold-seal {
+    margin-bottom: 0.15rem !important;
+  }
+
+  .cert-gold-seal svg {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .seal-caption {
+    font-size: 0.52rem !important;
+  }
+
+  .diploma-audit-strip {
+    margin: 0 -2rem -2rem -2rem !important;
+    padding: 0.6rem 2rem !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .audit-label {
+    font-size: 0.56rem !important;
+  }
+
+  .audit-value {
+    font-size: 0.7rem !important;
+  }
+
+  .qr-item svg {
+    width: 20px !important;
+    height: 20px !important;
   }
 }
 
