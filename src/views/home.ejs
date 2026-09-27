@@ -25,7 +25,7 @@
   <!-- Hero Primary Actions -->
   <div class="home-hero-actions">
     <a href="/projects" class="btn btn-primary btn-lg">
-      Explore 41 Submissions →
+      Explore <%= stats.projectCount || 41 %> Submissions →
     </a>
     <a href="/vote" class="btn btn-secondary btn-lg">
       Community Ballot
@@ -166,7 +166,7 @@
         <div class="section-kicker">SHOWCASE ENTRIES</div>
         <h2 class="section-title-large">Featured Submissions</h2>
       </div>
-      <a href="/projects" class="section-link-inline">Browse all 41 entries →</a>
+      <a href="/projects" class="section-link-inline">Browse all <%= stats.projectCount || 41 %> entries →</a>
     </div>
 
     <div class="featured-preview-grid">
@@ -202,7 +202,7 @@
     <div class="timeline-step step-done">
       <div class="timeline-dot">✓</div>
       <div class="timeline-title">2. Submission Deadline</div>
-      <div class="timeline-desc">Strict deadline enforcement (HTTP 403 on late)</div>
+      <div class="timeline-desc">Strict deadline enforcement across all tracks</div>
       <div class="timeline-date">March 1, 2026 · 6:00 PM UTC</div>
     </div>
     <div class="timeline-step step-active">

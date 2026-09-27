@@ -231,10 +231,19 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
   // 8. Download Generated Credentials as CSV
   fastify.get('/api/organizer/teams/credentials.csv', {
     preHandler: [requireRole(['organizer', 'admin'])],
-  }, async (_req: FastifyRequest, reply: FastifyReply) => {
+  }, async (req: FastifyRequest, reply: FastifyReply) => {
     const { getQualifiedTeamsWithCredentials } = await import('../db/queries.js');
     const teams = getQualifiedTeamsWithCredentials();
     const config = (await import('../config.js')).config;
+
+    logAuditEvent({
+      actorId: req.user!.userId,
+      actorRole: req.user!.role,
+      action: 'CREDENTIALS_CSV_DOWNLOADED',
+      resourceType: 'credentials',
+      payload: { count: teams.length },
+      ipAddress: req.ip,
+    });
 
     const headers = ['team_id', 'team_name', 'track_name', 'user_id', 'leader_name', 'leader_email', 'temporary_password', 'login_url'];
     const rows = [headers.join(',')];
@@ -279,6 +288,17 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     if (!body || !body.url) return reply.code(400).send({ error: 'Webhook URL is required' });
     const { createWebhook } = await import('../db/queries.js');
     const id = createWebhook(body.url, body.eventTypes || 'all', body.secret);
+
+    logAuditEvent({
+      actorId: req.user!.userId,
+      actorRole: req.user!.role,
+      action: 'WEBHOOK_CREATED',
+      resourceType: 'webhook',
+      resourceId: id,
+      payload: { url: body.url },
+      ipAddress: req.ip,
+    });
+
     return reply.code(201).send({ success: true, id, message: 'Webhook registered successfully' });
   });
 
@@ -287,6 +307,17 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
   }, async (req, reply: FastifyReply) => {
     const { deleteWebhook } = await import('../db/queries.js');
     const deleted = deleteWebhook(req.params.id);
+
+    logAuditEvent({
+      actorId: req.user!.userId,
+      actorRole: req.user!.role,
+      action: 'WEBHOOK_DELETED',
+      resourceType: 'webhook',
+      resourceId: req.params.id,
+      payload: { success: deleted },
+      ipAddress: req.ip,
+    });
+
     return reply.send({ success: deleted });
   });
 }

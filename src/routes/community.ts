@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'node:crypto';
-import { execute, getEvent, getProjectsForComparison, isVotingClosed, queryAll, queryOne } from '../db/index.js';
+import { execute, getAllTracks, getEvent, getProjectsForComparison, isVotingClosed, queryAll, queryOne } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
 
 // Sliding-window rate limiter in memory (resets on server restart, complemented by SQLite unique constraint)
@@ -29,6 +29,7 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
     const event = getEvent();
     const votingClosed = isVotingClosed(event);
     const projects = getProjectsForComparison();
+    const tracks = getAllTracks();
 
     // Deterministic Fisher-Yates hash shuffle per visitor session to eliminate presentation order bias
     const seed = req.user?.token || req.ip || 'default_seed';
@@ -39,6 +40,7 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
     });
 
     const userVotedProjectIds: string[] = [];
+    let userTeamProjectId: string | null = null;
     if (req.user) {
       const userHash = hashVoterIdentifier(req.user.userId);
       const votes = queryAll<{ project_id: string }>(
@@ -47,16 +49,30 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
         req.user.userId
       );
       for (const v of votes) userVotedProjectIds.push(v.project_id);
+
+      const teamMember = queryOne<{ team_id: string }>(
+        'SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1',
+        req.user.userId
+      );
+      if (teamMember) {
+        const teamProj = queryOne<{ id: string }>(
+          'SELECT id FROM projects WHERE team_id = ? LIMIT 1',
+          teamMember.team_id
+        );
+        if (teamProj) userTeamProjectId = teamProj.id;
+      }
     }
 
     return reply.view('voting.ejs', {
       title: 'Community Voting — DOGFOOD 2026',
       projects: shuffled,
+      tracks,
       event,
       user: req.user,
       isVotingClosed: votingClosed,
       userVotedProjectId: userVotedProjectIds[0] || null,
       userVotedProjectIds,
+      userTeamProjectId,
     });
   });
 

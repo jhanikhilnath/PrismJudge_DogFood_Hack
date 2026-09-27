@@ -122,7 +122,10 @@
               data-inno="<%= crit.innovation || 3 %>"
               data-imp="<%= crit.impact || 3 %>"
               data-comment="<%= (p.score && p.score.comment) ? p.score.comment : '' %>"
-              onclick="openScoringModal(this.dataset.projectId, this.dataset.projectTitle, this.dataset.func, this.dataset.qual, this.dataset.inno, this.dataset.imp, this.dataset.comment)"
+              data-summary="<%= (p.summary || '').replace(/"/g, '&quot;') %>"
+              data-track="<%= p.track_name || 'General' %>"
+              data-repo="<%= p.repo_url || '' %>"
+              onclick="openScoringModal(this.dataset.projectId, this.dataset.projectTitle, this.dataset.func, this.dataset.qual, this.dataset.inno, this.dataset.imp, this.dataset.comment, this.dataset.summary, this.dataset.track, this.dataset.repo)"
             >
               <%= p.hasScored ? 'Update' : 'Evaluate' %>
             </button>
@@ -141,8 +144,20 @@
 <div id="scoring-modal" class="modal-backdrop" style="display: none;" onclick="if(event.target===this) closeModal()">
   <div class="modal-dialog">
     <div class="modal-header">
-      <h2 id="modal-project-title" class="modal-title">Evaluate Project</h2>
+      <div>
+        <h2 id="modal-project-title" class="modal-title">Evaluate Project</h2>
+        <div id="modal-project-meta" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 0.2rem;"></div>
+      </div>
       <button type="button" class="btn-close-modal" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- Project Context Panel -->
+    <div id="modal-project-card" style="background: var(--bg-surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+      <p id="modal-project-summary" style="font-size: 0.84rem; color: var(--text-secondary); margin: 0 0 0.5rem 0; line-height: 1.45;"></p>
+      <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.8rem;">
+        <a id="modal-project-detail-link" href="#" target="_blank" style="color: var(--accent-blue); font-weight: 600; text-decoration: none;">View Submission Details ↗</a>
+        <a id="modal-project-repo-link" href="#" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; display: none;">Source Repository ↗</a>
+      </div>
     </div>
     
     <form id="scoring-form" onsubmit="submitScore(event)">
@@ -150,7 +165,7 @@
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-          <label class="form-label" style="margin: 0;">Functionality (40% Weight)</label>
+          <label class="form-label" for="score-func" style="margin: 0;">Functionality (40% Weight)</label>
           <span id="val-func" class="rubric-val-chip">3</span>
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-func" class="rubric-input" data-weight="0.4" oninput="document.getElementById('val-func').textContent = this.value; updateModalScore();">
@@ -163,7 +178,7 @@
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-          <label class="form-label" style="margin: 0;">Quality &amp; Architecture (30% Weight)</label>
+          <label class="form-label" for="score-qual" style="margin: 0;">Quality &amp; Architecture (30% Weight)</label>
           <span id="val-qual" class="rubric-val-chip">3</span>
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-qual" class="rubric-input" data-weight="0.3" oninput="document.getElementById('val-qual').textContent = this.value; updateModalScore();">
@@ -176,7 +191,7 @@
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-          <label class="form-label" style="margin: 0;">Innovation (20% Weight)</label>
+          <label class="form-label" for="score-inno" style="margin: 0;">Innovation (20% Weight)</label>
           <span id="val-inno" class="rubric-val-chip">3</span>
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-inno" class="rubric-input" data-weight="0.2" oninput="document.getElementById('val-inno').textContent = this.value; updateModalScore();">
@@ -189,7 +204,7 @@
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-          <label class="form-label" style="margin: 0;">Impact &amp; Practicality (10% Weight)</label>
+          <label class="form-label" for="score-imp" style="margin: 0;">Impact &amp; Practicality (10% Weight)</label>
           <span id="val-imp" class="rubric-val-chip">3</span>
         </div>
         <input type="range" min="1" max="5" step="1" value="3" id="score-imp" class="rubric-input" data-weight="0.1" oninput="document.getElementById('val-imp').textContent = this.value; updateModalScore();">
@@ -230,9 +245,19 @@
 <script>
   let currentStatusFilter = 'all';
 
-  function openScoringModal(projectId, projectTitle, func = 3, qual = 3, inno = 3, imp = 3, comment = '') {
+  function openScoringModal(projectId, projectTitle, func = 3, qual = 3, inno = 3, imp = 3, comment = '', summary = '', track = '', repo = '') {
     document.getElementById('modal-project-id').value = projectId;
     document.getElementById('modal-project-title').textContent = 'Evaluate ' + projectTitle;
+    document.getElementById('modal-project-meta').textContent = (track ? track + ' · ' : '') + projectId.toUpperCase();
+    document.getElementById('modal-project-summary').textContent = summary || 'No summary provided.';
+    document.getElementById('modal-project-detail-link').href = '/projects/' + projectId;
+    const repoLink = document.getElementById('modal-project-repo-link');
+    if (repo && repoLink) {
+      repoLink.href = repo;
+      repoLink.style.display = 'inline';
+    } else if (repoLink) {
+      repoLink.style.display = 'none';
+    }
     
     document.getElementById('score-func').value = func;
     document.getElementById('val-func').textContent = func;

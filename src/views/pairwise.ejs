@@ -170,6 +170,7 @@
 
   // Keyboard navigation shortcuts
   document.addEventListener('keydown', function(e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     // Avoid triggering when user is in input/textarea
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 

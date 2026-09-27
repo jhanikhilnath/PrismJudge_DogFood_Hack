@@ -35,7 +35,10 @@ export function generateLeaderboard(): LeaderboardEntry[] {
     const pairwiseRank = pt ? pt.rank : 0;
 
     // Composite: 80% normalized score + 20% pairwise bonus (centered around 70)
-    const composite = rating.normalizedScore * 0.8 + (70 + pairwiseSkill * 10) * 0.2;
+    // If a project has 0 reviews, its composite score is strictly 0.00
+    const composite = rating.reviewCount === 0
+      ? 0
+      : rating.normalizedScore * 0.8 + (70 + pairwiseSkill * 10) * 0.2;
 
     return {
       ...rating,
@@ -106,5 +109,5 @@ export function generateCSVExport(): string {
     );
   }
 
-  return rows.join('\n');
+  return rows.join('\r\n');
 }

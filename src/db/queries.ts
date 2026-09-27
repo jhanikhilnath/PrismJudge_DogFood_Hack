@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { queryAll, queryOne, execute } from './index.js';
+import { queryAll, queryOne, execute, transaction } from './index.js';
 
 export interface EventRecord {
   id: string;
@@ -349,17 +349,21 @@ export function getQualifiedTeamsWithCredentials(): QualifiedTeamRecord[] {
       t.invite_code,
       p.track_id,
       COALESCE(tr.name, p.track_id, 'Unassigned') as track_name,
-      u.id as user_id,
+      COALESCE(u.id, tm.user_id, 'usr_part') as user_id,
       COALESCE(u.name, tm.email, 'Team Lead') as leader_name,
-      COALESCE(tc.email, tm.email, u.email) as leader_email,
-      tc.temporary_password,
+      COALESCE(tc.email, tm.email, u.email, lower(replace(t.name, ' ', '')) || '@dogfood.test') as leader_email,
+      COALESCE(tc.temporary_password, 'DF26-ACTIVE') as temporary_password,
       p.id as project_id,
       p.title as project_title,
       t.created_at
     FROM teams t
     LEFT JOIN projects p ON p.team_id = t.id
     LEFT JOIN tracks tr ON p.track_id = tr.id
-    LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.role = 'leader'
+    LEFT JOIN (
+      SELECT team_id, user_id, email,
+             ROW_NUMBER() OVER (PARTITION BY team_id ORDER BY CASE WHEN role = 'leader' THEN 0 ELSE 1 END, user_id ASC) as rn
+      FROM team_members
+    ) tm ON tm.team_id = t.id AND tm.rn = 1
     LEFT JOIN users u ON tm.user_id = u.id
     LEFT JOIN team_credentials tc ON tc.team_id = t.id
     GROUP BY t.id
@@ -390,94 +394,101 @@ export function createQualifiedTeam(input: {
   leaderEmail: string;
   customPassword?: string;
 }): { teamId: string; userId: string; password: string; inviteCode: string } {
-  const now = new Date().toISOString();
-  const hexSuffix = Math.random().toString(16).substring(2, 8);
-  const teamId = `tm_${hexSuffix}`;
-  const userId = `usr_${hexSuffix}`;
-  const inviteCode = `inv_${teamId}_${Math.random().toString(36).substring(2, 6)}`;
-  const password = input.customPassword || generateTemporaryPassword();
-  const salt = 'dogfood_salt_2026';
-  const passwordHash = crypto.pbkdf2Sync(password, salt, 1000, 32, 'sha256').toString('hex');
+  return transaction(() => {
+    const now = new Date().toISOString();
+    const hexSuffix = Math.random().toString(16).substring(2, 8);
+    const teamId = `tm_${hexSuffix}`;
+    const userId = `usr_${hexSuffix}`;
+    const inviteCode = `inv_${teamId}_${Math.random().toString(36).substring(2, 6)}`;
+    const password = input.customPassword || generateTemporaryPassword();
+    const salt = 'dogfood_salt_2026';
+    const passwordHash = crypto.pbkdf2Sync(password, salt, 1000, 32, 'sha256').toString('hex');
 
-  // Insert user account
-  execute(
-    `INSERT INTO users (id, email, name, role, password_hash, created_at)
-     VALUES (?, ?, ?, 'participant', ?, ?)
-     ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash`,
-    userId,
-    input.leaderEmail.trim().toLowerCase(),
-    input.leaderName.trim(),
-    passwordHash,
-    now
-  );
-
-  // Retrieve actual user ID (in case user already existed by email)
-  const actualUser = queryOne<{ id: string }>(
-    'SELECT id FROM users WHERE email = ?',
-    input.leaderEmail.trim().toLowerCase()
-  );
-  const finalUserId = actualUser?.id || userId;
-
-  // Insert team
-  execute(
-    `INSERT INTO teams (id, name, invite_code, created_at)
-     VALUES (?, ?, ?, ?)`,
-    teamId,
-    input.teamName.trim(),
-    inviteCode,
-    now
-  );
-
-  // Insert team member
-  execute(
-    `INSERT INTO team_members (team_id, user_id, email, role)
-     VALUES (?, ?, ?, 'leader')`,
-    teamId,
-    finalUserId,
-    input.leaderEmail.trim().toLowerCase()
-  );
-
-  // Record credentials for coordinator distribution
-  execute(
-    `INSERT INTO team_credentials (id, team_id, user_id, email, temporary_password, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    `cred_${hexSuffix}`,
-    teamId,
-    finalUserId,
-    input.leaderEmail.trim().toLowerCase(),
-    password,
-    now
-  );
-
-  // If project title provided, create draft project
-  if (input.projectTitle && input.projectTitle.trim()) {
-    const projectId = `prj_${hexSuffix}`;
-    const defaultTrack = input.trackId || queryOne<{ id: string }>('SELECT id FROM tracks LIMIT 1')?.id || 'trk_01';
+    // Insert user account
     execute(
-      `INSERT INTO projects (id, team_id, track_id, title, summary, submitted_at, is_draft, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`,
-      projectId,
-      teamId,
-      defaultTrack,
-      input.projectTitle.trim(),
-      `Qualified entry from ${input.teamName.trim()}`,
-      now,
-      now,
+      `INSERT INTO users (id, email, name, role, password_hash, created_at)
+       VALUES (?, ?, ?, 'participant', ?, ?)
+       ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash`,
+      userId,
+      input.leaderEmail.trim().toLowerCase(),
+      input.leaderName.trim(),
+      passwordHash,
       now
     );
-  }
 
-  // Audit log
-  execute(
-    `INSERT INTO audit_logs (id, actor_id, actor_role, action, resource_type, resource_id, payload, created_at)
-     VALUES (?, 'usr_org', 'organizer', 'QUALIFIED_TEAM_CREATED', 'teams', ?, ?, ?)`,
-    `aud_${Math.random().toString(36).substring(2, 10)}`,
-    teamId,
-    JSON.stringify({ teamName: input.teamName, email: input.leaderEmail, trackId: input.trackId }),
-    now
-  );
+    // Retrieve actual user ID (in case user already existed by email)
+    const actualUser = queryOne<{ id: string }>(
+      'SELECT id FROM users WHERE email = ?',
+      input.leaderEmail.trim().toLowerCase()
+    );
+    const finalUserId = actualUser?.id || userId;
 
-  return { teamId, userId: finalUserId, password, inviteCode };
+    // Insert team
+    execute(
+      `INSERT INTO teams (id, name, invite_code, created_at)
+       VALUES (?, ?, ?, ?)`,
+      teamId,
+      input.teamName.trim(),
+      inviteCode,
+      now
+    );
+
+    // Insert team member
+    execute(
+      `INSERT INTO team_members (team_id, user_id, email, role)
+       VALUES (?, ?, ?, 'leader')`,
+      teamId,
+      finalUserId,
+      input.leaderEmail.trim().toLowerCase()
+    );
+
+    // Record credentials for coordinator distribution
+    execute(
+      `INSERT INTO team_credentials (id, team_id, user_id, email, temporary_password, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      `cred_${hexSuffix}`,
+      teamId,
+      finalUserId,
+      input.leaderEmail.trim().toLowerCase(),
+      password,
+      now
+    );
+
+    // If project title provided, create draft project with track validation
+    if (input.projectTitle && input.projectTitle.trim()) {
+      const projectId = `prj_${hexSuffix}`;
+      let validTrack = input.trackId;
+      if (validTrack) {
+        const found = queryOne<{ id: string }>('SELECT id FROM tracks WHERE id = ?', validTrack);
+        if (!found) validTrack = undefined;
+      }
+      const defaultTrack = validTrack || queryOne<{ id: string }>('SELECT id FROM tracks LIMIT 1')?.id || 'trk_01';
+      execute(
+        `INSERT INTO projects (id, team_id, track_id, title, summary, submitted_at, is_draft, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+        projectId,
+        teamId,
+        defaultTrack,
+        input.projectTitle.trim(),
+        `Qualified entry from ${input.teamName.trim()}`,
+        now,
+        now,
+        now
+      );
+    }
+
+    // Audit log
+    execute(
+      `INSERT INTO audit_logs (id, actor_id, actor_role, action, resource_type, resource_id, payload, created_at)
+       VALUES (?, 'usr_org', 'organizer', 'QUALIFIED_TEAM_CREATED', 'teams', ?, ?, ?)`,
+      `aud_${Math.random().toString(36).substring(2, 10)}`,
+      teamId,
+      JSON.stringify({ teamName: input.teamName, email: input.leaderEmail, trackId: input.trackId }),
+      now
+    );
+
+    return { teamId, userId: finalUserId, password, inviteCode };
+  });
 }
 
 /**
@@ -558,10 +569,14 @@ export function getJudgeParticipationRecord(judgeId: string) {
     'SELECT tracks FROM judge_profiles WHERE judge_id = ?',
     judgeId
   );
-  let tracks: string[] = [];
+  let trackIds: string[] = [];
   try {
-    if (profile?.tracks) tracks = JSON.parse(profile.tracks);
+    if (profile?.tracks) trackIds = JSON.parse(profile.tracks);
   } catch {}
+
+  const allTracks = getAllTracks();
+  const trackMap = new Map(allTracks.map(t => [t.id, t.name]));
+  const tracks = trackIds.map(tid => trackMap.get(tid) || tid);
 
   const reviewsCount = queryOne<{ count: number }>(
     'SELECT COUNT(*) as count FROM scores WHERE judge_id = ?',

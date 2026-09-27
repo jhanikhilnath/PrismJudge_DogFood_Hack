@@ -120,6 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    const spotlightCard = document.getElementById('spotlight-card');
+    if (spotlightCard) {
+      spotlightCard.style.display = (query || track) ? 'none' : '';
+    }
+
     if (noProjectsBanner) {
       noProjectsBanner.style.display = visibleCount === 0 ? 'block' : 'none';
     }

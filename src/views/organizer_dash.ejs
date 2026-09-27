@@ -33,6 +33,11 @@
     <div class="metric-subtext">Four-criterion rubric evaluations</div>
   </div>
   <div class="metric-card">
+    <div class="metric-header">COMMUNITY BALLOTS</div>
+    <div class="metric-value"><%= typeof counts.votes !== 'undefined' ? counts.votes : 0 %></div>
+    <div class="metric-subtext">Verified community &amp; peer ballots cast</div>
+  </div>
+  <div class="metric-card">
     <div class="metric-header">GLOBAL PRIOR MEAN</div>
     <div class="metric-value">
       <%= normalization.globalMean %> <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">/ 5.0</span>
@@ -96,17 +101,18 @@
 <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem;">
   <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
     <div>
-      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem;">Evaluator Calibration &amp; Severity Index</h3>
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem;">Juror Calibration &amp; Severity Index</h3>
       <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Automated balance adjustments per evaluator across 30 jurors</p>
     </div>
     <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);">30 Active Evaluators</span>
   </div>
 
-  <div style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+  <div style="max-height: 280px; overflow: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
     <table class="data-table" style="font-size: 0.82rem;">
       <thead>
         <tr>
           <th>Judge ID</th>
+          <th>Evaluator</th>
           <th style="text-align: center;">Reviews</th>
           <th>Raw Average</th>
           <th>Severity Offset</th>
@@ -116,9 +122,17 @@
         </tr>
       </thead>
       <tbody>
-        <% Object.entries(normalization.judgeStats).forEach(([jid, j]) => { %>
+        <% 
+          const judgeMap = new Map((typeof judgeProgress !== 'undefined' ? judgeProgress : []).map(jp => [jp.id, jp]));
+          Object.entries(normalization.judgeStats).forEach(([jid, j]) => { 
+            const jInfo = judgeMap.get(jid);
+        %>
           <tr>
             <td style="font-family: var(--font-mono); font-weight: 600;"><%= jid %></td>
+            <td>
+              <div style="font-weight: 600; color: var(--text-primary);"><%= jInfo ? jInfo.name : jid %></div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);"><%= (jInfo && jInfo.email) ? jInfo.email : '' %></div>
+            </td>
             <td style="text-align: center; font-family: var(--font-mono);"><%= j.reviewCount %></td>
             <td style="font-family: var(--font-mono);"><%= j.sampleMean.toFixed(2) %></td>
             <td style="font-family: var(--font-mono); color: <%= j.severity < -0.2 ? '#DC2626' : (j.severity > 0.2 ? '#2563EB' : 'var(--text-secondary)') %>;">
