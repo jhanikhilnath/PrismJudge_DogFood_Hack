@@ -135,6 +135,25 @@ export function initializeSchema(): void {
       created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS team_credentials (
+      id TEXT PRIMARY KEY,
+      team_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      email TEXT NOT NULL,
+      temporary_password TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS webhooks (
+      id TEXT PRIMARY KEY,
+      url TEXT NOT NULL,
+      event_types TEXT NOT NULL DEFAULT 'all',
+      secret TEXT,
+      created_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_projects_track ON projects(track_id);
     CREATE INDEX IF NOT EXISTS idx_projects_team ON projects(team_id);
     CREATE INDEX IF NOT EXISTS idx_scores_judge ON scores(judge_id);
@@ -142,5 +161,6 @@ export function initializeSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
     CREATE INDEX IF NOT EXISTS idx_team_members_user ON team_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_team_credentials_team ON team_credentials(team_id);
   `);
 }

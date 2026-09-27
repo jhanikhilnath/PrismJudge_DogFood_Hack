@@ -31,3 +31,4 @@ skills-lock.json
 
 # Given folder (we copied run.py & fixtures.json to repo root)
 given/
+comps/

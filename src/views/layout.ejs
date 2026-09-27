@@ -29,22 +29,27 @@
       </div>
 
       <!-- Role-Based Navigation: Only show tabs relevant to the user's role -->
+      <% const currentUser = (typeof user !== 'undefined' && user) ? user : null; %>
       <nav class="main-nav">
         <a href="/" class="nav-link" data-path="/">Home</a>
         <a href="/projects" class="nav-link" data-path="/projects">Gallery</a>
 
-        <% if (!user || user.role === 'participant' || user.role === 'organizer') { %>
+        <% if (!currentUser || currentUser.role === 'participant') { %>
           <a href="/projects/new" class="nav-link" data-path="/projects/new">Submit</a>
+        <% } %>
+
+        <% if (currentUser && (currentUser.role === 'organizer' || currentUser.role === 'admin')) { %>
+          <a href="/organizer/teams" class="nav-link" data-path="/organizer/teams">Teams</a>
         <% } %>
 
         <a href="/vote" class="nav-link" data-path="/vote">Ballot</a>
 
-        <% if (user && (user.role === 'judge' || user.role === 'organizer')) { %>
+        <% if (currentUser && currentUser.role === 'judge') { %>
           <a href="/judge/dashboard" class="nav-link" data-path="/judge/dashboard">Judging</a>
           <a href="/judge/pairwise" class="nav-link" data-path="/judge/pairwise">Pairwise</a>
         <% } %>
 
-        <% if (user && user.role === 'organizer') { %>
+        <% if (currentUser && (currentUser.role === 'organizer' || currentUser.role === 'admin')) { %>
           <a href="/organizer/dashboard" class="nav-link" data-path="/organizer/dashboard">Console</a>
         <% } %>
       </nav>

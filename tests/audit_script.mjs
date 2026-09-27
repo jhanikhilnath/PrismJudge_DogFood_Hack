@@ -24,8 +24,8 @@ const ROLES = {
   organizer: {
     name: 'Organizer (session=org_7f2a)',
     cookie: 'session=org_7f2a',
-    expectedNav: ['Home', 'Gallery', 'Submit', 'Ballot', 'Judging', 'Pairwise', 'Console'],
-    forbiddenNav: [],
+    expectedNav: ['Home', 'Gallery', 'Teams', 'Ballot', 'Console'],
+    forbiddenNav: ['Submit', 'Pairwise'],
   },
 };
 
@@ -40,6 +40,7 @@ const ROUTES = [
   { path: '/judge/dashboard', name: 'Judge Dashboard' },
   { path: '/judge/pairwise', name: 'Pairwise Arena' },
   { path: '/organizer/dashboard', name: 'Organizer Console' },
+  { path: '/organizer/teams', name: 'Qualified Teams' },
   { path: '/api/export.csv', name: 'CSV Export' },
   { path: '/api/organizer/audit', name: 'Audit Trail' },
   { path: '/api/judge/scores', name: 'Judge Scores API' },
@@ -140,7 +141,7 @@ async function runAudit() {
             `status=${res.statusCode}`
           );
         }
-      } else if (route.path === '/organizer/dashboard' || route.path === '/api/export.csv' || route.path === '/api/organizer/audit') {
+      } else if (route.path === '/organizer/dashboard' || route.path === '/organizer/teams' || route.path === '/api/export.csv' || route.path === '/api/organizer/audit') {
         if (roleKey === 'organizer') {
           check(
             `[${roleKey}] ${route.path} accessible`,

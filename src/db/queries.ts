@@ -1,4 +1,5 @@
-import { queryAll, queryOne } from './index.js';
+import crypto from 'node:crypto';
+import { queryAll, queryOne, execute } from './index.js';
 
 export interface EventRecord {
   id: string;
@@ -321,3 +322,256 @@ export function getRecentAuditLogs(limit = 15): AuditLogRecord[] {
     limit
   );
 }
+
+export interface QualifiedTeamRecord {
+  team_id: string;
+  team_name: string;
+  invite_code: string;
+  track_id: string | null;
+  track_name: string | null;
+  user_id: string | null;
+  leader_name: string | null;
+  leader_email: string | null;
+  temporary_password: string | null;
+  project_id: string | null;
+  project_title: string | null;
+  created_at: string;
+}
+
+/**
+ * Retrieve all qualified teams with their generated login credentials and project status.
+ */
+export function getQualifiedTeamsWithCredentials(): QualifiedTeamRecord[] {
+  return queryAll<QualifiedTeamRecord>(`
+    SELECT 
+      t.id as team_id,
+      t.name as team_name,
+      t.invite_code,
+      p.track_id,
+      COALESCE(tr.name, p.track_id, 'Unassigned') as track_name,
+      u.id as user_id,
+      COALESCE(u.name, tm.email, 'Team Lead') as leader_name,
+      COALESCE(tc.email, tm.email, u.email) as leader_email,
+      tc.temporary_password,
+      p.id as project_id,
+      p.title as project_title,
+      t.created_at
+    FROM teams t
+    LEFT JOIN projects p ON p.team_id = t.id
+    LEFT JOIN tracks tr ON p.track_id = tr.id
+    LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.role = 'leader'
+    LEFT JOIN users u ON tm.user_id = u.id
+    LEFT JOIN team_credentials tc ON tc.team_id = t.id
+    GROUP BY t.id
+    ORDER BY t.created_at DESC, t.id ASC
+  `);
+}
+
+/**
+ * Helper to generate a human-memorable, secure temporary password.
+ */
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `DF26-${code}`;
+}
+
+/**
+ * Create a new qualified team, generate a leader account with credentials, and link initial project.
+ */
+export function createQualifiedTeam(input: {
+  teamName: string;
+  trackId?: string;
+  projectTitle?: string;
+  leaderName: string;
+  leaderEmail: string;
+  customPassword?: string;
+}): { teamId: string; userId: string; password: string; inviteCode: string } {
+  const now = new Date().toISOString();
+  const hexSuffix = Math.random().toString(16).substring(2, 8);
+  const teamId = `tm_${hexSuffix}`;
+  const userId = `usr_${hexSuffix}`;
+  const inviteCode = `inv_${teamId}_${Math.random().toString(36).substring(2, 6)}`;
+  const password = input.customPassword || generateTemporaryPassword();
+  const salt = 'dogfood_salt_2026';
+  const passwordHash = crypto.pbkdf2Sync(password, salt, 1000, 32, 'sha256').toString('hex');
+
+  // Insert user account
+  execute(
+    `INSERT INTO users (id, email, name, role, password_hash, created_at)
+     VALUES (?, ?, ?, 'participant', ?, ?)
+     ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash`,
+    userId,
+    input.leaderEmail.trim().toLowerCase(),
+    input.leaderName.trim(),
+    passwordHash,
+    now
+  );
+
+  // Retrieve actual user ID (in case user already existed by email)
+  const actualUser = queryOne<{ id: string }>(
+    'SELECT id FROM users WHERE email = ?',
+    input.leaderEmail.trim().toLowerCase()
+  );
+  const finalUserId = actualUser?.id || userId;
+
+  // Insert team
+  execute(
+    `INSERT INTO teams (id, name, invite_code, created_at)
+     VALUES (?, ?, ?, ?)`,
+    teamId,
+    input.teamName.trim(),
+    inviteCode,
+    now
+  );
+
+  // Insert team member
+  execute(
+    `INSERT INTO team_members (team_id, user_id, email, role)
+     VALUES (?, ?, ?, 'leader')`,
+    teamId,
+    finalUserId,
+    input.leaderEmail.trim().toLowerCase()
+  );
+
+  // Record credentials for coordinator distribution
+  execute(
+    `INSERT INTO team_credentials (id, team_id, user_id, email, temporary_password, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    `cred_${hexSuffix}`,
+    teamId,
+    finalUserId,
+    input.leaderEmail.trim().toLowerCase(),
+    password,
+    now
+  );
+
+  // If project title provided, create draft project
+  if (input.projectTitle && input.projectTitle.trim()) {
+    const projectId = `prj_${hexSuffix}`;
+    const defaultTrack = input.trackId || queryOne<{ id: string }>('SELECT id FROM tracks LIMIT 1')?.id || 'trk_01';
+    execute(
+      `INSERT INTO projects (id, team_id, track_id, title, summary, submitted_at, is_draft, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+      projectId,
+      teamId,
+      defaultTrack,
+      input.projectTitle.trim(),
+      `Qualified entry from ${input.teamName.trim()}`,
+      now,
+      now,
+      now
+    );
+  }
+
+  // Audit log
+  execute(
+    `INSERT INTO audit_logs (id, actor_id, actor_role, action, resource_type, resource_id, payload, created_at)
+     VALUES (?, 'usr_org', 'organizer', 'QUALIFIED_TEAM_CREATED', 'teams', ?, ?, ?)`,
+    `aud_${Math.random().toString(36).substring(2, 10)}`,
+    teamId,
+    JSON.stringify({ teamName: input.teamName, email: input.leaderEmail, trackId: input.trackId }),
+    now
+  );
+
+  return { teamId, userId: finalUserId, password, inviteCode };
+}
+
+/**
+ * Bulk import multiple qualified teams from parsed rows.
+ */
+export function bulkImportQualifiedTeams(rows: Array<{
+  teamName: string;
+  trackId?: string;
+  projectTitle?: string;
+  leaderName: string;
+  leaderEmail: string;
+}>): Array<{ teamId: string; teamName: string; leaderEmail: string; userId: string; password: string }> {
+  const results: Array<{ teamId: string; teamName: string; leaderEmail: string; userId: string; password: string }> = [];
+
+  for (const row of rows) {
+    if (!row.teamName || !row.leaderEmail) continue;
+    const res = createQualifiedTeam({
+      teamName: row.teamName,
+      trackId: row.trackId,
+      projectTitle: row.projectTitle,
+      leaderName: row.leaderName || row.teamName,
+      leaderEmail: row.leaderEmail,
+    });
+    results.push({
+      teamId: res.teamId,
+      teamName: row.teamName,
+      leaderEmail: row.leaderEmail,
+      userId: res.userId,
+      password: res.password,
+    });
+  }
+
+  return results;
+}
+
+export interface WebhookRecord {
+  id: string;
+  url: string;
+  event_types: string;
+  secret: string | null;
+  created_at: string;
+}
+
+export function getWebhooks(): WebhookRecord[] {
+  return queryAll<WebhookRecord>('SELECT id, url, event_types, secret, created_at FROM webhooks ORDER BY created_at DESC');
+}
+
+export function createWebhook(url: string, eventTypes = 'all', secret?: string): string {
+  const id = `whk_${Math.random().toString(36).substring(2, 10)}`;
+  const now = new Date().toISOString();
+  execute(
+    'INSERT INTO webhooks (id, url, event_types, secret, created_at) VALUES (?, ?, ?, ?, ?)',
+    id,
+    url,
+    eventTypes,
+    secret || null,
+    now
+  );
+  return id;
+}
+
+export function deleteWebhook(id: string): boolean {
+  const res = execute('DELETE FROM webhooks WHERE id = ?', id);
+  return Number(res.changes) > 0;
+}
+
+/**
+ * Retrieve judge participation record for signed credential issuance.
+ */
+export function getJudgeParticipationRecord(judgeId: string) {
+  const judge = queryOne<{ id: string; name: string; email: string; role: string; created_at: string }>(
+    "SELECT id, name, email, role, created_at FROM users WHERE id = ? AND role = 'judge'",
+    judgeId
+  );
+  if (!judge) return null;
+
+  const profile = queryOne<{ tracks: string }>(
+    'SELECT tracks FROM judge_profiles WHERE judge_id = ?',
+    judgeId
+  );
+  let tracks: string[] = [];
+  try {
+    if (profile?.tracks) tracks = JSON.parse(profile.tracks);
+  } catch {}
+
+  const reviewsCount = queryOne<{ count: number }>(
+    'SELECT COUNT(*) as count FROM scores WHERE judge_id = ?',
+    judgeId
+  )?.count ?? 0;
+
+  return {
+    judge,
+    tracks,
+    reviewsCount,
+  };
+}
+

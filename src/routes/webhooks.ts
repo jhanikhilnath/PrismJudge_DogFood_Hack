@@ -93,7 +93,113 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     });
   });
 
-  // 3. Health Check
+  // 3. Verifiable Judge Participation Certificate (T4 Stretch)
+  fastify.get('/certificates/judge/:judgeId', async (req: FastifyRequest<{ Params: { judgeId: string } }>, reply: FastifyReply) => {
+    const { judgeId } = req.params;
+    const { getJudgeParticipationRecord } = await import('../db/queries.js');
+    const record = getJudgeParticipationRecord(judgeId);
+
+    if (!record) {
+      return reply.code(404).send({ error: 'Judge record not found' });
+    }
+
+    // A. Authentication check
+    if (!req.user) {
+      if (req.headers.accept?.includes('application/json')) {
+        return reply.code(401).send({ error: 'Unauthorized', message: 'Authentication required' });
+      }
+      return reply.redirect(`/login?redirect=/certificates/judge/${judgeId}&error=Please+sign+in+to+view+your+certificate`);
+    }
+
+    // B. Authorization check: Judge themselves or organizer/admin
+    const isStaff = req.user.role === 'organizer' || req.user.role === 'admin';
+    const isSelf = req.user.userId === judgeId;
+
+    if (!isStaff && !isSelf) {
+      if (req.headers.accept?.includes('application/json')) {
+        return reply.code(403).send({
+          error: 'Forbidden',
+          message: 'Juror commendations are private to the assigned evaluator and event organizers.',
+        });
+      }
+      return reply.code(403).view('certificate_restricted.ejs', {
+        title: 'Access Restricted — DOGFOOD 2026',
+        project: { title: `Evaluator Commendation (${record.judge.name})` },
+        user: req.user,
+      });
+    }
+
+    // Cryptographic signature
+    const payload = `judge:${record.judge.id}:${record.reviewsCount}:${record.tracks.join(',')}`;
+    const signature = crypto.createHmac('sha256', config.sessionSecret).update(payload).digest('hex');
+
+    if (req.headers.accept?.includes('application/json')) {
+      return reply.send({
+        event: 'DOGFOOD 2026',
+        credential_type: 'JUROR_COMMENDATION_RECORD',
+        judge: record.judge,
+        tracks: record.tracks,
+        reviews_count: record.reviewsCount,
+        verification: {
+          payload,
+          algorithm: 'HMAC-SHA256',
+          signature,
+          verify_url: `${config.baseUrl}/certificates/judge/${record.judge.id}/verify`,
+        },
+      });
+    }
+
+    return reply.view('judge_certificate.ejs', {
+      title: `Juror Commendation — ${record.judge.name}`,
+      judge: record.judge,
+      tracks: record.tracks,
+      reviewsCount: record.reviewsCount,
+      signature,
+      user: req.user,
+    });
+  });
+
+  // 4. Public Judge Credential Verification Endpoint
+  fastify.get('/certificates/judge/:judgeId/verify', async (req: FastifyRequest<{ Params: { judgeId: string } }>, reply: FastifyReply) => {
+    const { judgeId } = req.params;
+    const { getJudgeParticipationRecord } = await import('../db/queries.js');
+    const record = getJudgeParticipationRecord(judgeId);
+
+    if (!record) {
+      return reply.code(404).send({ verified: false, error: 'Judge record not found' });
+    }
+
+    return reply.send({
+      verified: true,
+      credential_type: 'JUROR_COMMENDATION_RECORD',
+      credential_id: `DF26-JDG-${record.judge.id.toUpperCase()}`,
+      judge_id: record.judge.id,
+      evaluator_name: record.judge.name,
+      role: 'Technical Evaluator & Juror',
+      reviews_contributed: record.reviewsCount,
+      tracks_evaluated: record.tracks,
+      status: 'AUTHENTIC_CREDENTIAL_ISSUED',
+    });
+  });
+
+  // 5. Embeddable Project Gallery Widget (T4 Stretch)
+  fastify.get('/embed/gallery', async (req: FastifyRequest, reply: FastifyReply) => {
+    const { getProjects, getAllTracks } = await import('../db/queries.js');
+    const query = req.query as { q?: string; track?: string } || {};
+    const projects = getProjects({ q: query.q, track: query.track });
+    const tracks = getAllTracks();
+
+    return reply.view('embed_gallery.ejs', {
+      title: 'DOGFOOD 2026 — Project Showcase Widget',
+      projects,
+      tracks,
+      currentTrack: query.track || '',
+      searchQuery: query.q || '',
+      user: req.user,
+    });
+  });
+
+  // 6. Health Check
   fastify.get('/health', async (_req: FastifyRequest, reply: FastifyReply) => {
     return reply.send({ status: 'ok', time: new Date().toISOString() });
   });

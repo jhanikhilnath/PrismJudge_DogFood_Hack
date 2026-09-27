@@ -77,22 +77,27 @@
   <div class="normalization-header">
     <div class="normalization-title-group">
       <span class="norm-indicator-dot"></span>
-      <h3 class="normalization-title">Empirical Bayesian Shrinkage Z-Score Normalizer</h3>
+      <h3 class="normalization-title">Fair Score Calibration System</h3>
     </div>
-    <span class="norm-pill">m = 3.0 Pseudo-Obs</span>
+    <span class="norm-pill">Active Equalization</span>
   </div>
   <p class="normalization-desc">
-    Prior parameters: <code>μ₀ = <%= normalization.globalMean %></code>, <code>σ₀ = <%= normalization.globalStd %></code>.
-    Individual judge sample variance shrinks toward the global panel prior via normal-inverse-gamma conjugate updates. Zero-variance judges (such as <code>jdg_07</code> with raw σ = 0) smoothly shrink to <code>σ_shrunk = 0.5105</code>, guaranteeing mathematical stability, eliminating division-by-zero singularities, and normalizing harsh vs generous grading.
+    Scores are automatically balanced across all 30 evaluators to neutralize strict versus lenient grading habits. Every submission is evaluated against an impartial, standardized scale.
   </p>
+  <details style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
+    <summary style="font-weight: 600; color: var(--text-secondary); outline: none;">Technical Calibration Proof &amp; Methodology</summary>
+    <div style="padding: 0.75rem; margin-top: 0.5rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-light); font-size: 0.8rem; line-height: 1.5;">
+      Uses Empirical Bayesian Normalization. Prior parameters: <code>μ₀ = <%= normalization.globalMean %></code>, <code>σ₀ = <%= normalization.globalStd %></code> (m = 3.0). Evaluator variance smoothly shrinks toward the panel prior, resolving zero-variance judges (such as <code>jdg_07</code> with raw σ = 0) to <code>σ* = 0.5105</code> without singularities.
+    </div>
+  </details>
 </div>
 
 <!-- Judge Calibration Diagnostic Panel -->
 <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem;">
   <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
     <div>
-      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem;">Juror Calibration &amp; Severity Index</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Empirical Bayesian adjustments per evaluator across 30 jurors</p>
+      <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem;">Evaluator Calibration &amp; Severity Index</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Automated balance adjustments per evaluator across 30 jurors</p>
     </div>
     <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);">30 Active Evaluators</span>
   </div>
@@ -103,10 +108,10 @@
         <tr>
           <th>Judge ID</th>
           <th style="text-align: center;">Reviews</th>
-          <th>Sample Mean</th>
-          <th>Severity (Δ)</th>
-          <th>Shrunk Mean (μ*)</th>
-          <th>Shrunk Std (σ*)</th>
+          <th>Raw Average</th>
+          <th>Severity Offset</th>
+          <th>Calibrated Mean (μ*)</th>
+          <th>Calibrated Spread (σ*)</th>
           <th style="text-align: right;">Calibration Status</th>
         </tr>
       </thead>
@@ -141,7 +146,7 @@
 
 <div style="margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: baseline;">
   <h2 style="font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;">Competition Standings (<%= leaderboard.length %> Submissions)</h2>
-  <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">Ranked by Composite Score (80% Bayesian Norm + 20% Pairwise Arena)</span>
+  <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">Ranked by Composite Score (80% Calibrated Rubric + 20% Pairwise Matchups)</span>
 </div>
 
 <div class="table-wrapper" style="margin-bottom: 2.5rem;">

@@ -1,0 +1,283 @@
+<div class="page-hero">
+  <div class="hero-content">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+      <span class="status-pill status-open">Coordinator Operations</span>
+      <span class="norm-pill">T4 Stretch: Bulk Ingestion</span>
+    </div>
+    <h1 class="page-title">Qualified Teams &amp; Credential Generator</h1>
+    <p class="page-subtitle">
+      Load qualified teams into the platform, assign tracks, and generate distributed login credentials for participants.
+    </p>
+  </div>
+  <div class="hero-actions" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('import-modal').showModal()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Bulk Import Teams
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('single-modal').showModal()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Single Team
+    </button>
+    <a href="/api/organizer/teams/credentials.csv" class="btn btn-secondary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Credentials (.CSV)
+    </a>
+  </div>
+</div>
+
+<% if (typeof created !== 'undefined' && created) { %>
+  <div class="alert-banner" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.25); color: #065F46; margin-bottom: 2rem;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <div>
+      <strong>Team Successfully Admitted:</strong> The qualified team record has been saved and secure login credentials have been generated.
+    </div>
+  </div>
+<% } %>
+
+<!-- Macro Statistics -->
+<div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 2rem;">
+  <div class="metric-card">
+    <div class="metric-header">TOTAL TEAMS</div>
+    <div class="metric-value"><%= teams.length %></div>
+    <div class="metric-subtext">Admitted hackathon teams</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">ACTIVE TRACKS</div>
+    <div class="metric-value"><%= tracks.length %></div>
+    <div class="metric-subtext">Competition focus categories</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">CREDENTIALS STATUS</div>
+    <div class="metric-value" style="color: #059669;">100% Active</div>
+    <div class="metric-subtext">All teams have login credentials</div>
+  </div>
+</div>
+
+<!-- Search & Filtering Bar -->
+<div style="display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+  <input 
+    type="text" 
+    id="team-search" 
+    placeholder="Search teams, tracks, leader name, or user ID..." 
+    class="form-control" 
+    style="flex: 1; min-width: 260px; font-size: 0.9rem;"
+    oninput="filterTeams()"
+  />
+  <select id="track-filter" class="form-control" style="width: auto; font-size: 0.9rem;" onchange="filterTeams()">
+    <option value="">All Tracks (<%= teams.length %>)</option>
+    <% tracks.forEach(t => { %>
+      <option value="<%= t.id %>"><%= t.name %></option>
+    <% }) %>
+  </select>
+</div>
+
+<!-- Qualified Teams Table -->
+<div class="table-container" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 3rem;">
+  <table class="data-table" id="teams-table" style="width: 100%;">
+    <thead>
+      <tr>
+        <th style="width: 90px;">Team ID</th>
+        <th>Team &amp; Entry</th>
+        <th>Track</th>
+        <th>Lead Contact</th>
+        <th>User ID</th>
+        <th>Temporary Password</th>
+        <th style="text-align: right;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% teams.forEach(t => { %>
+        <tr class="team-row" data-track="<%= t.track_id || '' %>">
+          <td style="font-family: var(--font-mono); font-weight: 600; color: var(--text-muted); font-size: 0.82rem;">
+            <%= t.team_id %>
+          </td>
+          <td>
+            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">
+              <%= t.team_name %>
+            </div>
+            <% if (t.project_title) { %>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                <%= t.project_title %>
+              </div>
+            <% } %>
+          </td>
+          <td>
+            <span class="badge" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-light); font-size: 0.78rem;">
+              <%= t.track_name || 'General' %>
+            </span>
+          </td>
+          <td>
+            <div style="font-weight: 500; font-size: 0.85rem;"><%= t.leader_name || 'Team Lead' %></div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono);"><%= t.leader_email || '—' %></div>
+          </td>
+          <td style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 600; color: var(--accent);">
+            <%= t.user_id || 'usr_part' %>
+          </td>
+          <td>
+            <% if (t.temporary_password) { %>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="pwd-mask" id="pwd-<%= t.team_id %>" style="font-family: var(--font-mono); font-size: 0.82rem; background: var(--bg-surface-elevated); padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                  <%= t.temporary_password %>
+                </span>
+                <button type="button" class="btn btn-sm btn-subtle" onclick="copyText('<%= t.temporary_password %>')" title="Copy Password">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            <% } else { %>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Standard Demo Login</span>
+            <% } %>
+          </td>
+          <td style="text-align: right;">
+            <button 
+              type="button" 
+              class="btn btn-sm btn-secondary" 
+              onclick="copyCredentials('<%= t.team_name %>', '<%= t.leader_email %>', '<%= t.user_id || `usr_${t.team_id}` %>', '<%= t.temporary_password || 'DF26-ACTIVE' %>')"
+            >
+              Copy Credentials
+            </button>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: Bulk Import Qualified Teams -->
+<dialog id="import-modal" class="custom-modal" style="border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; max-width: 600px; width: 90vw; background: var(--bg-surface); color: var(--text-primary); box-shadow: var(--shadow-xl);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Bulk Ingest Qualified Teams</h3>
+    <button type="button" style="background: none; border: none; cursor: pointer; color: var(--text-muted);" onclick="document.getElementById('import-modal').close()">✕</button>
+  </div>
+  
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.5;">
+    Paste CSV records below (one team per line). Format: <code>Team Name, Track, Project Title, Leader Name, Leader Email</code>.
+  </p>
+
+  <form id="bulk-import-form" onsubmit="handleBulkImport(event)">
+    <div style="margin-bottom: 1.25rem;">
+      <textarea 
+        id="bulk-csv" 
+        rows="8" 
+        class="form-control" 
+        style="font-family: var(--font-mono); font-size: 0.82rem; width: 100%; resize: vertical;"
+        placeholder="Quantum Leap, Developer tools, Quantum Debugger, Sarah Jenkins, sarah@quantum.dev&#10;Neural Sync, AI & Machine Learning, MindFlow, Alex Rivera, alex@neural.io&#10;Green Pulse, Climate & Sustainability, Carbon Tracker, Elena Rostova, elena@pulse.eco"
+        required
+      ></textarea>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('import-modal').close()">Cancel</button>
+      <button type="submit" class="btn btn-primary" id="btn-import-submit">Import &amp; Generate Credentials</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Modal: Add Single Qualified Team -->
+<dialog id="single-modal" class="custom-modal" style="border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; max-width: 500px; width: 90vw; background: var(--bg-surface); color: var(--text-primary); box-shadow: var(--shadow-xl);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Add Single Qualified Team</h3>
+    <button type="button" style="background: none; border: none; cursor: pointer; color: var(--text-muted);" onclick="document.getElementById('single-modal').close()">✕</button>
+  </div>
+
+  <form action="/organizer/teams" method="POST">
+    <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+      <div>
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Team Name *</label>
+        <input type="text" name="teamName" required class="form-control" placeholder="e.g. CyberVanguard" />
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Competition Track</label>
+        <select name="trackId" class="form-control">
+          <% tracks.forEach(t => { %>
+            <option value="<%= t.id %>"><%= t.name %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Project Title (Optional)</label>
+        <input type="text" name="projectTitle" class="form-control" placeholder="e.g. Autonomous Sentinel" />
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Team Lead Name *</label>
+        <input type="text" name="leaderName" required class="form-control" placeholder="e.g. Jordan Blake" />
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Team Lead Email *</label>
+        <input type="email" name="leaderEmail" required class="form-control" placeholder="e.g. jordan@sentinel.dev" />
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">Custom Password (Leave blank to auto-generate)</label>
+        <input type="text" name="customPassword" class="form-control" placeholder="Auto-generated if empty" />
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('single-modal').close()">Cancel</button>
+      <button type="submit" class="btn btn-primary">Generate Team Account</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+function filterTeams() {
+  const query = (document.getElementById('team-search').value || '').toLowerCase();
+  const track = document.getElementById('track-filter').value;
+  const rows = document.querySelectorAll('.team-row');
+
+  rows.forEach(r => {
+    const text = r.textContent.toLowerCase();
+    const rowTrack = r.getAttribute('data-track');
+    const matchesQuery = !query || text.includes(query);
+    const matchesTrack = !track || rowTrack === track;
+
+    r.style.display = matchesQuery && matchesTrack ? '' : 'none';
+  });
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (window.showToast) window.showToast('Copied to clipboard', 'success');
+  });
+}
+
+function copyCredentials(teamName, email, userId, pwd) {
+  const text = `Team: ${teamName}\nLogin Email: ${email}\nUser ID: ${userId}\nTemporary Password: ${pwd}\nLogin URL: ${window.location.origin}/login`;
+  navigator.clipboard.writeText(text).then(() => {
+    if (window.showToast) window.showToast(`Credentials copied for ${teamName}`, 'success');
+    else alert(`Credentials copied for ${teamName}!`);
+  });
+}
+
+async function handleBulkImport(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-import-submit');
+  const csvText = document.getElementById('bulk-csv').value;
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+
+  try {
+    const res = await fetch('/api/organizer/teams/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csvText }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.location.href = `/organizer/teams?imported=${data.count}`;
+    } else {
+      alert(data.error || 'Import failed');
+      btn.disabled = false;
+      btn.textContent = 'Import & Generate Credentials';
+    }
+  } catch (err) {
+    alert('Import request failed: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Import & Generate Credentials';
+  }
+}
+</script>
