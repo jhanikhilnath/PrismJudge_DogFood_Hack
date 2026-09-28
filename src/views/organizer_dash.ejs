@@ -263,7 +263,7 @@
               <td><span class="badge-status badge-default" style="font-size: 0.68rem;"><%= log.actor_role %></span></td>
               <td style="font-family: var(--font-mono); font-weight: 600; color: var(--text-primary);"><%= log.action %></td>
               <td style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);">
-                <%= log.resource_type %><%= log.resource_id ? ' (' + log.resource_id + ')' : '' %>
+                <%= log.resource_type %><%= (log.resource_id && log.resource_type !== 'session') ? ' (' + log.resource_id + ')' : '' %>
               </td>
             </tr>
           <% }); %>

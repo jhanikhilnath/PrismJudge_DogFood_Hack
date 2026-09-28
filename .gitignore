@@ -33,3 +33,14 @@ skills-lock.json
 # Given folder (we copied run.py & fixtures.json to repo root)
 given/
 comps/
+
+# Internal agent coordination & presentation files
+AGENTS.md
+agents.md
+CONTEXT.md
+context.md
+PRESENTATION.md
+presentation.md
+docs/PRESENTATION.md
+docs/presentation.md
+

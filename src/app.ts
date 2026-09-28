@@ -36,6 +36,11 @@ export async function buildApp(): Promise<FastifyInstance> {
     prefix: '/static/',
   });
 
+  // Direct root favicon
+  fastify.get('/favicon.ico', async (_req, reply) => {
+    return reply.sendFile('favicon.ico');
+  });
+
   // 3. Server-side templates (EJS)
   await fastify.register(fastifyView, {
     engine: { ejs },

@@ -141,8 +141,8 @@ The platform contains two distinct mathematical engines that operate on evaluati
 1. **Empirical Bayesian Shrinkage Engine (`src/engine/normalization.ts`)**:
    - Computes global prior mean $\mu_0$ and global prior variance $\sigma_0^2$ across all scores in the competition.
    - Shrinks each individual juror's scoring distribution toward the global population:
-     $$\mu_j^* = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad \sigma_j^{*2} = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
-   - Guarantees strictly positive standard deviation $\sigma_j^* > 0$ even when sample variance $v_j = 0$ (such as `jdg_07`).
+     $$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
+   - Guarantees strictly positive standard deviation $\sigma_j^{\star} > 0$ even when sample variance $v_j = 0$ (such as `jdg_07`).
    - Normalizes scores into an intuitive 0–100 scale: $\text{Score}_{ij}^{\text{norm}} = \text{clamp}(70 + 12 \cdot Z_{ij}, 0, 100)$.
 
 2. **Bradley-Terry Pairwise Engine (`src/engine/pairwise.ts`)**:
@@ -160,7 +160,7 @@ The platform contains two distinct mathematical engines that operate on evaluati
 ## 5. Operations Console & Team Credentials Architecture
 
 The coordinator console (`/organizer/dashboard` and `/organizer/teams`) enables real-time event operations:
-* **Juror Calibration Diagnostics**: Live table of all 30 evaluators displaying raw mean, severity offset $\Delta = \bar{S}_j - \mu_0$, shrunk variance $\sigma_j^{*2}$, and singularity resolution status.
+* **Juror Calibration Diagnostics**: Live table of all 30 evaluators displaying raw mean, severity offset $\Delta = \bar{S}_j - \mu_0$, shrunk variance $(\sigma_j^{\star})^2$, and singularity resolution status.
 * **Underserved Project Tracking**: Automatically identifies submissions with review counts below the confidence threshold ($n < 3$) and flags them in high-visibility warning banners.
 * **Qualified Team Onboarding & Temporary Credential Generation**:
   - Allows coordinators to onboard teams individually or via bulk CSV upload (`/api/organizer/teams/bulk-csv`).

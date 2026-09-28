@@ -60,7 +60,6 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
       actorRole: user.role,
       action: 'LOGIN',
       resourceType: 'session',
-      resourceId: token,
       ipAddress: req.ip,
     });
 
@@ -151,7 +150,6 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
       actorRole: user.role,
       action: 'LOGIN',
       resourceType: 'session',
-      resourceId: token,
       ipAddress: req.ip,
     });
 
@@ -190,7 +188,6 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
         actorRole: req.user.role,
         action: 'LOGOUT',
         resourceType: 'session',
-        resourceId: req.user.token,
       });
     }
     reply.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
@@ -206,7 +203,6 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
         actorRole: req.user.role,
         action: 'LOGOUT',
         resourceType: 'session',
-        resourceId: req.user.token,
       });
     }
 

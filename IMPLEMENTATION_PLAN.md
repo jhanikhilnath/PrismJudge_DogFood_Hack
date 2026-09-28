@@ -189,13 +189,13 @@ The project raw criterion score is $S_{ij} = \sum_k w_k s_{ijk}$.
 Let $n_j$ be the number of reviews submitted by judge $j$, with sample mean $\bar{S}_j = \frac{1}{n_j}\sum_i S_{ij}$ and sample variance $v_j = \frac{1}{n_j-1}\sum_i (S_{ij} - \bar{S}_j)^2$.
 
 Let $\mu_0$ and $\sigma_0^2$ be the global prior mean and variance across all scores in the competition.
-We apply Bayesian shrinkage to estimate the posterior mean $\mu_j^*$ and posterior standard deviation $\sigma_j^*$:
-$$\mu_j^* = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}$$
-$$\sigma_j^{*2} = \frac{(n_j - 1) v_j + m \sigma_0^2}{(n_j - 1) + m}$$
+We apply Bayesian shrinkage to estimate the posterior mean $\mu_j^{\star}$ and posterior standard deviation $\sigma_j^{\star}$:
+$$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}$$
+$$(\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
 where $m = 3.0$ represents the pseudo-observation prior weight.
 
 The normalized score for project $i$ from judge $j$ is:
-$$Z_{ij} = \frac{S_{ij} - \mu_j^*}{\sigma_j^*}$$
+$$Z_{ij} = \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}$$
 Rescaled to a standard 0–100 scale:
 $$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(50 + 15 \cdot Z_{ij}, 0, 100\right)$$
 The project's final normalized rating is the average across all assigned judges:

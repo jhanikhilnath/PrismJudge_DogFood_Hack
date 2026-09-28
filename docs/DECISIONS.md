@@ -62,9 +62,9 @@
   1. **Zero-Variance Singularity:** Judge `jdg_07` in `fixtures.json` assigned an identical score of `4` to all 3 evaluated projects. Raw sample variance is $0$, causing division by zero ($z = \frac{0}{0} = \text{NaN}$).
   2. **Small-Sample Distortion:** A judge with only 2 reviews has extreme estimation variance, artificially amplifying or dampening scores.
 - **Decision:** Implement Empirical Bayesian Shrinkage using a normal-inverse-gamma conjugate prior with pseudo-observation weight $m = 3.0$:
-  $$\mu_j^* = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad \sigma_j^{*2} = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
+  $$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
 - **Rationale:**
-  1. $\sigma_j^*$ is strictly bounded below by $\sqrt{\frac{m}{\max(1, n_j - 1) + m}} \sigma_0 > 0$. For `jdg_07`, $\sigma_7^* = 0.5105 > 0$, guaranteeing zero mathematical singularities.
+  1. $\sigma_j^{\star}$ is strictly bounded below by $\sqrt{\frac{m}{\max(1, n_j - 1) + m}} \sigma_0 > 0$. For `jdg_07`, $\sigma_7^{\star} = 0.5105 > 0$, guaranteeing zero mathematical singularities.
   2. As a judge reviews more projects ($n_j \to \infty$), their posterior shrinks toward their empirical distribution, balancing individual judgment with population stability.
 
 ---
