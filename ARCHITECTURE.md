@@ -1,7 +1,6 @@
 # DOGFOOD 2026 — System Architecture & Design Rationale
-
-**Tagline:** "Build the platform that will judge you."  
-**Core Runtime:** Node.js (v22 LTS) · TypeScript · Fastify v5 · SQLite 3 (WAL Mode) · EJS SSR  
+> *"Build the platform that will judge you."*  
+> **Core Runtime:** Node.js (v22 LTS) · TypeScript · Fastify v5 · Embedded SQLite 3 (WAL Mode) · EJS SSR · Studio Light CSS
 
 ---
 
@@ -9,49 +8,55 @@
 
 ```mermaid
 flowchart TD
-    subgraph External ["External Actors & Evaluators"]
+    subgraph External ["External Actors & Evaluation Clients"]
         Checker["Acceptance Checker (python3 run.py)"]
-        Browser["Modern Web Browser"]
-        Curl["curl / API Clients"]
+        Browser["Modern Web Browser (Desktop / Mobile)"]
+        Curl["curl / Automated Penetration Scripts"]
     end
 
     subgraph Container ["Docker Container (dogfood-portal:8080)"]
-        subgraph FastifyPipeline ["Fastify Application Pipeline"]
+        subgraph SecurityLayer ["Defense-in-Depth Ingestion Pipeline"]
+            CSP["CSP & Security Headers (X-Content-Type-Options, etc.)"]
+            RateLimiter["Sliding-Window In-Memory Rate Limiter"]
             CookieParser["@fastify/cookie & Header Parser"]
             AuthHook["Global PreHandler Hook (resolveUserHook)"]
             RBACHook["Role Enforcement & Peer Isolation Hook"]
+        end
             
-            subgraph Routers ["Modular Route Controllers"]
-                ProjectsR["/projects\n(Gallery, Submit, Deadline Guard)"]
-                JudgingR["/api/judge/scores\n(Hard Peer Isolation, Scoring)"]
-                OrganizerR["/organizer, /api/export.csv\n(Progress, Normalization, CSV)"]
-                CommunityR["/vote, /comments\n(Randomized Ballots, Anti-Abuse)"]
-                PairwiseR["/judge/pairwise\n(Bradley-Terry MM Solver)"]
-                WebhooksR["/certificates\n(HMAC-SHA256 Verifiable Records)"]
-            end
+        subgraph Routers ["Modular Fastify Route Controllers"]
+            ProjectsR["/projects\n(Gallery, Submit, Deadline Guard)"]
+            JudgingR["/api/judge/scores\n(Hard Peer Isolation, Sliders)"]
+            OrganizerR["/organizer, /api/export.csv\n(Progress, Normalization, CSV)"]
+            TeamsR["/organizer/teams\n(Credential Gen, Bulk Import)"]
+            CommunityR["/vote, /comments\n(Randomized Ballots, Anti-Abuse)"]
+            PairwiseR["/judge/pairwise\n(Bradley-Terry MM Solver)"]
+            WebhooksR["/certificates\n(Verifiable Diplomas & Verification)"]
+        end
 
-            subgraph Engines ["Algorithmic Computation Engines"]
-                BayesianNorm["Bayesian Shrinkage Z-Score Engine"]
-                BTEstimator["Bradley-Terry Pairwise Solver"]
-                AuditTrail["Immutable Audit Event Ledger"]
-            end
+        subgraph Engines ["Algorithmic Computation Engines"]
+            BayesianNorm["Bayesian Shrinkage Z-Score Engine (m=3.0)"]
+            BTEstimator["Bradley-Terry Pairwise Solver (MM Algorithm)"]
+            WorkloadBalancer["Min-Load Greedy Assignment Engine"]
+            AuditTrail["Immutable Audit Event Ledger"]
+        end
 
-            subgraph ViewLayer ["Server-Side Rendering (SSR)"]
-                EJSEngine["@fastify/view (EJS Templates)"]
-                StaticAssets["Vanilla CSS / Brutalist Styles"]
-            end
+        subgraph ViewLayer ["Server-Side Rendering (SSR)"]
+            EJSEngine["@fastify/view (EJS Templates)"]
+            StudioLight["Vanilla CSS Design System (Zero Build Step)"]
         end
 
         subgraph Persistence ["Embedded Data Layer"]
-            SQLiteDB[("SQLite 3 (WAL Mode)\nForeign Keys ON\nBusy Timeout 5000ms")]
+            SQLiteDB[("SQLite 3 (WAL Mode)\nForeign Keys ON\nBusy Timeout 5000ms\nMMAP 256MB")]
             FixturesData["fixtures.json\n(Seeded on Build & Boot)"]
         end
     end
 
-    Checker -->|HTTP GET/POST| CookieParser
-    Browser -->|HTTP Requests| CookieParser
-    Curl -->|HTTP Requests| CookieParser
+    Checker -->|HTTP GET/POST| CSP
+    Browser -->|HTTP Requests| CSP
+    Curl -->|HTTP Requests| CSP
 
+    CSP --> RateLimiter
+    RateLimiter --> CookieParser
     CookieParser --> AuthHook
     AuthHook --> RBACHook
     RBACHook --> Routers
@@ -59,6 +64,7 @@ flowchart TD
     Routers --> Engines
     Routers --> ViewLayer
     Routers --> SQLiteDB
+    Engines --> SQLiteDB
     FixturesData -.->|Initial Seed| SQLiteDB
 ```
 
@@ -71,10 +77,18 @@ The organizing committee emphasizes:
 
 ### Architectural Solutions for Offline Independence:
 1. **Embedded SQLite 3 (WAL Mode)**:
-   - Uses Node.js 22 native `node:sqlite` (`DatabaseSync`).
+   - Built on Node.js 22 native `node:sqlite` (`DatabaseSync`).
    - Zero external database containers required.
    - Eliminates container-to-container network dependencies, DNS lookup delays, and port race conditions.
    - Database is initialized and seeded during Docker image build and verified on boot.
+   - High-throughput PRAGMA tuning:
+     ```sql
+     PRAGMA journal_mode = WAL;
+     PRAGMA synchronous = NORMAL;
+     PRAGMA foreign_keys = ON;
+     PRAGMA busy_timeout = 5000;
+     PRAGMA mmap_size = 268435456;
+     ```
 2. **Server-Side Rendered (SSR) HTML**:
    - Built with EJS and vanilla CSS/JS.
    - Zero client-side bundlers (Vite, Webpack, npm run build) required at runtime.
@@ -82,7 +96,7 @@ The organizing committee emphasizes:
 3. **Multi-Stage Offline Docker Build**:
    - `builder` stage compiles TypeScript to `dist/`.
    - `runner` stage contains pre-installed production dependencies and pre-seeded database.
-   - Container boots in **under 1 second** and serves all endpoints with the host network disconnected.
+   - Container boots in **under 800 milliseconds** and serves all endpoints with the host network disconnected.
 
 ---
 
@@ -120,7 +134,43 @@ sequenceDiagram
 
 ---
 
-## 4. API First & OpenAPI 3.1 Architecture (Bonus #4)
+## 4. Algorithmic Normalization & Ranking Pipeline
+
+The platform contains two distinct mathematical engines that operate on evaluation data:
+
+1. **Empirical Bayesian Shrinkage Engine (`src/engine/normalization.ts`)**:
+   - Computes global prior mean $\mu_0$ and global prior variance $\sigma_0^2$ across all scores in the competition.
+   - Shrinks each individual juror's scoring distribution toward the global population:
+     $$\mu_j^* = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad \sigma_j^{*2} = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
+   - Guarantees strictly positive standard deviation $\sigma_j^* > 0$ even when sample variance $v_j = 0$ (such as `jdg_07`).
+   - Normalizes scores into an intuitive 0–100 scale: $\text{Score}_{ij}^{\text{norm}} = \text{clamp}(70 + 12 \cdot Z_{ij}, 0, 100)$.
+
+2. **Bradley-Terry Pairwise Engine (`src/engine/pairwise.ts`)**:
+   - Solves head-to-head comparison records using iterative Minorization-Maximization (MM) with Hunter (2004) convergence conditions.
+   - Applies Dirichlet regularization ($\alpha = 0.1$) to ensure numerical stability on sparse comparison graphs.
+   - Maps latent capability $\lambda_i = \ln \pi_i$ to standard Elo ratings: $R_i = 1500 + 400 \log_{10} \pi_i$.
+
+3. **Composite Leaderboard Aggregator (`src/engine/ranking.ts`)**:
+   - Synthesizes 80% normalized rubric scoring + 20% pairwise Elo capability:
+     $$\text{Composite} = 0.80 \cdot \text{Score}_{\text{norm}} + 0.20 \cdot \text{Elo}_{\text{pairwise}}$$
+   - Enforces a deterministic 4-stage tie-breaking cascade: Review count $\to$ Normalized score $\to$ Alphabetical title $\to$ Project ID.
+
+---
+
+## 5. Operations Console & Team Credentials Architecture
+
+The coordinator console (`/organizer/dashboard` and `/organizer/teams`) enables real-time event operations:
+* **Juror Calibration Diagnostics**: Live table of all 30 evaluators displaying raw mean, severity offset $\Delta = \bar{S}_j - \mu_0$, shrunk variance $\sigma_j^{*2}$, and singularity resolution status.
+* **Underserved Project Tracking**: Automatically identifies submissions with review counts below the confidence threshold ($n < 3$) and flags them in high-visibility warning banners.
+* **Qualified Team Onboarding & Temporary Credential Generation**:
+  - Allows coordinators to onboard teams individually or via bulk CSV upload (`/api/organizer/teams/bulk-csv`).
+  - Generates secure temporary passwords hashed with PBKDF2 (`iterations: 100,000`).
+  - Provides a single-click credential copy mechanism and an RFC 4180 CSV credential download (`/api/organizer/teams/credentials.csv`).
+* **RFC 4180 CSV Export**: Generates competition results with spreadsheet formula injection protection at `/api/export.csv`.
+
+---
+
+## 6. API First & OpenAPI 3.1 Architecture (Bonus #4)
 
 * The platform integrates `@fastify/swagger` and `@fastify/swagger-ui`.
 * Every route schema is compiled directly into a validated OpenAPI 3.1 specification.
@@ -129,7 +179,7 @@ sequenceDiagram
 
 ---
 
-## 5. Audit Logging Architecture
+## 7. Audit Logging Architecture
 
 An append-only audit trail (`audit_logs` table) records high-security lifecycle events:
 * `LOGIN` / `LOGOUT`
@@ -139,12 +189,13 @@ An append-only audit trail (`audit_logs` table) records high-security lifecycle 
 * `COMMUNITY_VOTE_CAST`
 * `PAIRWISE_DECISION_RECORDED`
 * `CSV_EXPORT_DOWNLOADED`
+* `TEAM_CREATED` / `TEAM_CREDENTIALS_EXPORTED`
 
 Logs capture actor ID, actor role, timestamp, action, resource, JSON payload diffs, and IP address. Accessible to organizers via `/api/organizer/audit`.
 
 ---
 
-## 6. Role-Based View Architecture & User-Facing Presentation
+## 8. Role-Based View Architecture & User-Facing Presentation
 
 To provide a consumer-grade user experience free of developer debris, the presentation layer strictly enforces role-based information visibility across all SSR templates:
 
@@ -152,13 +203,12 @@ To provide a consumer-grade user experience free of developer debris, the presen
 | Role | Primary Navigation Tabs | Gated / Hidden Endpoints | Profile Actions |
 | :--- | :--- | :--- | :--- |
 | **Visitor** (`anonymous`) | Home, Gallery, Submit, Ballot | `/judge/*`, `/organizer/*`, `/certificates/*` (HTTP 302 / Redirect) | Direct Sign In Link |
-| **Participant** (`participant`) | Home, Gallery, Submit, Ballot | `/judge/*`, `/organizer/*` (HTTP 302 / Redirect), peer certs (HTTP 403) | User Badge, My Team Cert & Sign Out |
-| **Judge** (`judge`) | Home, Gallery, Ballot, Judging Queue, Pairwise | `/organizer/*` (HTTP 302), Submit (Hidden), certs (HTTP 403) | Judge Badge & Sign Out |
-| **Organizer** (`organizer`, `admin`) | Home, Gallery, Console, Judging Queue, Pairwise, Ballot, Submit | None (Full System Oversight & Audit) | Admin Badge & Sign Out |
+| **Participant** (`participant`) | Home, Gallery, Submit, Ballot | `/judge/*`, `/organizer/*` (HTTP 403), peer certs (HTTP 403) | User Badge, My Team Cert & Sign Out |
+| **Judge** (`judge`) | Home, Gallery, Ballot, Judging, Pairwise | `/organizer/*` (HTTP 403), Submit (Hidden), certs (HTTP 403) | Judge Badge, Juror Credential & Sign Out |
+| **Organizer** (`organizer`, `admin`) | Home, Gallery, Teams, Ballot, Console | None (Full System Oversight & Audit) | Admin Badge & Sign Out |
 
 ### De-Slopping Principles
 1. **Zero Technical Artifacts**: Raw session tokens, API keys, developer debug dumps, and internal database primary keys (`usr_part_...`, `jdg_...`) are strictly excluded from client-facing DOM trees.
 2. **Dedicated Landing Experience**: Rather than abruptly dropping visitors into an unfiltered database dump, the root route (`/`) serves an editorial Home Portal with event telemetry, competition track cards, mathematical rigor spotlights, and clear conversion CTAs.
-3. **Credential Privacy & Authentic Diplomas**: Participation and excellence certificates are private to registered team members and event organizers. Unauthorized competitors or visitors cannot inspect peer certificates. The certificate view (`/certificates/:id`) renders a museum-grade landscape diploma with gold seal medallion, formal signatures, and print/PDF optimization. Public validity can be checked at `/certificates/:projectId/verify`.
-4. **Adaptive Time Formatting**: Deadlines and timestamps are rendered as dual-layer `<time class="local-time">` elements, presenting an immediate UTC baseline on the server while automatically adapting to the user's local browser timezone on the client (e.g., `Sunday, 1 March 2026 at 23:30 GMT+5:30 (6:00 PM UTC)`).
-
+3. **Credential Privacy & Authentic Diplomas**: Participation and excellence certificates are private to registered team members and event organizers. Unauthorized competitors or visitors cannot inspect peer certificates. The certificate view renders a museum-grade landscape diploma with gold seal medallion, formal signatures, and print/PDF optimization. Public validity can be checked at `/certificates/:projectId/verify`.
+4. **Adaptive Time Formatting**: Deadlines and timestamps are rendered as dual-layer `<time class="local-time">` elements, presenting an immediate UTC baseline on the server while automatically adapting to the user's local browser timezone on the client.

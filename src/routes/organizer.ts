@@ -350,7 +350,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
       const escape = (val: string | null | undefined) => {
         if (!val) return '""';
         let str = String(val);
-        if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`;
+        if (/^\s*[=+\-@\t\r\|%]/.test(str)) str = `'${str}`;
         return `"${str.replace(/"/g, '""')}"`;
       };
 
@@ -384,6 +384,10 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
   }, async (req, reply: FastifyReply) => {
     const body = req.body;
     if (!body || !body.url) return reply.code(400).send({ error: 'Webhook URL is required' });
+    const { isSafeWebhookUrl } = await import('../core/webhooks.js');
+    if (!isSafeWebhookUrl(body.url)) {
+      return reply.code(400).send({ error: 'Invalid or restricted webhook URL. Must be public HTTP/HTTPS.' });
+    }
     const { createWebhook } = await import('../db/queries.js');
     const id = createWebhook(body.url, body.eventTypes || 'all', body.secret);
 

@@ -72,7 +72,7 @@
 </div>
 
 <!-- Qualified Teams Table -->
-<div class="table-container" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 3rem;">
+<div class="table-wrapper" style="margin-bottom: 3rem;">
   <table class="data-table" id="teams-table" style="width: 100%;">
     <thead>
       <tr>
@@ -249,7 +249,6 @@ function copyCredentials(teamName, email, userId, pwd) {
   const text = `Team: ${teamName}\nLogin Email: ${email}\nUser ID: ${userId}\nTemporary Password: ${pwd}\nLogin URL: ${window.location.origin}/login`;
   navigator.clipboard.writeText(text).then(() => {
     if (window.showToast) window.showToast(`Credentials copied for ${teamName}`, 'success');
-    else alert(`Credentials copied for ${teamName}!`);
   });
 }
 
@@ -270,12 +269,12 @@ async function handleBulkImport(e) {
     if (data.success) {
       window.location.href = `/organizer/teams?imported=${data.count}`;
     } else {
-      alert(data.error || 'Import failed');
+      if (window.showToast) window.showToast(data.error || 'Import failed', 'error');
       btn.disabled = false;
       btn.textContent = 'Import & Generate Credentials';
     }
   } catch (err) {
-    alert('Import request failed: ' + err.message);
+    if (window.showToast) window.showToast('Import request failed: ' + err.message, 'error');
     btn.disabled = false;
     btn.textContent = 'Import & Generate Credentials';
   }

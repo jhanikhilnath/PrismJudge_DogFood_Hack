@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } f
 import crypto from 'node:crypto';
 import { execute, getAllTracks, getEvent, getProjectsForComparison, isVotingClosed, queryAll, queryOne } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
+import { rateLimit } from '../core/rateLimit.js';
 
 // Sliding-window rate limiter in memory (resets on server restart, complemented by SQLite unique constraint)
 const voteRateLimitWindow = new Map<string, number>();
@@ -124,6 +125,17 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
         }
       }
 
+      if (voter_email) {
+        const isEmailMember = queryOne<{ user_id: string }>(
+          'SELECT user_id FROM team_members WHERE team_id = ? AND LOWER(email) = ?',
+          proj.team_id,
+          voter_email.toLowerCase().trim()
+        );
+        if (isEmailMember) {
+          return reply.code(403).send({ error: 'Self-voting is not allowed. You cannot vote for your own team project.' });
+        }
+      }
+
       // Check for duplicate vote on same project (check both hashed and raw ID)
       const existing = queryOne<{ id: string }>(
         'SELECT id FROM community_votes WHERE project_id = ? AND (voter_hash = ? OR voter_hash = ?)',
@@ -168,6 +180,9 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
   // 3. Post Project Discussion Comment (T3: Discussion Stream)
   fastify.post<{ Params: { projectId: string }; Body: CommentBody }>(
     '/api/comments/:projectId',
+    {
+      preHandler: [rateLimit('write')],
+    },
     async (req: FastifyRequest<{ Params: { projectId: string }; Body: CommentBody }>, reply: FastifyReply) => {
       const { projectId } = req.params;
       const { content, author_name } = req.body || {};

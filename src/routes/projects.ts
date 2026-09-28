@@ -123,6 +123,16 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const chosenTrackId = track_id || 'trk_01';
     const projectId = `prj_${Date.now().toString(36)}`;
 
+    const sanitizeHttpUrl = (raw?: string | null) => {
+      if (!raw || typeof raw !== 'string') return null;
+      const trimmed = raw.trim();
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return null;
+    };
+
+    const cleanRepoUrl = sanitizeHttpUrl(repo_url);
+    const cleanDemoUrl = sanitizeHttpUrl(demo_url);
+
     execute(
       `INSERT INTO projects (id, team_id, track_id, title, summary, repo_url, demo_url, submitted_at, is_draft, is_duplicate, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
@@ -131,8 +141,8 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       chosenTrackId,
       title.trim(),
       summary.trim(),
-      repo_url || null,
-      demo_url || null,
+      cleanRepoUrl,
+      cleanDemoUrl,
       now,
       is_draft ? 1 : 0,
       now,
@@ -167,6 +177,13 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const project = getProjectById(id);
 
     if (!project) {
+      if (req.headers.accept?.includes('text/html')) {
+        return reply.code(404).view('404.ejs', {
+          title: 'Project Not Found — DOGFOOD 2026',
+          user: req.user,
+          path: req.url,
+        });
+      }
       return reply.code(404).send({ error: 'Project not found' });
     }
 
@@ -190,7 +207,14 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       : null;
 
     if (req.headers.accept?.includes('application/json')) {
-      return reply.send({ project, members, comments });
+      const isPrivileged = req.user && (req.user.role === 'organizer' || req.user.role === 'admin' || members.some((m) => m.user_id === req.user?.userId));
+      const sanitizedMembers = isPrivileged
+        ? members
+        : members.map((m) => ({
+            ...m,
+            email: m.email ? m.email.replace(/^(.)(.*)(@.*)$/, (_, first, middle, rest) => `${first}${'*'.repeat(Math.min(middle.length, 4))}${rest}`) : '',
+          }));
+      return reply.send({ project, members: sanitizedMembers, comments });
     }
 
     return reply.view('project_detail.ejs', {

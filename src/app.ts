@@ -86,9 +86,19 @@ export async function buildApp(): Promise<FastifyInstance> {
     reply.header('X-Frame-Options', 'SAMEORIGIN');
     reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     reply.header('X-XSS-Protection', '1; mode=block');
+    reply.header(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self';"
+    );
   });
 
-  // 5c. Liveness and Readiness Probes
+  // 5c. Robots Exclusion Standard
+  fastify.get('/robots.txt', async (_req, reply) => {
+    reply.header('Content-Type', 'text/plain; charset=utf-8');
+    return reply.send("User-agent: *\nDisallow: /organizer/\nDisallow: /judge/\nDisallow: /api/\nAllow: /\n");
+  });
+
+  // 5d. Liveness and Readiness Probes
   fastify.get('/healthz', async (_req, reply) => {
     return reply.code(200).send({
       status: 'ok',

@@ -46,15 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. Active Navigation Item Highlight
   const currentPath = window.location.pathname;
-  const navLinks = document.querySelectorAll('.main-nav .nav-link');
+  const navLinks = Array.from(document.querySelectorAll('.main-nav .nav-link'));
+  const exactMatch = navLinks.find((link) => link.getAttribute('data-path') === currentPath);
   navLinks.forEach((link) => {
-    const linkPath = link.getAttribute('data-path');
-    if (linkPath) {
-      if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(linkPath))) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
+    if (exactMatch) {
+      link.classList.toggle('active', link === exactMatch);
+    } else {
+      const linkPath = link.getAttribute('data-path');
+      link.classList.toggle('active', Boolean(linkPath && linkPath !== '/' && currentPath.startsWith(linkPath)));
     }
   });
 
@@ -91,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // 5. Live Search & Track Filter
-  const searchInput = document.getElementById('gallery-search');
+  const searchInput = document.getElementById('gallery-search') || document.getElementById('ballot-search');
   const trackFilter = document.getElementById('gallery-track');
   const trackPillButtons = document.querySelectorAll('.track-pill-btn');
   const projectCards = document.querySelectorAll('.grid-cards .project-card');
@@ -99,7 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const clearFiltersBtn = document.getElementById('btn-clear-filters');
 
   function filterProjects() {
-    if (!projectCards.length) return;
+    if (!projectCards.length) {
+      if (searchInput && searchInput.value === '' && window.location.search) {
+        window.location.href = '/projects';
+      }
+      return;
+    }
     const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const track = trackFilter ? trackFilter.value : '';
 
@@ -134,9 +138,13 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', filterProjects);
   }
 
-  // Keyboard shortcut '/' to focus search input
+  // Keyboard shortcut '/' to focus search input (safely guarded against form typing)
   document.addEventListener('keydown', (e) => {
-    if (e.key === '/' && document.activeElement !== searchInput && searchInput) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const active = document.activeElement;
+    const tag = active?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
+    if (e.key === '/' && searchInput) {
       e.preventDefault();
       searchInput.focus();
     }

@@ -11,11 +11,11 @@ export interface LeaderboardEntry extends ProjectRating {
 /**
  * Sanitize CSV cell according to RFC 4180 rules and formula injection prevention.
  */
-function sanitizeCSV(val: string): string {
-  if (!val) return '""';
-  let clean = val.replace(/"/g, '""');
-  // Neutralize potential spreadsheet formula injection (=, +, -, @, \t, \r)
-  if (/^[=+\-@\t\r]/.test(clean)) {
+function sanitizeCSV(val: string | null | undefined): string {
+  if (val === null || val === undefined) return '""';
+  let clean = String(val).replace(/"/g, '""');
+  // Neutralize potential spreadsheet formula injection (=, +, -, @, \t, \r, |, %) even with leading whitespace
+  if (/^\s*[=+\-@\t\r\|%]/.test(clean)) {
     clean = `'${clean}`;
   }
   return `"${clean}"`;
@@ -190,7 +190,14 @@ export function generateCSVExport(stage: string = 'composite'): string {
     const headers = ['comparison_id', 'judge_id', 'project_a', 'project_b', 'winner', 'created_at'];
     const rows: string[] = [headers.join(',')];
     for (const c of comparisons) {
-      rows.push([c.id, c.judge_id, c.project_a, c.project_b, c.winner || 'TIE', c.created_at].join(','));
+      rows.push([
+        sanitizeCSV(c.id),
+        sanitizeCSV(c.judge_id),
+        sanitizeCSV(c.project_a),
+        sanitizeCSV(c.project_b),
+        sanitizeCSV(c.winner || 'TIE'),
+        sanitizeCSV(c.created_at),
+      ].join(','));
     }
     return rows.join('\r\n');
   }
@@ -212,14 +219,14 @@ export function generateCSVExport(stage: string = 'composite'): string {
     for (const log of auditLogs) {
       rows.push(
         [
-          log.id,
-          log.created_at,
-          log.actor_id || '',
-          log.actor_role || '',
+          sanitizeCSV(log.id),
+          sanitizeCSV(log.created_at),
+          sanitizeCSV(log.actor_id || ''),
+          sanitizeCSV(log.actor_role || ''),
           sanitizeCSV(log.action),
-          log.resource_type,
-          log.resource_id || '',
-          log.ip_address || '',
+          sanitizeCSV(log.resource_type),
+          sanitizeCSV(log.resource_id || ''),
+          sanitizeCSV(log.ip_address || ''),
         ].join(',')
       );
     }

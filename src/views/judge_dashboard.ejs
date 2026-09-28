@@ -122,7 +122,7 @@
               data-inno="<%= crit.innovation || 3 %>"
               data-imp="<%= crit.impact || 3 %>"
               data-comment="<%= (p.score && p.score.comment) ? p.score.comment : '' %>"
-              data-summary="<%= (p.summary || '').replace(/"/g, '&quot;') %>"
+              data-summary="<%= p.summary || '' %>"
               data-track="<%= p.track_name || 'General' %>"
               data-repo="<%= p.repo_url || '' %>"
               onclick="openScoringModal(this.dataset.projectId, this.dataset.projectTitle, this.dataset.func, this.dataset.qual, this.dataset.inno, this.dataset.imp, this.dataset.comment, this.dataset.summary, this.dataset.track, this.dataset.repo)"
@@ -404,8 +404,6 @@
         const err = await res.json();
         if (window.showToast) {
           window.showToast(err.error || 'Failed to submit evaluation', 'error');
-        } else {
-          alert('Error: ' + (err.error || 'Failed to submit score'));
         }
       }
     } catch (err) {

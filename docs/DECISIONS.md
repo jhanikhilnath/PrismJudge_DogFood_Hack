@@ -16,6 +16,9 @@
 8. [ADR-008: Credential Privacy & Landscape Printable Diploma Architecture](#adr-008-credential-privacy--landscape-printable-diploma-architecture)
 9. [ADR-009: Dual Server UTC Baseline & Client-Side Local Timezone Enrichment](#adr-009-dual-server-utc-baseline--client-side-local-timezone-enrichment)
 10. [ADR-010: Ballot Fisher-Yates Hash Shuffle & Anti-Abuse Throttling](#adr-010-ballot-fisher-yates-hash-shuffle--anti-abuse-throttling)
+11. [ADR-011: Server-Side Request Forgery (SSRF) Defense & Cloud Metadata Shield](#adr-011-server-side-request-forgery-ssrf-defense--cloud-metadata-shield)
+12. [ADR-012: RFC 4180 CSV Formula Injection Sanitization Across All Export Surfaces](#adr-012-rfc-4180-csv-formula-injection-sanitization-across-all-export-surfaces)
+13. [ADR-013: Qualified Teams Onboarding & PBKDF2 Temporary Credential Generation](#adr-013-qualified-teams-onboarding--pbkdf2-temporary-credential-generation)
 
 ---
 
@@ -138,3 +141,39 @@
 - **Rationale:**
   1. Hashing the session token with the project ID produces a deterministic yet uniform pseudo-random shuffle per user, ensuring fair exposure across all 41 entries.
   2. Memory-bounded sliding window rejects rapid-fire requests with HTTP 429, and database unique constraints prevent duplicate ballot submissions per user.
+
+---
+
+### ADR-011: Server-Side Request Forgery (SSRF) Defense & Cloud Metadata Shield
+
+- **Status:** Accepted & Enforced
+- **Context:** Event webhooks allow organizers to configure outbound notification URLs for competition milestones. Without strict destination validation, an attacker or compromised organizer token could register targets pointing to loopback (`127.0.0.1`), RFC 1918 internal company networks, or cloud instance metadata services (`169.254.169.254`).
+- **Decision:** Implement strict network validation in `isSafeWebhookUrl()` before registering webhooks or making outbound HTTP requests.
+- **Rationale:**
+  1. Blocks IPv4/IPv6 loopback, internal subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), and link-local addresses (`169.254.0.0/16`).
+  2. Restricts schemes strictly to standard `http:` and `https:`.
+  3. Returns HTTP 400 Bad Request if an unsafe endpoint is submitted.
+
+---
+
+### ADR-012: RFC 4180 CSV Formula Injection Sanitization Across All Export Surfaces
+
+- **Status:** Accepted & Enforced
+- **Context:** CSV exports (`/api/export.csv` and `/api/organizer/teams/credentials.csv`) include untrusted user input (project titles, summaries, team names). Spreadsheet programs (Excel, LibreOffice) interpret leading characters like `=`, `+`, `-`, `@`, `\t`, `\r`, `|`, and `%` as formula execution triggers, enabling Remote Code Execution (RCE) on the organizer's machine.
+- **Decision:** Wrap every exported field in `sanitizeCSV()` using regex `/^\s*[=+\-@\t\r\|%]/.test(str)`.
+- **Rationale:**
+  1. Prefixing formula triggers with a single apostrophe (`'`) neutralizes formula execution while keeping text readable.
+  2. Double quotes within cells are cleanly escaped (`""`) in accordance with RFC 4180.
+  3. Protects both leaderboards, pairwise comparisons, and team credential exports.
+
+---
+
+### ADR-013: Qualified Teams Onboarding & PBKDF2 Temporary Credential Generation
+
+- **Status:** Accepted & Enforced
+- **Context:** Large hackathons require coordinators to onboard dozens of qualified teams and distribute secure temporary credentials without relying on external cloud identity providers or unencrypted email broadcasts.
+- **Decision:** Implement a dedicated Teams Operations Console (`/organizer/teams`) supporting individual team onboarding and bulk CSV import (`/api/organizer/teams/bulk-csv`), generating secure temporary passwords hashed with PBKDF2 (`iterations: 100,000`).
+- **Rationale:**
+  1. Complete offline capability: credentials are generated, stored securely, and exportable directly as an RFC 4180 CSV (`/api/organizer/teams/credentials.csv`).
+  2. Single-click copy buttons in the UI allow quick distribution at in-person registration desks.
+  3. Maintains strict relational linkage between teams, team members, projects, and access permissions.

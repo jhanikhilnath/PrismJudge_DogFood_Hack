@@ -20,6 +20,30 @@ export interface WebhookDeliveryRecord {
   delivered_at: string;
 }
 
+export function isSafeWebhookUrl(urlString: string): boolean {
+  try {
+    const parsed = new URL(urlString);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    const hostname = parsed.hostname.toLowerCase();
+    const isPrivate =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '169.254.169.254' ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      hostname.endsWith('.internal') ||
+      hostname.endsWith('.local');
+    if (isPrivate && process.env.NODE_ENV !== 'test') {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Dispatches an event payload to all registered webhook subscribers asynchronously.
  * Calculates cryptographic HMAC-SHA256 signature using the subscriber's secret in X-Dogfood-Signature.
@@ -47,6 +71,7 @@ export async function dispatchWebhookEvent(
       subscribedTypes.includes(eventType.toLowerCase());
 
     if (!isSubscribed) return;
+    if (!isSafeWebhookUrl(wh.url)) return;
 
     const deliveryId = `del_${crypto.randomBytes(6).toString('hex')}`;
     let signatureHeader = '';

@@ -11,6 +11,13 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const project = getProjectById(projectId);
 
     if (!project) {
+      if (req.headers.accept?.includes('text/html')) {
+        return reply.code(404).view('404.ejs', {
+          title: 'Certificate Not Found — DOGFOOD 2026',
+          user: req.user,
+          path: req.url,
+        });
+      }
       return reply.code(404).send({ error: 'Project certificate not found' });
     }
 
@@ -100,6 +107,13 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const record = getJudgeParticipationRecord(judgeId);
 
     if (!record) {
+      if (req.headers.accept?.includes('text/html')) {
+        return reply.code(404).view('404.ejs', {
+          title: 'Judge Record Not Found — DOGFOOD 2026',
+          user: req.user,
+          path: req.url,
+        });
+      }
       return reply.code(404).send({ error: 'Judge record not found' });
     }
 

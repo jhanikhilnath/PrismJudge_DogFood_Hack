@@ -67,8 +67,13 @@ export async function pairwiseRoutes(fastify: FastifyInstance, _opts: FastifyPlu
         return reply.code(404).send({ error: 'One or both projects not found' });
       }
 
-      const matchId = `pw_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
       const judgeId = req.user!.userId;
+      const { hasConflictOfInterest } = await import('../engine/assignment.js');
+      if (hasConflictOfInterest(judgeId, project_a) || hasConflictOfInterest(judgeId, project_b)) {
+        return reply.code(403).send({ error: 'Conflict of interest detected for one or both projects' });
+      }
+
+      const matchId = `pw_${Date.now().toString(36)}_${crypto.randomBytes(4).toString('hex')}`;
       const now = new Date().toISOString();
 
       execute(

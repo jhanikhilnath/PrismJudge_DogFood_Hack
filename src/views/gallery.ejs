@@ -105,7 +105,7 @@
         </div>
         <div class="meta-stat-item">
           <span class="meta-stat-label">PEER REVIEWS</span>
-          <span class="meta-stat-value"><%= featuredProject.review_count %> reviews</span>
+          <span class="meta-stat-value"><%= featuredProject.review_count %> review<%= featuredProject.review_count === 1 ? '' : 's' %></span>
         </div>
         <div class="meta-stat-item">
           <span class="meta-stat-label">STATUS</span>
@@ -123,7 +123,7 @@
 
 <!-- Filter Toolbar & Pills -->
 <div class="gallery-toolbar-section">
-  <div class="search-bar-row">
+  <form action="/projects" method="GET" class="search-bar-row">
     <div class="search-input-wrapper">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <circle cx="11" cy="11" r="8"></circle>
@@ -131,6 +131,7 @@
       </svg>
       <input 
         type="text" 
+        name="q"
         id="gallery-search" 
         placeholder="Search projects by title, keywords, or summary..." 
         value="<%= query.q %>"
@@ -138,15 +139,18 @@
       >
       <kbd class="search-kbd">/</kbd>
     </div>
+    <% if (query.track) { %>
+      <input type="hidden" name="track" value="<%= query.track %>">
+    <% } %>
 
     <!-- Hidden native select synced for script compatibility -->
-    <select id="gallery-track" class="form-select" style="display: none;">
+    <select id="gallery-track" name="track" class="form-select" style="display: none;">
       <option value="">All Tracks</option>
       <% tracks.forEach(function(t) { %>
         <option value="<%= t.id %>" <%= query.track === t.id ? 'selected' : '' %>><%= t.name %></option>
       <% }); %>
     </select>
-  </div>
+  </form>
 
   <!-- Interactive Track Pills -->
   <div class="track-pills-container" id="track-pills-wrapper">
@@ -214,7 +218,7 @@
             <span><%= p.team_name || p.team_id %></span>
           </div>
           <div class="review-badge-group">
-            <span class="review-count-badge"><%= p.review_count %> reviews</span>
+            <span class="review-count-badge"><%= p.review_count %> review<%= p.review_count === 1 ? '' : 's' %></span>
             <svg class="card-arrow-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>

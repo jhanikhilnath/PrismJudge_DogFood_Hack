@@ -158,8 +158,6 @@
         const err = await res.json();
         if (window.showToast) {
           window.showToast(err.error || 'Failed to submit match', 'error');
-        } else {
-          alert('Error: ' + (err.error || 'Failed to submit match'));
         }
       }
     } catch (e) {

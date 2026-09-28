@@ -86,7 +86,7 @@
             <div>
               <div class="diploma-project-label">SUBMISSIONS REVIEWED</div>
               <div style="font-weight: 700; font-size: 0.95rem; color: var(--accent);">
-                <%= reviewsCount %> Submissions
+                <%= reviewsCount %> Submission<%= reviewsCount === 1 ? '' : 's' %>
               </div>
             </div>
             <div>
@@ -110,17 +110,24 @@
             <div class="sig-title">Judging Committee Chair</div>
           </div>
 
-          <!-- Official Gold Seal Medallion -->
-          <div class="cert-gold-seal" aria-label="Official Verified Seal">
-            <div class="seal-outer-ring">
-              <div class="seal-inner-ring">
-                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#92400E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-                <span class="seal-text-top">OFFICIAL</span>
-                <span class="seal-text-bottom">EVALUATOR</span>
-              </div>
+          <!-- Center Official Seal -->
+          <div class="diploma-seal-col">
+            <div class="cert-gold-seal">
+              <svg width="78" height="78" viewBox="0 0 100 100" fill="none">
+                <!-- Starburst Medallion -->
+                <circle cx="50" cy="50" r="46" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+                <circle cx="50" cy="50" r="41" fill="#FBBF24" stroke="#B45309" stroke-width="1" stroke-dasharray="2 2"/>
+                <circle cx="50" cy="50" r="34" fill="#F59E0B"/>
+                <!-- Ribbon Tails -->
+                <path d="M38 86 L30 100 L44 94 L50 100 L46 86 Z" fill="#D97706"/>
+                <path d="M62 86 L70 100 L56 94 L50 100 L54 86 Z" fill="#D97706"/>
+                <!-- Center Seal Graphics -->
+                <polygon points="50,22 55,36 70,36 58,45 62,60 50,50 38,60 42,45 30,36 45,36" fill="#FFFBEB"/>
+                <text x="50" y="68" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="5.5" font-weight="700" fill="#78350F" letter-spacing="1">DOGFOOD</text>
+                <text x="50" y="74" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="4.2" font-weight="600" fill="#78350F">2026 JURY</text>
+              </svg>
             </div>
+            <div class="seal-caption">OFFICIAL EVALUATOR</div>
           </div>
 
           <div class="diploma-sig-col">

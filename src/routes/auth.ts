@@ -25,6 +25,15 @@ interface AuthQuery {
   error?: string;
 }
 
+function sanitizeRedirect(url?: string | null): string {
+  if (!url || typeof url !== 'string') return '/projects';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.includes('\\')) {
+    return trimmed;
+  }
+  return '/projects';
+}
+
 export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
   // 1. JSON API Login Endpoint (email & password)
   fastify.post<{ Body: LoginBody }>(
@@ -69,15 +78,17 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
     return reply.view('login.ejs', {
       title: 'Sign In — DOGFOOD 2026',
       user: req.user,
-      redirect: query.redirect || '/projects',
+      redirect: sanitizeRedirect(query.redirect),
       error: query.error || null,
     });
   });
 
   // 3. Web Form Sign-In Submission (Persona, Direct Token, or Email/Password)
-  fastify.post('/login', async (req: FastifyRequest<{ Body: LoginBody; Querystring: AuthQuery }>, reply: FastifyReply) => {
+  fastify.post<{ Body: LoginBody; Querystring: AuthQuery }>('/login', {
+    preHandler: [rateLimit('auth')],
+  }, async (req, reply: FastifyReply) => {
     const body = req.body || {};
-    const redirectUrl = body.redirect || req.query?.redirect || '/projects';
+    const redirectUrl = sanitizeRedirect(body.redirect || req.query?.redirect);
     const isHtml = req.headers.accept?.includes('text/html') || !req.headers['content-type']?.includes('application/json');
 
     // Case A: 1-Click Demo Persona Login
@@ -167,7 +178,7 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
     }
 
     reply.setCookie(SESSION_COOKIE_NAME, token, PERSISTENT_COOKIE_OPTIONS);
-    const redirectUrl = req.query?.redirect || '/projects';
+    const redirectUrl = sanitizeRedirect(req.query?.redirect);
     return reply.redirect(redirectUrl);
   });
 
@@ -221,7 +232,11 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
   });
 
   // 8. Test Sessions Directory (for acceptance test runners and evaluation)
-  fastify.get('/api/test-sessions', async (_req: FastifyRequest, reply: FastifyReply) => {
+  fastify.get('/api/test-sessions', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (process.env.NODE_ENV !== 'test' && (!req.user || req.user.role !== 'organizer')) {
+      return reply.code(403).send({ error: 'Forbidden', message: 'Test sessions directory is restricted' });
+    }
+
     const sessions = queryAll<{ token: string; email: string; name: string; role: string }>(`
       SELECT s.token, u.email, u.name, u.role
       FROM sessions s

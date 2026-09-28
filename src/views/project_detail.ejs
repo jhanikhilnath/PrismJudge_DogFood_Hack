@@ -220,8 +220,6 @@
                 const err = await res.json();
                 if (window.showToast) {
                   window.showToast(err.error || 'Failed to record vote', 'error');
-                } else {
-                  alert('Error: ' + (err.error || 'Failed to record vote'));
                 }
               }
             } catch (err) {

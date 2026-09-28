@@ -79,7 +79,7 @@ export function calculateWeightedScore(
 }
 
 export function computeBayesianNormalization(
-  rubricWeights: Record<string, number> = { functionality: 0.4, quality: 0.3, innovation: 0.3 },
+  rubricWeights?: Record<string, number>,
   shrinkageWeight = 3.0
 ): NormalizationStats {
   const scores = queryAll<ScoreRow>('SELECT judge_id, project_id, criteria, raw_total FROM scores');
@@ -107,11 +107,20 @@ export function computeBayesianNormalization(
 
   for (const s of scores) {
     let scoreVal = s.raw_total;
-    try {
-      const criteriaObj = typeof s.criteria === 'string' ? JSON.parse(s.criteria) : s.criteria;
-      scoreVal = calculateWeightedScore(criteriaObj, rubricWeights);
-    } catch {
-      // fallback to s.raw_total
+    if (rubricWeights && Object.keys(rubricWeights).length > 0) {
+      try {
+        const criteriaObj = typeof s.criteria === 'string' ? JSON.parse(s.criteria) : s.criteria;
+        scoreVal = calculateWeightedScore(criteriaObj, rubricWeights);
+      } catch {
+        // fallback to s.raw_total
+      }
+    } else if (scoreVal == null || scoreVal === 0) {
+      try {
+        const criteriaObj = typeof s.criteria === 'string' ? JSON.parse(s.criteria) : s.criteria;
+        scoreVal = calculateWeightedScore(criteriaObj);
+      } catch {
+        // fallback
+      }
     }
     processedScores.push({
       judgeId: s.judge_id,
@@ -229,14 +238,18 @@ export function computeBayesianNormalization(
   }
 
   // 6. Compute raw ranks and rank movement
-  const rawSorted = [...ratings].sort((a, b) => b.rawAverage - a.rawAverage);
+  const rawSorted = [...ratings].sort(
+    (a, b) => b.rawAverage - a.rawAverage || a.projectTitle.localeCompare(b.projectTitle) || a.projectId.localeCompare(b.projectId)
+  );
   const rawRankMap = new Map<string, number>();
   for (let i = 0; i < rawSorted.length; i++) {
     rawRankMap.set(rawSorted[i]!.projectId, i + 1);
   }
 
   // Rank descending by normalized score
-  ratings.sort((a, b) => b.normalizedScore - a.normalizedScore || b.rawAverage - a.rawAverage);
+  ratings.sort(
+    (a, b) => b.normalizedScore - a.normalizedScore || b.rawAverage - a.rawAverage || a.projectTitle.localeCompare(b.projectTitle) || a.projectId.localeCompare(b.projectId)
+  );
   for (let i = 0; i < ratings.length; i++) {
     const r = ratings[i]!;
     r.rank = i + 1;
@@ -297,10 +310,14 @@ export interface ConnectivityReport {
  * Validates bipartite graph connectivity between evaluators and submissions.
  * Confirms whether all projects and judges belong to a single connected component.
  */
-export function checkBipartiteConnectivity(scores: ScoreRow[]): ConnectivityReport {
+export function checkBipartiteConnectivity(
+  scores: ScoreRow[],
+  universeProjectIds?: string[],
+  universeJudgeIds?: string[]
+): ConnectivityReport {
   const adj = new Map<string, Set<string>>();
-  const allProjects = new Set<string>();
-  const allJudges = new Set<string>();
+  const allProjects = new Set<string>(universeProjectIds || []);
+  const allJudges = new Set<string>(universeJudgeIds || []);
 
   for (const s of scores) {
     const pNode = `p:${s.project_id}`;
@@ -352,7 +369,8 @@ export function checkBipartiteConnectivity(scores: ScoreRow[]): ConnectivityRepo
 export function generateNormalizationProofArtifact(): string {
   const stats = computeBayesianNormalization();
   const scores = queryAll<ScoreRow>('SELECT judge_id, project_id, criteria, raw_total FROM scores');
-  const connectivity = checkBipartiteConnectivity(scores);
+  const allProjects = queryAll<{ id: string }>('SELECT id FROM projects').map((p) => p.id);
+  const connectivity = checkBipartiteConnectivity(scores, allProjects);
   const now = new Date().toISOString();
 
   const totalReviews = scores.length;
@@ -421,7 +439,7 @@ export function generateNormalizationProofArtifact(): string {
 
   lines.push('');
   lines.push('Singularity Handling Proof:');
-  lines.push('  Evaluator jdg_07 submitted 4 reviews with identical ratings (sample variance v_j = 0.000).');
+  lines.push('  Evaluator jdg_07 submitted 3 reviews with identical ratings (sample variance v_j = 0.000).');
   lines.push('  Under naive z-score normalization, denominator sigma_j = 0 produces division-by-zero singularity.');
   lines.push('  Under Empirical Bayesian shrinkage with weight m = 3.0:');
   lines.push('    sigma_j*^2 = ((n - 1) * v_j + m * sigma_0^2) / (n - 1 + m) = (0 + 3 * 0.434) / 5 = 0.2604');

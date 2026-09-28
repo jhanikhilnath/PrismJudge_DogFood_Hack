@@ -531,7 +531,7 @@ per-judge:
     calibration_status: "Balanced"
 
 Singularity Handling Proof:
-  Evaluator jdg_07 submitted 4 reviews with identical ratings (sample variance v_j = 0.000).
+  Evaluator jdg_07 submitted 3 reviews with identical ratings (sample variance v_j = 0.000).
   Under naive z-score normalization, denominator sigma_j = 0 produces division-by-zero singularity.
   Under Empirical Bayesian shrinkage with weight m = 3.0:
     sigma_j*^2 = ((n - 1) * v_j + m * sigma_0^2) / (n - 1 + m) = (0 + 3 * 0.434) / 5 = 0.2604

@@ -117,7 +117,7 @@ export function verifyUserCredentials(
 
   if (!user) return null;
 
-  const isValid = user.password_hash === hashed || user.password_hash === `hash_${user.role}`;
+  const isValid = timingSafeTokenEqual(user.password_hash, hashed) || timingSafeTokenEqual(user.password_hash, `hash_${user.role}`);
   if (!isValid) return null;
 
   return { id: user.id, email: user.email, name: user.name, role: user.role };
