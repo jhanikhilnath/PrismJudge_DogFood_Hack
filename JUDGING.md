@@ -1,5 +1,5 @@
 # DOGFOOD 2026 — Judging Engine & Normalization Proof
-**Prize Target:** Best Judging Engine ($100 USD) & Grand Prize  
+**Specification:** Empirical Bayesian Shrinkage, Bradley-Terry Pairwise Engine & Bipartite Connectivity  
 **Authors:** Dogfood Portal Engineering Team  
 **Verification Suite:** `tests/normalization.test.ts`, `tests/pairwise.test.ts`, `tests/role_isolation.test.ts`  
 
@@ -60,11 +60,11 @@ For the `fixtures.json` dataset:
 We model the true judge distribution parameters using a conjugate normal-inverse-gamma prior with pseudo-observation weight $m = 3.0$.
 
 #### Posterior Mean Estimation:
-$$\mu_j^* = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}$$
+$$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}$$
 
 #### Posterior Standard Deviation Estimation:
-$$\sigma_j^{*2} = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
-$$\sigma_j^* = \sqrt{\sigma_j^{*2}}$$
+$$(\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
+$$\sigma_j^{\star} = \sqrt{(\sigma_j^{\star})^2}$$
 
 ### 3.3 Resolution of `jdg_07` (Zero Variance Case)
 For judge `jdg_07`:
@@ -74,17 +74,17 @@ For judge `jdg_07`:
 - $m = 3.0$
 
 Applying shrinkage:
-$$\mu_7^* = \frac{3(4.000) + 3(3.567)}{3 + 3} = 3.783$$
-$$\sigma_7^{*2} = \frac{(2)(0.000) + 3(0.434)}{2 + 3} = \frac{1.303}{5} = 0.2606$$
-$$\sigma_7^* = \sqrt{0.2606} = 0.5105 > 0$$
+$$\mu_7^{\star} = \frac{3(4.000) + 3(3.567)}{3 + 3} = 3.783$$
+$$(\sigma_7^{\star})^2 = \frac{(2)(0.000) + 3(0.434)}{2 + 3} = \frac{1.303}{5} = 0.2606$$
+$$\sigma_7^{\star} = \sqrt{0.2606} = 0.5105 > 0$$
 
 **Mathematical Proof of Non-Zero Standard Deviation:**
-$$\forall j, \quad \sigma_j^{*2} \ge \frac{m \sigma_0^2}{\max(1, n_j - 1) + m} > 0$$
+$$\forall j, \quad (\sigma_j^{\star})^2 \ge \frac{m \sigma_0^2}{\max(1, n_j - 1) + m} > 0$$
 Since $m = 3.0$ and $\sigma_0^2 > 0$, **the denominator is never zero, and the shrunk standard deviation is strictly bounded below by $\sqrt{\frac{m}{n_j + m - 1}}\sigma_0 > 0$**. Division by zero is mathematically impossible.
 
 ### 3.4 Target Rescaling to Standard 0–100 Scale
 Individual normalized reviews are mapped to a standardized scale centered at 70 with standard deviation 12:
-$$Z_{ij} = \frac{S_{ij} - \mu_j^*}{\sigma_j^*}$$
+$$Z_{ij} = \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}$$
 $$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot Z_{ij}, 0, 100\right)$$
 
 The project's aggregate normalized score is the mean across all judges:
@@ -129,7 +129,7 @@ where:
 Rather than sampling pairs uniformly at random, the platform implements an active acquisition policy that maximizes the expected Fisher Information about relative project rank:
 $$\mathcal{I}(\theta_{ij}) = \frac{\pi_i \pi_j}{(\pi_i + \pi_j)^2} = \frac{1}{1 + 10^{|R_i - R_j|/400}}$$
 Candidate pairs are selected according to:
-$$(i^*, j^*) = \arg\max_{i < j} \left[ \mathcal{I}(\theta_{ij}) + \frac{0.35}{\sqrt{1 + N_i + N_j}} + 0.25 \cdot \mathbf{1}_{\{N_{ij} = 0\}} \right]$$
+$$(i^{\star}, j^{\star}) = \arg\max_{i < j} \left[ \mathcal{I}(\theta_{ij}) + \frac{0.35}{\sqrt{1 + N_i + N_j}} + 0.25 \cdot \mathbf{1}_{\{N_{ij} = 0\}} \right]$$
 This optimizes judge evaluation efficiency, prioritizing high-information close matchups for podium contenders while rapidly exploring unreviewed submissions.
 
 Convergence is guaranteed monotonically due to log-concavity of the Bradley-Terry likelihood function. Tested and verified in `tests/pairwise.test.ts`.

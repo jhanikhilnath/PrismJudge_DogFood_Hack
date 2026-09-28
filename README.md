@@ -1,23 +1,22 @@
 # DOGFOOD 2026
 > *"Build the platform that will judge you."*  
 > **Self-Hostable Hackathon Submission, Evaluation & Normalization Engine**  
-> Built for the **DOGFOOD 2026 Grand Prize ($800)** & **Best Judging Engine ($100)**  
+> Built from first principles for [DOGFOOD 2026](https://dogfoodhack.com/).  
 > **Repository:** [https://github.com/jhanikhilnath/dogfood_hack.git](https://github.com/jhanikhilnath/dogfood_hack.git)
 
 ---
 
-<p align="center">
-  <a href="#acceptance-verification"><img src="https://img.shields.io/badge/Acceptance%20Suite-7%2F7%20PASS-brightgreen.svg?style=for-the-badge&logo=checkmarx" alt="Acceptance 7/7 PASS"></a>
-  <a href="#test-suite"><img src="https://img.shields.io/badge/Unit%20%26%20Security-47%2F47%20PASS-brightgreen.svg?style=for-the-badge&logo=node.js" alt="Unit Tests 47/47 PASS"></a>
-  <a href="#test-suite"><img src="https://img.shields.io/badge/Route%20Audit-641%2F641%20PASS-brightgreen.svg?style=for-the-badge&logo=fastify" alt="Route Matrix 641/641 PASS"></a>
-  <a href="#test-suite"><img src="https://img.shields.io/badge/E2E%20Container-89%2F89%20PASS-brightgreen.svg?style=for-the-badge&logo=docker" alt="E2E 89/89 PASS"></a>
-  <a href="#the-one-command-rule"><img src="https://img.shields.io/badge/Offline%20Boot-%3C%20800ms-blue.svg?style=for-the-badge&logo=sqlite" alt="Offline <800ms Boot"></a>
-  <a href="#where-things-are"><img src="https://img.shields.io/badge/OpenAPI-3.1%20Compliant-teal.svg?style=for-the-badge&logo=openapi-initiative" alt="OpenAPI 3.1"></a>
-</p>
-
----
-
 ![DOGFOOD 2026 Welcome Portal](docs/screenshots/hero.png)
+
+### System Verification & Compliance
+| Metric | Result | Verification Runbook |
+| :--- | :---: | :--- |
+| **Official Acceptance Suite** | **`7 / 7 PASS`** | Official runner: `python3 run.py .dogfood.toml` (Claimed T1 T2) |
+| **Unit & Security Test Suite** | **`47 / 47 PASS`** | 100% passing across 9 test suites (`npm test`) |
+| **Route Access & Role Matrix** | **`641 / 641 PASS`** | Comprehensive 4-role penetration matrix (`tests/audit_script.mjs`) |
+| **Containerized E2E Verification** | **`89 / 89 PASS`** | Full system lifecycle audit (`tests/comprehensive_e2e_audit.mjs`) |
+| **Cold Offline Boot Time** | **`< 800 ms`** | Embedded SQLite 3 WAL Mode, zero cloud/network dependencies |
+| **API Specification** | **`OpenAPI 3.1`** | Validated schema with live interactive Swagger UI at `/docs` |
 
 ---
 
@@ -27,7 +26,7 @@ Most hackathon platforms average scores. An arithmetic average treats a judge wh
 
 **DOGFOOD 2026 is built from first principles to hold the line:**
 
-1. **Empirical Bayesian Shrinkage (The Zero-Variance Proof)**: We shrink each judge's mean and spread toward the competition-wide prior ($\mu_0 \approx 3.57, \sigma_0^2 \approx 0.43$) with pseudo-weight $m = 3.0$. For judge `jdg_07` (who gave 4.0 on every review, sample variance $v = 0$), the shrunk spread is $\sigma_7^* = 0.5105 > 0$. **Division by zero is mathematically impossible.**
+1. **Empirical Bayesian Shrinkage (The Zero-Variance Proof)**: We shrink each judge's mean and spread toward the competition-wide prior ($\mu_0 \approx 3.57, \sigma_0^2 \approx 0.43$) with pseudo-weight $m = 3.0$. For judge `jdg_07` (who gave 4.0 on every review, sample variance $v = 0$), the shrunk spread is $\sigma_7^{\star} = 0.5105 > 0$. **Division by zero is mathematically impossible.**
 2. **Bradley-Terry Pairwise Engine**: Beside the rubric, judges can evaluate head-to-head showdowns. We solve latent capability using Minorization-Maximization (MM) with Dirichlet smoothing, mapping win rates to standard Elo ratings ($1300–1700$).
 3. **Hard Backend Peer Isolation**: Fastify `preHandler` hooks inspect every request before the database is touched. If Judge B probes `/api/judge/scores?judge=judge_a`, the server halts with a hard **HTTP 403 Forbidden**.
 4. **Single-Process Offline Speed**: Zero external database containers, zero cloud authentication services. Built in Node.js 22 LTS with embedded SQLite 3 (WAL mode) and 256MB memory mapping. Boots in **< 800ms** on an air-gapped laptop with physical network disconnected.
@@ -153,18 +152,18 @@ Standard Z-Score normalization defines $Z_{ij} = \frac{S_{ij} - \bar{S}_j}{\sigm
 
 We solve this using Empirical Bayesian Shrinkage with pseudo-observation weight $m = 3.0$:
 
-$$\mu_j^* = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad \sigma_j^{*2} = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}, \quad \sigma_j^* = \sqrt{\sigma_j^{*2}}$$
+$$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}, \quad \sigma_j^{\star} = \sqrt{(\sigma_j^{\star})^2}$$
 
-$$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot \frac{S_{ij} - \mu_j^*}{\sigma_j^*}, 0, 100\right)$$
+$$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}, 0, 100\right)$$
 
 #### Resolution of Evaluator `jdg_07` (Zero Variance Case)
 * Reviews: $n_7 = 3$, Sample Mean: $\bar{S}_7 = 4.000$, Sample Variance: $v_7 = 0.000$.
 * Global Prior Mean: $\mu_0 = 3.567$, Global Prior Variance: $\sigma_0^2 = 0.434$.
-* Shrunk Mean: $\mu_7^* = \frac{3(4.000) + 3(3.567)}{3 + 3} = 3.783$.
-* Shrunk Variance: $\sigma_7^{*2} = \frac{(2)(0.000) + 3(0.434)}{2 + 3} = \frac{1.303}{5} = 0.2606$.
-* Shrunk Spread: $\sigma_7^* = \sqrt{0.2606} = \mathbf{0.5105 > 0}$.
+* Shrunk Mean: $\mu_7^{\star} = \frac{3(4.000) + 3(3.567)}{3 + 3} = 3.783$.
+* Shrunk Variance: $(\sigma_7^{\star})^2 = \frac{(2)(0.000) + 3(0.434)}{2 + 3} = \frac{1.303}{5} = 0.2606$.
+* Shrunk Spread: $\sigma_7^{\star} = \sqrt{0.2606} = \mathbf{0.5105 > 0}$.
 
-$$\forall j, \quad \sigma_j^{*2} \ge \frac{m \sigma_0^2}{\max(1, n_j - 1) + m} > 0$$
+$$\forall j, \quad (\sigma_j^{\star})^2 \ge \frac{m \sigma_0^2}{\max(1, n_j - 1) + m} > 0$$
 The shrunk standard deviation is strictly bounded below by a positive constant. **Division by zero is impossible.**
 
 ---
@@ -263,5 +262,5 @@ npx tsc --noEmit
 ---
 
 <p align="center">
-  <b>Built for DOGFOOD 2026 · Grand Prize & Best Judging Engine Entry</b>
+  <b>DOGFOOD 2026 · Self-Hostable Hackathon Submission & Evaluation Platform</b>
 </p>

@@ -1,6 +1,6 @@
 # DOGFOOD 2026: Production-Grade Hackathon Evaluation & Normalization Platform
-> **Grand Prize & Best Judging Engine Pitch Deck**  
-> *Target: $800 Grand Prize · $100 Best Judging Engine*  
+> **Architecture, Mathematical Rigor & System Verification Pitch Deck**  
+> *Production-Grade Evaluation & Normalization Engine*  
 > **Repository**: [https://github.com/jhanikhilnath/dogfood_hack.git](https://github.com/jhanikhilnath/dogfood_hack.git)  
 > **Architecture**: Node.js 22 LTS · Fastify v5 · TypeScript · Embedded SQLite 3 (WAL Mode) · Zero Cloud Dependencies
 
@@ -113,11 +113,11 @@ $$Z_{ij} = \frac{S_{ij} - \bar{S}_j}{\sigma_j}$$
 When a juror scores few projects ($n_j$ is small) or awards identical scores ($v_j = 0$), sample estimates $\bar{S}_j$ and $s_j$ are either noisy or undefined. **DOGFOOD 2026 implements Empirical Bayesian Shrinkage** using a normal-inverse-gamma prior distribution centered on the global judging population:
 
 ### The Mathematical Formulation:
-$$\mu_j^* = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}$$
+$$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}$$
 
-$$\sigma_j^{*2} = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}, \quad \sigma_j^* = \sqrt{\sigma_j^{*2}}$$
+$$(\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}, \quad \sigma_j^{\star} = \sqrt{(\sigma_j^{\star})^2}$$
 
-$$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot \frac{S_{ij} - \mu_j^*}{\sigma_j^*}, 0, 100\right)$$
+$$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}, 0, 100\right)$$
 
 ```
 Prior Weight: m = 3.0 (empirically calibrated across 30 jurors)
@@ -136,7 +136,7 @@ Global Prior Variance (σ₀²): ~0.4343 (σ₀ ≈ 0.6590)
 |    μ₇* = (3 · 4.0000 + 3.0 · 3.5706) / (3 + 3.0) = (12.0 + 10.7118) / 6.0 = 3.7853              |
 |                                                                                                  |
 | 2. Shrinkage Variance & Standard Deviation:                                                      |
-|    σ₇*² = ((3 - 1) · 0.0000 + 3.0 · 0.4343) / ((3 - 1) + 3.0) = (0 + 1.3029) / 5.0 = 0.2606   |
+|    (σ₇*)² = ((3 - 1) · 0.0000 + 3.0 · 0.4343) / ((3 - 1) + 3.0) = (0 + 1.3029) / 5.0 = 0.2606  |
 |    σ₇* = √0.2606 = 0.5105 > 0.0000                                                               |
 |                                                                                                  |
 | CONCLUSION: Division by zero is mathematically impossible. The denominator is strictly positive  |
