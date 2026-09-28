@@ -33,6 +33,32 @@ Most hackathon platforms average scores. An arithmetic average treats a judge wh
 
 ---
 
+## Two Independent Evaluation Tracks: Official Judging vs. Community Choice
+
+A common question in hackathon systems is: *Why can visitors vote on projects? Can random people skew the final winners?*
+
+**No. The platform maintains two strictly decoupled evaluation systems:**
+
+| Evaluation Dimension | Track 1: Official Evaluation (Tier 2) | Track 2: Community Choice Award (Tier 3) |
+| :--- | :--- | :--- |
+| **Who Participates** | **Official Registered Judges Only** (`judge` role) | **Audience, Attendees, Peers & Visitors** (Public) |
+| **What It Decides** | **Official Grand Prizes, Track Winners & Leaderboard** | **Standalone "Community Choice / People's Choice" Prize** |
+| **Scoring Engine** | 4-criterion weighted rubrics + Bayesian shrinkage + Pairwise Elo | Simple 1-person-1-vote ballot tally |
+| **Access Control** | **Hard backend role isolation (HTTP 403)**; curl probes rejected | Public ballot protected by anti-abuse and anti-Sybil barriers |
+| **Self-Voting Barrier** | Judges cannot evaluate their own projects (Conflict of Interest check) | **Strictly blocked (HTTP 403)**: cannot vote for own team project |
+| **Result Sealing** | Hidden from peers and participants during active judging | Tallies sealed until voting concludes to prevent herd bias |
+| **Specification Mandate** | PRD §3.2 (FR-100 to FR-126) | PRD §3.3.1 (FR-200 to FR-216) |
+
+### Why Public Voting Exists in Tier 3 (PRD §3.3.1)
+The competition specification explicitly requires supporting public engagement via a "People's Choice" award:
+* **PRD FR-200 — FR-203**: Mandates support for `open` (anyone with link), `email_gated`, and `authenticated` voting modes.
+* **PRD FR-205 (Anti-Self-Voting Barrier)**: *"A voter cannot vote on their own team project. The API returns 403."* Our backend verifies voter sessions and emails against SQLite team rosters to reject self-votes.
+* **PRD FR-206 & FR-210 (Sealed Results)**: Aggregate vote tallies are concealed from the public until results are announced to eliminate bandwagon voting.
+* **Fisher-Yates Presentation Debiasing**: Ballot order is pseudo-randomly shuffled per visitor session using cryptographic hashing, so projects at the top of the list don't gain an unfair advantage.
+* **Anti-Sybil Defenses**: Compound database constraints (`UNIQUE(project_id, voter_hash)`) and sliding-window IP rate limiters block bot floods and automated manipulation.
+
+---
+
 ## Visual Tour of the Platform
 
 | | |
