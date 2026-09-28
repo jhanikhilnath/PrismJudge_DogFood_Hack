@@ -141,7 +141,11 @@ The platform contains two distinct mathematical engines that operate on evaluati
 1. **Empirical Bayesian Shrinkage Engine (`src/engine/normalization.ts`)**:
    - Computes global prior mean $\mu_0$ and global prior variance $\sigma_0^2$ across all scores in the competition.
    - Shrinks each individual juror's scoring distribution toward the global population:
-     $$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
+
+     $$
+     \mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}
+     $$
+
    - Guarantees strictly positive standard deviation $\sigma_j^{\star} > 0$ even when sample variance $v_j = 0$ (such as `jdg_07`).
    - Normalizes scores into an intuitive 0–100 scale: $\text{Score}_{ij}^{\text{norm}} = \text{clamp}(70 + 12 \cdot Z_{ij}, 0, 100)$.
 
@@ -152,7 +156,11 @@ The platform contains two distinct mathematical engines that operate on evaluati
 
 3. **Composite Leaderboard Aggregator (`src/engine/ranking.ts`)**:
    - Synthesizes 80% normalized rubric scoring + 20% pairwise Elo capability:
-     $$\text{Composite} = 0.80 \cdot \text{Score}_{\text{norm}} + 0.20 \cdot \text{Elo}_{\text{pairwise}}$$
+
+     $$
+     \text{Composite} = 0.80 \cdot \text{Score}_{\text{norm}} + 0.20 \cdot \text{Elo}_{\text{pairwise}}
+     $$
+
    - Enforces a deterministic 4-stage tie-breaking cascade: Review count $\to$ Normalized score $\to$ Alphabetical title $\to$ Project ID.
 
 ---

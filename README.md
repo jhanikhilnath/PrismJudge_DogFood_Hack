@@ -178,9 +178,13 @@ Standard Z-Score normalization defines $Z_{ij} = \frac{S_{ij} - \bar{S}_j}{\sigm
 
 We solve this using Empirical Bayesian Shrinkage with pseudo-observation weight $m = 3.0$:
 
-$$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}, \quad \sigma_j^{\star} = \sqrt{(\sigma_j^{\star})^2}$$
+$$
+\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}, \quad \sigma_j^{\star} = \sqrt{(\sigma_j^{\star})^2}
+$$
 
-$$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}, 0, 100\right)$$
+$$
+\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}, 0, 100\right)
+$$
 
 #### Resolution of Evaluator `jdg_07` (Zero Variance Case)
 * Reviews: $n_7 = 3$, Sample Mean: $\bar{S}_7 = 4.000$, Sample Variance: $v_7 = 0.000$.
@@ -189,17 +193,26 @@ $$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(70 + 12 \cdot \frac{S_{ij}
 * Shrunk Variance: $(\sigma_7^{\star})^2 = \frac{(2)(0.000) + 3(0.434)}{2 + 3} = \frac{1.303}{5} = 0.2606$.
 * Shrunk Spread: $\sigma_7^{\star} = \sqrt{0.2606} = \mathbf{0.5105 > 0}$.
 
-$$\forall j, \quad (\sigma_j^{\star})^2 \ge \frac{m \sigma_0^2}{\max(1, n_j - 1) + m} > 0$$
+$$
+\forall j, \quad (\sigma_j^{\star})^2 \ge \frac{m \sigma_0^2}{\max(1, n_j - 1) + m} > 0
+$$
+
 The shrunk standard deviation is strictly bounded below by a positive constant. **Division by zero is impossible.**
 
 ---
 
 ### 2. Bradley-Terry Minorization-Maximization (MM) Pairwise Solver
 Under the Bradley-Terry model, the probability that project $i$ beats project $j$ is:
-$$P(i \succ j) = \frac{\pi_i}{\pi_i + \pi_j} = \frac{e^{\lambda_i}}{e^{\lambda_i} + e^{\lambda_j}}$$
+
+$$
+P(i \succ j) = \frac{\pi_i}{\pi_i + \pi_j} = \frac{e^{\lambda_i}}{e^{\lambda_i} + e^{\lambda_j}}
+$$
 
 We solve for maximum likelihood using iterative Minorization-Maximization with Dirichlet smoothing ($\alpha = 0.10$):
-$$\pi_i^{(t+1)} = \frac{W_i + \alpha}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}} + \alpha \sum_k \frac{1}{\pi_i^{(t)} + \pi_k^{(t)}}}$$
+
+$$
+\pi_i^{(t+1)} = \frac{W_i + \alpha}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}} + \alpha \sum_k \frac{1}{\pi_i^{(t)} + \pi_k^{(t)}}}
+$$
 
 Latent capabilities are mapped to standard Elo ratings ($R_i = 1500 + 400 \log_{10} \pi_i$). The final competition standing synthesizes **80% Calibrated Rubric + 20% Pairwise Elo**.
 

@@ -190,16 +190,34 @@ Let $n_j$ be the number of reviews submitted by judge $j$, with sample mean $\ba
 
 Let $\mu_0$ and $\sigma_0^2$ be the global prior mean and variance across all scores in the competition.
 We apply Bayesian shrinkage to estimate the posterior mean $\mu_j^{\star}$ and posterior standard deviation $\sigma_j^{\star}$:
-$$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}$$
-$$(\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
+
+$$
+\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}
+$$
+
+$$
+(\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}
+$$
+
 where $m = 3.0$ represents the pseudo-observation prior weight.
 
 The normalized score for project $i$ from judge $j$ is:
-$$Z_{ij} = \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}$$
+
+$$
+Z_{ij} = \frac{S_{ij} - \mu_j^{\star}}{\sigma_j^{\star}}
+$$
+
 Rescaled to a standard 0–100 scale:
-$$\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(50 + 15 \cdot Z_{ij}, 0, 100\right)$$
+
+$$
+\text{Score}_{ij}^{\text{norm}} = \text{clamp}\left(50 + 15 \cdot Z_{ij}, 0, 100\right)
+$$
+
 The project's final normalized rating is the average across all assigned judges:
-$$\hat{R}_i = \frac{1}{|J_i|} \sum_{j \in J_i} \text{Score}_{ij}^{\text{norm}}$$
+
+$$
+\hat{R}_i = \frac{1}{|J_i|} \sum_{j \in J_i} \text{Score}_{ij}^{\text{norm}}
+$$
 
 This guarantees:
 * When $n_j$ is small or $\sigma_j \to 0$ (e.g. `jdg_07`), the variance shrinks smoothly to the global prior $\sigma_0^2 > 0$, completely eliminating mathematical singularities.
@@ -210,9 +228,17 @@ This guarantees:
 ### Bonus Challenge 2: Pairwise Judging Mode (Bradley-Terry)
 To complement rubric scoring, judges can perform pairwise comparisons ($A \succ B$).
 Under the Bradley-Terry model:
-$$P(i \succ j) = \frac{\pi_i}{\pi_i + \pi_j} = \frac{e^{\lambda_i}}{e^{\lambda_i} + e^{\lambda_j}}$$
+
+$$
+P(i \succ j) = \frac{\pi_i}{\pi_i + \pi_j} = \frac{e^{\lambda_i}}{e^{\lambda_i} + e^{\lambda_j}}
+$$
+
 We implement the iterative **Minorization-Maximization (MM)** algorithm in TypeScript:
-$$\pi_i^{(t+1)} = \frac{W_i}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}}}$$
+
+$$
+\pi_i^{(t+1)} = \frac{W_i}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}}}
+$$
+
 where $W_i$ is the number of wins for project $i$, and $N_{ij}$ is the total matches between $i$ and $j$.
 * Exposes a dedicated pairwise voting UI for judges (`/judge/pairwise`).
 * Fully documented in `JUDGING.md` and unit-tested in `tests/pairwise.test.ts`.

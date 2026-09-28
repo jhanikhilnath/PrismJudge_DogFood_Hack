@@ -62,7 +62,11 @@
   1. **Zero-Variance Singularity:** Judge `jdg_07` in `fixtures.json` assigned an identical score of `4` to all 3 evaluated projects. Raw sample variance is $0$, causing division by zero ($z = \frac{0}{0} = \text{NaN}$).
   2. **Small-Sample Distortion:** A judge with only 2 reviews has extreme estimation variance, artificially amplifying or dampening scores.
 - **Decision:** Implement Empirical Bayesian Shrinkage using a normal-inverse-gamma conjugate prior with pseudo-observation weight $m = 3.0$:
-  $$\mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}$$
+
+  $$
+  \mu_j^{\star} = \frac{n_j \bar{S}_j + m \mu_0}{n_j + m}, \quad (\sigma_j^{\star})^2 = \frac{\max(0, n_j - 1) v_j + m \sigma_0^2}{\max(1, n_j - 1) + m}
+  $$
+
 - **Rationale:**
   1. $\sigma_j^{\star}$ is strictly bounded below by $\sqrt{\frac{m}{\max(1, n_j - 1) + m}} \sigma_0 > 0$. For `jdg_07`, $\sigma_7^{\star} = 0.5105 > 0$, guaranteeing zero mathematical singularities.
   2. As a judge reviews more projects ($n_j \to \infty$), their posterior shrinks toward their empirical distribution, balancing individual judgment with population stability.
@@ -74,7 +78,11 @@
 - **Status:** Accepted & Enforced
 - **Context:** Scoring rubrics often induce scale fatigue (judges grade everything 4/5 after reviewing 10 projects). Pairwise head-to-head comparison ($A \succ B$) eliminates scale anchoring.
 - **Decision:** Implement Bradley-Terry modeling solved via the iterative Minorization-Maximization (MM) algorithm with Laplacian smoothing ($\epsilon = 0.01$):
-  $$\pi_i^{(t+1)} = \frac{W_i}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}}}$$
+
+  $$
+  \pi_i^{(t+1)} = \frac{W_i}{\sum_{j \ne i} \frac{N_{ij}}{\pi_i^{(t)} + \pi_j^{(t)}}}
+  $$
+
 - **Rationale:**
   1. Bradley-Terry log-likelihood is strictly concave; MM guarantees monotonic convergence without learning rate tuning or gradient oscillations.
   2. Enables computation of both log-odds skill ratings ($\lambda_i$) and standard Elo ratings ($R_i = 1500 + 400 \log_{10} \pi_i$).
