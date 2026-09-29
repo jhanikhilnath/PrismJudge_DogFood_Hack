@@ -436,7 +436,7 @@ export function getRecentAuditLogs(limit = 15): AuditLogRecord[] {
   return queryAll<AuditLogRecord>(
     `SELECT id, actor_id, actor_role, action, resource_type, resource_id, payload, ip_address, created_at
      FROM audit_logs
-     ORDER BY created_at DESC
+     ORDER BY rowid DESC
      LIMIT ?`,
     limit
   );

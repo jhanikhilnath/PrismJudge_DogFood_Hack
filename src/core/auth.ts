@@ -28,10 +28,25 @@ export type DemoPersonaKey = keyof typeof DEMO_PERSONAS;
  * Resolve persona name ('organizer', 'judge_a', etc.) to its active bearer/cookie token.
  */
 export function resolvePersonaToken(personaOrToken: string): string {
-  if (personaOrToken in DEMO_PERSONAS) {
-    return DEMO_PERSONAS[personaOrToken as DemoPersonaKey].token;
+  if (!personaOrToken || typeof personaOrToken !== 'string') return '';
+  const key = personaOrToken.toLowerCase().trim();
+
+  if (key in DEMO_PERSONAS) {
+    return DEMO_PERSONAS[key as DemoPersonaKey].token;
   }
-  return personaOrToken;
+  if (key === 'judge' || key === 'lead_judge' || key === 'jdg_01' || key === 'tomas' || key === 'tomas_varga') {
+    return DEMO_PERSONAS.judge_a.token;
+  }
+  if (key === 'peer_judge' || key === 'jdg_02' || key === 'wei' || key === 'wei_lindqvist') {
+    return DEMO_PERSONAS.judge_b.token;
+  }
+  if (key === 'admin' || key === 'lead_organizer' || key === 'org' || key === 'usr_org') {
+    return DEMO_PERSONAS.organizer.token;
+  }
+  if (key === 'contestant' || key === 'usr_part' || key === 'team_01' || key === 'northkiln' || key === 'usr_part_33aa') {
+    return DEMO_PERSONAS.participant.token;
+  }
+  return personaOrToken.trim();
 }
 
 /**

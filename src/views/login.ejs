@@ -39,7 +39,7 @@
         </div>
         <form action="/login" method="POST">
           <input type="hidden" name="persona" value="organizer">
-          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <input type="hidden" name="redirect" value="<%= (redirect && redirect !== '/projects') ? redirect : '/organizer/dashboard' %>">
           <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">
             Enter as Organizer →
           </button>
@@ -62,7 +62,7 @@
         </div>
         <form action="/login" method="POST">
           <input type="hidden" name="persona" value="judge_a">
-          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <input type="hidden" name="redirect" value="<%= (redirect && redirect !== '/projects') ? redirect : '/judge/dashboard' %>">
           <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
             Enter as Judge A →
           </button>
@@ -85,7 +85,7 @@
         </div>
         <form action="/login" method="POST">
           <input type="hidden" name="persona" value="judge_b">
-          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <input type="hidden" name="redirect" value="<%= (redirect && redirect !== '/projects') ? redirect : '/judge/dashboard' %>">
           <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
             Enter as Judge B →
           </button>
@@ -108,7 +108,7 @@
         </div>
         <form action="/login" method="POST">
           <input type="hidden" name="persona" value="participant">
-          <input type="hidden" name="redirect" value="<%= redirect %>">
+          <input type="hidden" name="redirect" value="<%= redirect || '/projects' %>">
           <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
             Enter as Participant →
           </button>

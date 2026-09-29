@@ -30,12 +30,18 @@
     <div>Your active role is <strong><%= typeof user !== 'undefined' && user ? user.role : 'unspecified' %></strong>. If you are participating as an evaluator or staff member, you can switch demo personas or sign in with elevated credentials.</div>
   </div>
 
-  <div style="display: flex; justify-content: center; gap: 0.75rem;">
+  <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
     <a href="/projects" class="btn btn-secondary">
       Browse Submissions
     </a>
-    <a href="/login" class="btn btn-primary">
-      Switch Account / Sign In
+    <a href="/api/auth/switch/organizer" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+      Switch to Organizer →
+    </a>
+    <a href="/api/auth/switch/judge_a" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+      Switch to Judge A →
+    </a>
+    <a href="/login" class="btn btn-secondary">
+      All Sign In Options
     </a>
   </div>
 </div>

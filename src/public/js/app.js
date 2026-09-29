@@ -90,6 +90,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // 4b. Dynamic Persona Switch Interceptor (Preserves contextual route safely)
+  document.querySelectorAll('a[href^="/api/auth/switch/"]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const curPath = window.location.pathname;
+      const curSearch = window.location.search;
+      if (curPath && curPath !== '/login' && curPath !== '/') {
+        const fullLoc = curPath + curSearch;
+        const baseHref = link.getAttribute('href').split('?')[0];
+        link.setAttribute('href', `${baseHref}?redirect=${encodeURIComponent(fullLoc)}`);
+      }
+    });
+  });
+
+  // 4c. Flash Toast from Persona Switching
+  function checkSwitchToast() {
+    // Check flash cookie
+    const match = document.cookie.match(/(?:^|;\s*)prism_flash_switched=([^;]+)/);
+    if (match && match[1]) {
+      try {
+        const parts = decodeURIComponent(match[1]).split(':');
+        const role = parts[0];
+        const name = parts[1] || role;
+        window.showToast(`Switched active persona to ${name}`, 'success');
+      } catch (err) {}
+      // Clear cookie immediately
+      document.cookie = 'prism_flash_switched=; Path=/; Max-Age=0; SameSite=Lax';
+    }
+
+    // Also check query param fallback
+    const urlParams = new URLSearchParams(window.location.search);
+    const switchedRole = urlParams.get('switched');
+    if (switchedRole) {
+      const roleNames = {
+        organizer: 'Lead Organizer',
+        judge_a: 'Judge A (Tomas Varga)',
+        judge_b: 'Judge B (Wei Lindqvist)',
+        judge: 'Senior Technical Judge',
+        participant: 'Participant (Team NorthKiln)',
+      };
+      const name = roleNames[switchedRole] || switchedRole;
+      window.showToast(`Switched active persona to ${name}`, 'success');
+      urlParams.delete('switched');
+      const newSearch = urlParams.toString();
+      const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }
+  checkSwitchToast();
+
   // 5. Gallery Live Search & Track Filter (scoped strictly to gallery)
   const searchInput = document.getElementById('gallery-search');
   const trackFilter = document.getElementById('gallery-track');

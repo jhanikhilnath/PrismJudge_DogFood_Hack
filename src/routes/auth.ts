@@ -25,13 +25,82 @@ interface AuthQuery {
   error?: string;
 }
 
-function sanitizeRedirect(url?: string | null): string {
+export function getRoleDefaultPath(role: string): string {
+  switch (role) {
+    case 'organizer':
+    case 'admin':
+      return '/organizer/dashboard';
+    case 'judge':
+      return '/judge/dashboard';
+    case 'participant':
+    default:
+      return '/projects';
+  }
+}
+
+export function sanitizeRedirect(url?: string | null): string {
   if (!url || typeof url !== 'string') return '/projects';
   const trimmed = url.trim();
   if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.includes('\\')) {
     return trimmed;
   }
   return '/projects';
+}
+
+export function resolveSmartRedirect(targetRole: string, requestedRedirect?: string | null, refererHeader?: string | null): string {
+  let candidate = (requestedRedirect || '').trim();
+
+  // If candidate is not provided or just root/login, inspect referer header
+  if (!candidate || candidate === '/' || candidate === '/login') {
+    if (refererHeader) {
+      try {
+        const refUrl = new URL(refererHeader, 'http://localhost:8080');
+        if (refUrl.pathname && refUrl.pathname !== '/login' && refUrl.pathname !== '/') {
+          candidate = refUrl.pathname + refUrl.search;
+        }
+      } catch {}
+    }
+  }
+
+  // If still empty or at root/login, go to role's primary home
+  if (!candidate || candidate === '/' || candidate === '/login') {
+    return getRoleDefaultPath(targetRole);
+  }
+
+  // Validate local relative path
+  if (!candidate.startsWith('/') || candidate.startsWith('//') || candidate.includes('\\')) {
+    return getRoleDefaultPath(targetRole);
+  }
+
+  const path = candidate.split('?')[0];
+
+  // Organizer routes protection
+  if (path.startsWith('/organizer')) {
+    if (targetRole === 'organizer' || targetRole === 'admin') {
+      return candidate;
+    }
+    return getRoleDefaultPath(targetRole);
+  }
+
+  // Judge routes protection
+  if (path.startsWith('/judge')) {
+    if (targetRole === 'judge' || targetRole === 'organizer' || targetRole === 'admin') {
+      return candidate;
+    }
+    return getRoleDefaultPath(targetRole);
+  }
+
+  // Submission route: judges are blocked from submitting, so route them to judge dashboard
+  if (path === '/projects/new' && targetRole === 'judge') {
+    return '/judge/dashboard';
+  }
+
+  // If candidate was generic /projects and switching to organizer or judge, lead them directly to their operational console/dashboard
+  if (candidate === '/projects') {
+    return getRoleDefaultPath(targetRole);
+  }
+
+  return candidate;
 }
 
 export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginOptions): Promise<void> {
@@ -93,15 +162,40 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
     // Case A: 1-Click Demo Persona Login
     if (body.persona) {
       const resolvedToken = resolvePersonaToken(body.persona);
-      const session = queryOne<{ token: string; user_id: string }>(
-        'SELECT token, user_id FROM sessions WHERE token = ?',
+      let session = queryOne<{ token: string; user_id: string; role: string; name: string }>(
+        `SELECT s.token, s.user_id, u.role, u.name
+         FROM sessions s
+         JOIN users u ON s.user_id = u.id
+         WHERE s.token = ?
+         ORDER BY s.created_at DESC
+         LIMIT 1`,
         resolvedToken
       );
 
+      if (!session) {
+        session = queryOne<{ token: string; user_id: string; role: string; name: string }>(
+          `SELECT s.token, s.user_id, u.role, u.name
+           FROM sessions s
+           JOIN users u ON s.user_id = u.id
+           WHERE s.user_id = ?
+           ORDER BY s.created_at DESC
+           LIMIT 1`,
+          body.persona
+        );
+      }
+
       if (session) {
-        reply.setCookie(SESSION_COOKIE_NAME, resolvedToken, PERSISTENT_COOKIE_OPTIONS);
-        if (isHtml) return reply.redirect(redirectUrl);
-        return reply.send({ message: 'Logged in as demo persona', token: resolvedToken });
+        reply.setCookie(SESSION_COOKIE_NAME, session.token, PERSISTENT_COOKIE_OPTIONS);
+        reply.setCookie('prism_flash_switched', session.role + ':' + encodeURIComponent(session.name), {
+          path: '/',
+          httpOnly: false,
+          sameSite: 'lax',
+          maxAge: 15,
+        });
+
+        const targetUrl = resolveSmartRedirect(session.role, body.redirect || req.query?.redirect, req.headers.referer);
+        if (isHtml) return reply.redirect(targetUrl);
+        return reply.send({ message: 'Logged in as demo persona', token: session.token, redirect: targetUrl });
       }
     }
 
@@ -166,18 +260,42 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
     const { roleOrToken } = req.params;
     const token = resolvePersonaToken(roleOrToken);
 
-    const session = queryOne<{ token: string; user_id: string }>(
-      'SELECT token, user_id FROM sessions WHERE token = ?',
+    let session = queryOne<{ token: string; user_id: string; role: string; name: string }>(
+      `SELECT s.token, s.user_id, u.role, u.name
+       FROM sessions s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.token = ?
+       ORDER BY s.created_at DESC
+       LIMIT 1`,
       token
     );
 
     if (!session) {
-      return reply.code(404).send({ error: 'Session token not found' });
+      session = queryOne<{ token: string; user_id: string; role: string; name: string }>(
+        `SELECT s.token, s.user_id, u.role, u.name
+         FROM sessions s
+         JOIN users u ON s.user_id = u.id
+         WHERE s.user_id = ?
+         ORDER BY s.created_at DESC
+         LIMIT 1`,
+        roleOrToken
+      );
     }
 
-    reply.setCookie(SESSION_COOKIE_NAME, token, PERSISTENT_COOKIE_OPTIONS);
-    const redirectUrl = sanitizeRedirect(req.query?.redirect);
-    return reply.redirect(redirectUrl);
+    if (!session) {
+      return reply.code(404).send({ error: 'Session token or persona not found' });
+    }
+
+    reply.setCookie(SESSION_COOKIE_NAME, session.token, PERSISTENT_COOKIE_OPTIONS);
+    reply.setCookie('prism_flash_switched', session.role + ':' + encodeURIComponent(session.name), {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      maxAge: 15,
+    });
+
+    const targetUrl = resolveSmartRedirect(session.role, req.query?.redirect, req.headers.referer);
+    return reply.redirect(targetUrl);
   });
 
   // 5. Browser Logout (GET /logout)
