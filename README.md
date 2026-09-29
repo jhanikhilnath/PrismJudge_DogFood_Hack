@@ -274,14 +274,12 @@ npx tsc --noEmit
 
 ## Documentation Index
 
-- [docs/PRESENTATION.md](docs/PRESENTATION.md): Executive 12-slide pitch deck with proofs, diagrams, and live demo script.
 - [ARCHITECTURE.md](ARCHITECTURE.md): System architecture, Fastify hook request lifecycle, and SQLite WAL tuning.
 - [JUDGING.md](JUDGING.md): Normalization proofs, Bradley-Terry math, rubric weights, and isolation rules.
 - [SECURITY.md](SECURITY.md): Formal threat model, penetration test results, and anti-abuse defenses.
 - [DATA-MODEL.md](DATA-MODEL.md): Relational schema, entity descriptions, and edge-case ingestion strategy.
 - [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Records (ADR-001 through ADR-013).
 - [docs/BACKUP-DR.md](docs/BACKUP-DR.md): Disaster recovery runbook covering online `VACUUM INTO` snapshots.
-- [AGENTS.md](AGENTS.md): Autonomous agent operating manual, invariants, and testing runbook.
 - [LICENSE](LICENSE): Official MIT License.
 
 ---
