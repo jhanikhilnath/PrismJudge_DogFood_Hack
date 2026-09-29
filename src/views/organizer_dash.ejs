@@ -23,19 +23,12 @@
       <input type="hidden" name="published" value="<%= resultsLive ? 'false' : 'true' %>">
       <button type="submit" class="btn <%= resultsLive ? 'btn-secondary' : 'btn-primary' %>" style="<%= resultsLive ? 'border-color: #059669; color: #059669;' : 'background: #059669; border-color: #059669;' %> font-weight: 700;">
         <% if (resultsLive) { %>
-          <span style="color: #059669;">●</span> Results Live 🏆 (Click to Embargo)
+          <span style="color: #059669;">●</span> Results Live (Click to Embargo)
         <% } else { %>
-          🚀 Publish Results Portal
+          Publish Results Portal
         <% } %>
       </button>
     </form>
-    <a href="/results" class="btn btn-secondary" target="_blank" title="Preview /results">
-      View /results ↗
-    </a>
-    <a href="/organizer/settings" class="btn btn-secondary" style="border-color: var(--primary); color: var(--primary);">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      Event Settings ⚙️
-    </a>
     <a href="/normalization-proof.txt" class="btn btn-secondary" target="_blank">
       Proof Artifact (.txt) ↗
     </a>
@@ -187,6 +180,182 @@
   </div>
 </div>
 
+<!-- Judging Workload & Review Queue Management Section -->
+<div class="card" style="margin-bottom: 2.5rem; border: 1px solid var(--border);">
+  <div class="card-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Judging Workload &amp; Review Queue Management</h3>
+        <span class="status-pill status-completed" style="font-size: 0.72rem; font-weight: 700;">
+          <%= typeof assignmentStats !== 'undefined' ? assignmentStats.totalAssignments : 0 %> ASSIGNMENTS
+        </span>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0;">
+        Automated balanced workload distribution, panel coverage tracking, and conflict-free evaluator reassignment.
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+      <button type="button" class="btn btn-sm btn-primary" onclick="triggerAutoDistribute('pending_only')" id="btn-auto-distribute-pending" style="display: inline-flex; align-items: center; gap: 0.35rem; background: #2563eb; border-color: #2563eb; font-weight: 700;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Auto-Distribute Pending
+      </button>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="triggerAutoDistribute('rebalance')" id="btn-rebalance-all" style="font-size: 0.78rem;">
+        Full Rebalance (All 41)
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body" style="padding: 1.25rem 1.5rem;">
+    <!-- Macro Summary Chips -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Total Assignments</div>
+        <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.2rem;" id="macro-total-assignments">
+          <%= typeof assignmentStats !== 'undefined' ? assignmentStats.totalAssignments : 0 %>
+        </div>
+      </div>
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Completed Reviews</div>
+        <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: #059669; margin-top: 0.2rem;" id="macro-completed-assignments">
+          <%= typeof assignmentStats !== 'undefined' ? assignmentStats.completedAssignments : 0 %>
+        </div>
+      </div>
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Pending In Queue</div>
+        <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: <%= (typeof assignmentStats !== 'undefined' && assignmentStats.pendingAssignments > 0) ? '#d97706' : 'var(--text-muted)' %>; margin-top: 0.2rem;" id="macro-pending-assignments">
+          <%= typeof assignmentStats !== 'undefined' ? assignmentStats.pendingAssignments : 0 %>
+        </div>
+      </div>
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Completion Rate</div>
+        <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.2rem;" id="macro-completion-rate">
+          <%= typeof assignmentStats !== 'undefined' ? assignmentStats.completionRate : 0 %>%
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter toolbar for assignments -->
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+      <div style="flex: 1; min-width: 240px; max-width: 380px;">
+        <input 
+          type="text" 
+          id="assignment-search" 
+          placeholder="Filter by project, team, or judge..." 
+          class="search-input" 
+          style="width: 100%; padding: 0.45rem 0.75rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary);"
+          oninput="filterAssignmentTable()"
+        >
+      </div>
+      <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary btn-sm active-assign-filter" id="filter-asg-all" onclick="setAssignmentFilter('all')">
+          All (<%= typeof projectAssignments !== 'undefined' ? projectAssignments.length : 0 %>)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="filter-asg-needs" onclick="setAssignmentFilter('needs')">
+          Needs Review (<%= typeof projectAssignments !== 'undefined' ? projectAssignments.filter(p => p.reviewCount < 3).length : 0 %>)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="filter-asg-pending" onclick="setAssignmentFilter('pending')">
+          Has Pending (<%= typeof projectAssignments !== 'undefined' ? projectAssignments.filter(p => p.pendingCount > 0).length : 0 %>)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="filter-asg-complete" onclick="setAssignmentFilter('complete')">
+          Complete 3/3 (<%= typeof projectAssignments !== 'undefined' ? projectAssignments.filter(p => p.completedCount >= 3).length : 0 %>)
+        </button>
+      </div>
+    </div>
+
+    <!-- Assignments Table -->
+    <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+      <table class="data-table" id="assignment-table" style="font-size: 0.82rem; width: 100%;">
+        <thead>
+          <tr>
+            <th style="width: 85px;">ID</th>
+            <th>Project Title</th>
+            <th>Track</th>
+            <th style="width: 130px; text-align: center;">Coverage</th>
+            <th>Assigned Evaluators</th>
+            <th style="width: 140px; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof projectAssignments !== 'undefined' && projectAssignments.length > 0) { %>
+            <% projectAssignments.forEach(function(item) { %>
+              <tr class="assignment-row" 
+                  data-project-id="<%= item.projectId.toLowerCase() %>" 
+                  data-title="<%= item.projectTitle.toLowerCase() %>" 
+                  data-team="<%= item.teamName.toLowerCase() %>"
+                  data-track="<%= item.trackName.toLowerCase() %>"
+                  data-status="<%= item.statusBadge %>"
+                  data-pending="<%= item.pendingCount %>"
+                  data-reviews="<%= item.reviewCount %>"
+                  data-judges="<%= item.assignedJudges.map(j => j.judgeName.toLowerCase() + ' ' + j.judgeId.toLowerCase()).join(' ') %>"
+                  data-judges-json="<%= JSON.stringify(item.assignedJudges) %>">
+                <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);"><%= item.projectId %></td>
+                <td>
+                  <a href="/projects/<%= item.projectId %>" style="font-weight: 600; color: var(--text-primary); text-decoration: none;" class="hover-underline">
+                    <%= item.projectTitle %>
+                  </a>
+                  <div style="font-size: 0.72rem; color: var(--text-muted);">Team: <%= item.teamName %></div>
+                </td>
+                <td><span class="track-pill" style="font-size: 0.7rem;"><%= item.trackName %></span></td>
+                <td style="text-align: center;">
+                  <% if (item.completedCount >= 3) { %>
+                    <span class="badge-status badge-success" style="font-size: 0.7rem; font-weight: 700;"><%= item.completedCount %>/3 Complete</span>
+                  <% } else if (item.assignedCount < 3) { %>
+                    <span class="badge-status badge-danger" style="font-size: 0.7rem; font-weight: 700;"><%= item.completedCount %>/3 (Needs Judges)</span>
+                  <% } else { %>
+                    <span class="badge-status badge-warning" style="font-size: 0.7rem; font-weight: 700;"><%= item.completedCount %>/3 (<%= item.pendingCount %> Pending)</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.35rem;" id="chips-<%= item.projectId %>">
+                    <% if (item.assignedJudges.length > 0) { %>
+                      <% item.assignedJudges.forEach(function(j) { %>
+                        <div style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.73rem; background: <%= j.status === 'completed' ? '#ECFDF5' : '#FFFBEB' %>; border: 1px solid <%= j.status === 'completed' ? '#A7F3D0' : '#FDE68A' %>; color: <%= j.status === 'completed' ? '#065F46' : '#92400E' %>;">
+                          <span><%= j.status === 'completed' ? '✓' : '⏳' %></span>
+                          <strong><%= j.judgeName %></strong>
+                          <span style="font-family: var(--font-mono); font-size: 0.68rem; opacity: 0.75;">(<%= j.judgeId %>)</span>
+                          <% if (j.rawTotal !== undefined) { %>
+                            <span style="font-family: var(--font-mono); font-weight: 700; color: #059669;"><%= j.rawTotal.toFixed(1) %></span>
+                          <% } %>
+                          <button type="button" 
+                                  title="Reassign this evaluator" 
+                                  onclick="openReassignModal('<%= item.projectId %>', '<%= item.projectTitle.replace(/'/g, "\\'") %>', '<%= item.teamName.replace(/'/g, "\\'") %>', '<%= item.teamId %>', '<%= j.judgeId %>')"
+                                  style="background: none; border: none; cursor: pointer; color: inherit; padding: 0; margin-left: 2px; font-size: 0.75rem; opacity: 0.6;" 
+                                  onmouseover="this.style.opacity=1" 
+                                  onmouseout="this.style.opacity=0.6">
+                            ⇄
+                          </button>
+                        </div>
+                      <% }); %>
+                    <% } else { %>
+                      <span style="font-size: 0.75rem; color: #DC2626; font-style: italic;">No evaluators assigned</span>
+                    <% } %>
+                  </div>
+                </td>
+                <td style="text-align: right;">
+                  <button type="button" 
+                          class="btn btn-secondary btn-sm" 
+                          style="font-size: 0.75rem; padding: 0.25rem 0.55rem;"
+                          onclick="openReassignModal('<%= item.projectId %>', '<%= item.projectTitle.replace(/'/g, "\\'") %>', '<%= item.teamName.replace(/'/g, "\\'") %>', '<%= item.teamId %>')">
+                    ⇄ Reassign Judge
+                  </button>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                No project assignments available.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div style="margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: baseline;">
   <h2 style="font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em;">Competition Standings (<%= leaderboard.length %> Submissions)</h2>
   <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">Ranked by Composite Score (80% Calibrated Rubric + 20% Pairwise Matchups)</span>
@@ -253,7 +422,7 @@
   <div class="card-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
     <div>
       <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-        <span style="font-size: 1.25rem;">💜</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
         <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Community Ballot &amp; People's Choice Intelligence</h3>
         <span class="status-pill <%= votingLive ? 'status-completed' : 'status-warning' %>" style="font-size: 0.72rem; font-weight: 700;">
           <%= votingLive ? 'STANDINGS LIVE (PUBLIC)' : 'STANDINGS SEALED (PRIVATE)' %>
@@ -268,7 +437,7 @@
       <form method="POST" action="/api/organizer/voting-results/toggle" style="margin: 0;">
         <input type="hidden" name="published" value="<%= votingLive ? 'false' : 'true' %>">
         <button type="submit" class="btn btn-sm <%= votingLive ? 'btn-secondary' : 'btn-primary' %>" style="<%= votingLive ? 'color: #dc2626; border-color: #fca5a5;' : 'background: #6d28d9; border-color: #6d28d9;' %>">
-          <%= votingLive ? '🔒 Seal Voting Results' : '📢 Publish Voting Results' %>
+          <%= votingLive ? 'Seal Voting Results' : 'Publish Voting Results' %>
         </button>
       </form>
       <a href="/vote" class="btn btn-secondary btn-sm" target="_blank">
@@ -296,7 +465,7 @@
         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">People's Choice Leader</div>
         <div style="font-size: 0.95rem; font-weight: 700; color: #6d28d9; margin-top: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           <% if (typeof votingBreakdown !== 'undefined' && votingBreakdown.leadingProject) { %>
-            🏆 <%= votingBreakdown.leadingProject.project_title %> (<%= votingBreakdown.leadingProject.vote_count %> votes)
+            <%= votingBreakdown.leadingProject.project_title %> (<%= votingBreakdown.leadingProject.vote_count %> votes)
           <% } else { %>
             No votes cast yet
           <% } %>
@@ -412,3 +581,239 @@
     </table>
   </div>
 </div>
+
+<!-- Reassign Evaluator Modal -->
+<div id="reassign-modal" class="modal-backdrop" style="display: none;" onclick="if(event.target===this) closeReassignModal()">
+  <div class="modal-dialog" style="max-width: 520px;">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" style="font-size: 1.15rem; font-weight: 700;">Reassign Project Evaluator</h2>
+        <div id="modal-reassign-subtitle" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 0.2rem;"></div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeReassignModal()" style="padding: 0.2rem 0.5rem;">✕</button>
+    </div>
+
+    <form id="reassign-form" onsubmit="submitReassignment(event)" style="padding: 1.25rem 1.5rem;">
+      <input type="hidden" id="reassign-project-id" name="projectId">
+      <input type="hidden" id="reassign-team-id" name="teamId">
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label" style="font-weight: 600; font-size: 0.82rem; margin-bottom: 0.35rem; display: block;">
+          Current Evaluator to Replace
+        </label>
+        <select id="reassign-old-judge" class="form-select" style="width: 100%; padding: 0.45rem 0.65rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary);">
+          <!-- Populated dynamically -->
+        </select>
+        <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+          Select which evaluator assignment slot will be reassigned or select 'Add New Evaluator'.
+        </span>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label" style="font-weight: 600; font-size: 0.82rem; margin-bottom: 0.35rem; display: block;">
+          Target Evaluator
+        </label>
+        <select id="reassign-new-judge" class="form-select" onchange="checkSelectedJudgeCoi()" style="width: 100%; padding: 0.45rem 0.65rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary);">
+          <option value="">-- Choose New Evaluator --</option>
+          <% if (typeof judgesWorkload !== 'undefined') { %>
+            <% judgesWorkload.forEach(function(j) { %>
+              <option value="<%= j.id %>" data-judge-name="<%= j.name %>">
+                <%= j.name %> (<%= j.id %>) · <%= j.assignedCount %> assigned (<%= j.completedCount %> done)
+              </option>
+            <% }); %>
+          <% } %>
+        </select>
+      </div>
+
+      <!-- COI Alert Box (hidden by default) -->
+      <div id="coi-alert-box" style="display: none; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1rem; color: #991B1B; font-size: 0.8rem; line-height: 1.4;">
+        <strong>⚠️ Conflict of Interest Detected:</strong>
+        <span id="coi-alert-message">This judge belongs to the project team. Assignment is prohibited under PRD §3.2.1.</span>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeReassignModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="btn-confirm-reassign">Authorize Reassignment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  let currentAssignFilter = 'all';
+
+  function setAssignmentFilter(filter) {
+    currentAssignFilter = filter;
+    ['all', 'needs', 'pending', 'complete'].forEach(f => {
+      const b = document.getElementById('filter-asg-' + f);
+      if (b) {
+        if (f === filter) {
+          b.className = 'btn btn-primary btn-sm active-assign-filter';
+        } else {
+          b.className = 'btn btn-secondary btn-sm';
+        }
+      }
+    });
+    filterAssignmentTable();
+  }
+
+  function filterAssignmentTable() {
+    const q = (document.getElementById('assignment-search')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.assignment-row');
+
+    rows.forEach(r => {
+      const pid = r.getAttribute('data-project-id') || '';
+      const title = r.getAttribute('data-title') || '';
+      const team = r.getAttribute('data-team') || '';
+      const track = r.getAttribute('data-track') || '';
+      const judges = r.getAttribute('data-judges') || '';
+      const status = r.getAttribute('data-status') || '';
+      const pending = parseInt(r.getAttribute('data-pending') || '0', 10);
+      const reviews = parseInt(r.getAttribute('data-reviews') || '0', 10);
+
+      const matchesSearch = !q || pid.includes(q) || title.includes(q) || team.includes(q) || track.includes(q) || judges.includes(q);
+
+      let matchesFilter = true;
+      if (currentAssignFilter === 'needs') {
+        matchesFilter = reviews < 3;
+      } else if (currentAssignFilter === 'pending') {
+        matchesFilter = pending > 0;
+      } else if (currentAssignFilter === 'complete') {
+        matchesFilter = reviews >= 3;
+      }
+
+      r.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+    });
+  }
+
+  function openReassignModal(projectId, projectTitle, teamName, teamId, preselectJudgeId) {
+    document.getElementById('reassign-project-id').value = projectId;
+    document.getElementById('reassign-team-id').value = teamId;
+    document.getElementById('modal-reassign-subtitle').textContent = projectId.toUpperCase() + ' · ' + projectTitle + ' (' + teamName + ')';
+
+    const row = document.querySelector(`.assignment-row[data-project-id="${projectId.toLowerCase()}"]`);
+    const judgesData = row ? JSON.parse(row.getAttribute('data-judges-json') || '[]') : [];
+
+    const oldSelect = document.getElementById('reassign-old-judge');
+    oldSelect.innerHTML = '';
+
+    if (judgesData.length > 0) {
+      judgesData.forEach(j => {
+        const opt = document.createElement('option');
+        opt.value = j.judgeId;
+        opt.textContent = `Replace ${j.judgeName} (${j.judgeId})${j.status === 'completed' ? ' - Scored' : ' - Pending'}`;
+        if (preselectJudgeId && j.judgeId === preselectJudgeId) {
+          opt.selected = true;
+        }
+        oldSelect.appendChild(opt);
+      });
+    }
+
+    const addOpt = document.createElement('option');
+    addOpt.value = '';
+    addOpt.textContent = '+ Add New Evaluator (No Replacement)';
+    if (!preselectJudgeId && judgesData.length < 3) {
+      addOpt.selected = true;
+    }
+    oldSelect.appendChild(addOpt);
+
+    document.getElementById('reassign-new-judge').value = '';
+    document.getElementById('coi-alert-box').style.display = 'none';
+    document.getElementById('btn-confirm-reassign').disabled = false;
+
+    document.getElementById('reassign-modal').style.display = 'flex';
+  }
+
+  function closeReassignModal() {
+    document.getElementById('reassign-modal').style.display = 'none';
+  }
+
+  function checkSelectedJudgeCoi() {
+    // Reset alert box
+    document.getElementById('coi-alert-box').style.display = 'none';
+    document.getElementById('btn-confirm-reassign').disabled = false;
+  }
+
+  async function submitReassignment(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-confirm-reassign');
+    const projectId = document.getElementById('reassign-project-id').value;
+    const oldJudgeId = document.getElementById('reassign-old-judge').value || undefined;
+    const newJudgeId = document.getElementById('reassign-new-judge').value;
+
+    if (!newJudgeId) {
+      alert('Please select a target evaluator.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+
+    try {
+      const res = await fetch('/api/organizer/assignments/reassign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, oldJudgeId, newJudgeId })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (window.showToast) window.showToast(data.message || 'Evaluator reassigned successfully', 'success');
+        closeReassignModal();
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        const alertBox = document.getElementById('coi-alert-box');
+        const alertMsg = document.getElementById('coi-alert-message');
+        if (alertBox && alertMsg) {
+          alertMsg.textContent = data.error || 'Failed to reassign evaluator';
+          alertBox.style.display = 'block';
+        } else {
+          alert(data.error || 'Failed to reassign evaluator');
+        }
+      }
+    } catch (err) {
+      alert('Network error while reassigning evaluator');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Authorize Reassignment';
+    }
+  }
+
+  async function triggerAutoDistribute(mode) {
+    const isPending = mode === 'pending_only';
+    const msg = isPending
+      ? 'Automatically distribute evaluators to all pending and underserved submissions to guarantee at least 3 conflict-free reviews each?'
+      : 'Full Rebalance: Clear and re-generate balanced evaluator allocations across all 41 submissions?';
+    
+    if (!confirm(msg)) return;
+
+    const btn = document.getElementById(isPending ? 'btn-auto-distribute-pending' : 'btn-rebalance-all');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Distributing...';
+    }
+
+    try {
+      const res = await fetch('/api/organizer/assignments/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, reviewsPerProject: 3 })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (window.showToast) {
+          window.showToast(data.message || 'Workload distributed successfully', 'success');
+        }
+        setTimeout(() => window.location.reload(), 700);
+      } else {
+        alert(data.error || 'Failed to distribute workloads');
+      }
+    } catch (err) {
+      alert('Network error during workload distribution');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = isPending ? 'Auto-Distribute Pending' : 'Full Rebalance (All 41)';
+      }
+    }
+  }
+</script>

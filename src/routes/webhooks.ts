@@ -87,7 +87,31 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const project = getProjectById(projectId);
 
     if (!project) {
+      if (req.headers.accept?.includes('text/html')) {
+        return reply.code(404).view('404.ejs', {
+          title: 'Certificate Not Found — PrismJudge',
+          user: req.user,
+          path: req.url,
+        });
+      }
       return reply.code(404).send({ verified: false, error: 'Certificate record not found' });
+    }
+
+    if (req.headers.accept?.includes('text/html')) {
+      return reply.view('certificate_verify.ejs', {
+        title: `Verify Credential — ${project.title}`,
+        type: 'PROJECT_AWARD',
+        record: {
+          certificate_id: `DF26-${project.id.toUpperCase()}`,
+          title: project.title,
+          track: project.track_name || 'General',
+          team: project.team_name || project.team_id || 'NorthKiln',
+          status: 'AUTHENTIC_CREDENTIAL_ISSUED',
+          verified: true,
+          projectId: project.id,
+        },
+        user: req.user,
+      });
     }
 
     return reply.send({
@@ -180,7 +204,32 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const record = getJudgeParticipationRecord(judgeId);
 
     if (!record) {
+      if (req.headers.accept?.includes('text/html')) {
+        return reply.code(404).view('404.ejs', {
+          title: 'Judge Record Not Found — PrismJudge',
+          user: req.user,
+          path: req.url,
+        });
+      }
       return reply.code(404).send({ verified: false, error: 'Judge record not found' });
+    }
+
+    if (req.headers.accept?.includes('text/html')) {
+      return reply.view('certificate_verify.ejs', {
+        title: `Verify Evaluator Credential — ${record.judge.name}`,
+        type: 'JUROR_COMMENDATION',
+        record: {
+          certificate_id: `DF26-${record.judge.id.toUpperCase()}`,
+          judge_id: record.judge.id,
+          evaluator_name: record.judge.name,
+          role: 'Technical Evaluator & Juror',
+          reviews_contributed: record.reviewsCount,
+          tracks_evaluated: record.tracks,
+          status: 'AUTHENTIC_CREDENTIAL_ISSUED',
+          verified: true,
+        },
+        user: req.user,
+      });
     }
 
     return reply.send({

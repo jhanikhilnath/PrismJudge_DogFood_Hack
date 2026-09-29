@@ -97,15 +97,7 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
         return reply.code(400).send({ error: 'project_id is required' });
       }
 
-      const event = getEvent();
-      if (isVotingClosed(event)) {
-        return reply.code(403).send({ error: 'Community voting has officially closed' });
-      }
-
       const ip = req.ip || '127.0.0.1';
-      const voterIdentifier = req.user ? req.user.userId : voter_email ? voter_email.toLowerCase().trim() : ip;
-      const voterHash = hashVoterIdentifier(voterIdentifier);
-      const ipHash = hashVoterIdentifier(ip);
 
       // Rate limit check: max 1 vote attempt per 3 seconds per IP
       const now = Date.now();
@@ -114,6 +106,15 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
         return reply.code(429).send({ error: 'Too many requests. Please wait a few seconds before voting.' });
       }
       voteRateLimitWindow.set(ip, now);
+
+      const event = getEvent();
+      if (event?.voting_results_published === 1 || isVotingClosed(event)) {
+        return reply.code(403).send({ error: 'Community voting has officially closed or results have been published' });
+      }
+
+      const voterIdentifier = req.user ? req.user.userId : voter_email ? voter_email.toLowerCase().trim() : ip;
+      const voterHash = hashVoterIdentifier(voterIdentifier);
+      const ipHash = hashVoterIdentifier(ip);
 
       const proj = queryOne<{ id: string; team_id: string }>(
         'SELECT id, team_id FROM projects WHERE id = ?',

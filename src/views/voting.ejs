@@ -38,7 +38,7 @@
       </div>
     </div>
     <a href="/results" class="btn btn-primary btn-sm" style="background: #7c3aed; border-color: #7c3aed; font-weight: 700;">
-      🏆 View Full Results Portal
+      View Full Results Portal ↗
     </a>
   </div>
 <% } else { %>
@@ -141,8 +141,8 @@
             </button>
           <% } else { %>
             <form onsubmit="castVote(event, '<%= p.id %>')">
-              <button type="submit" class="btn btn-primary" style="width: 100%;" <%= isVotingClosed ? 'disabled' : '' %>>
-                <%= isVotingClosed ? 'Voting Closed' : 'Vote for Project' %>
+              <button type="submit" class="btn btn-primary" style="width: 100%;" <%= (isVotingClosed || votingPublished) ? 'disabled' : '' %>>
+                <%= votingPublished ? 'Voting Concluded (Results Published)' : isVotingClosed ? 'Voting Closed' : 'Vote for Project' %>
               </button>
             </form>
           <% } %>

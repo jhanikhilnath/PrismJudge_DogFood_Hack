@@ -1,0 +1,90 @@
+<div class="page-hero" style="margin-bottom: 2rem;">
+  <div class="hero-content">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 9999px; padding: 0.25rem 0.85rem; font-size: 0.78rem; font-weight: 700; color: #065f46; margin-bottom: 0.75rem;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Cryptographically Verified Record
+    </div>
+    <h1 class="page-title">Credential Verification</h1>
+    <p class="page-subtitle">
+      Public cryptographic provenance record verified against the immutable event ledger.
+    </p>
+  </div>
+</div>
+
+<div style="max-width: 680px; margin: 0 auto 4rem auto;">
+  <div class="card" style="background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); overflow: hidden;">
+    <!-- Verification Status Banner -->
+    <div style="background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1rem;">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0; letter-spacing: -0.02em;">Authentic Credential Issued</h2>
+        <div style="font-size: 0.82rem; opacity: 0.9; margin-top: 0.2rem; font-family: var(--font-mono);">STATUS: AUTHENTIC_CREDENTIAL_ISSUED</div>
+      </div>
+    </div>
+
+    <!-- Credential Details Grid -->
+    <div style="padding: 2rem;">
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">CREDENTIAL ID</div>
+          <div style="font-size: 1.05rem; font-weight: 700; font-family: var(--font-mono); color: var(--text-primary);"><%= record.certificate_id %></div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">ISSUING AUTHORITY</div>
+          <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">DOGFOOD 2026 Committee</div>
+        </div>
+
+        <% if (type === 'PROJECT_AWARD') { %>
+          <div style="grid-column: span 2;">
+            <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">PROJECT SUBMISSION</div>
+            <div style="font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary);"><%= record.title %></div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">TEAM / RECIPIENT</div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-secondary);"><%= record.team %></div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">COMPETITION TRACK</div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-secondary);"><%= record.track %></div>
+          </div>
+        <% } else { %>
+          <div style="grid-column: span 2;">
+            <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">EVALUATOR NAME</div>
+            <div style="font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; color: var(--text-primary);"><%= record.evaluator_name %></div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">CONTRIBUTED REVIEWS</div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-secondary);"><%= record.reviews_contributed %> Completed Evaluations</div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.35rem;">EVALUATED TRACKS</div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-secondary);"><%= record.tracks_evaluated.join(', ') %></div>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Trust & Verification Footer -->
+      <div style="background: var(--bg-surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          Verified via embedded SQLite 3 WAL cryptographic digest.
+        </div>
+        <% if (type === 'PROJECT_AWARD') { %>
+          <a href="/projects/<%= record.projectId %>" class="btn btn-secondary btn-sm">
+            View Project Details ↗
+          </a>
+        <% } else { %>
+          <a href="/certificates/judge/<%= record.judge_id %>" class="btn btn-secondary btn-sm">
+            View Official Diploma ↗
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

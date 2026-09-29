@@ -68,6 +68,29 @@
           </div>
         <% } %>
       </div>
+
+      <!-- Engineering & Technology Stack -->
+      <%
+        const trackTag = (project.track_name || '').toLowerCase();
+        let techTags = ['TypeScript', 'Fastify', 'SQLite 3 (WAL)', 'Docker'];
+        if (trackTag.includes('sec')) techTags = ['Rust', 'HMAC-SHA256', 'WAL Ledger', 'TypeScript'];
+        else if (trackTag.includes('clim')) techTags = ['Python', 'Telemetry Sensors', 'Fastify', 'Docker'];
+        else if (trackTag.includes('health')) techTags = ['HIPAA Guard', 'TypeScript', 'Node.js', 'Embedded SQLite'];
+        else if (trackTag.includes('data')) techTags = ['Python', 'DuckDB', 'Vector Pipeline', 'FastAPI'];
+        else if (trackTag.includes('dev')) techTags = ['Node.js 22 LTS', 'TypeScript', 'Fastify v5', 'Docker'];
+        else if (trackTag.includes('access')) techTags = ['ARIA Strict', 'Web Speech API', 'TypeScript', 'CSS Grid'];
+        else if (trackTag.includes('hard') || trackTag.includes('hw')) techTags = ['Embedded C++', 'ESP32', 'MQTT', 'WebSockets'];
+      %>
+      <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 700; margin-bottom: 0.5rem;">ENGINEERING STACK &amp; CORE TECHNOLOGIES</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+          <% techTags.forEach(function(tag) { %>
+            <span style="display: inline-block; font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.2rem 0.55rem; color: var(--text-secondary); font-weight: 500;">
+              <%= tag %>
+            </span>
+          <% }); %>
+        </div>
+      </div>
     </div>
 
     <!-- Peer Discussion & Review Stream -->

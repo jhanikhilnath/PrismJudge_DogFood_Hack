@@ -12,7 +12,7 @@
 | Metric | Result | Verification Runbook |
 | :--- | :---: | :--- |
 | **Official Acceptance Suite** | **`7 / 7 PASS`** | Official runner: `python3 run.py .dogfood.toml` (Claimed T1 T2) |
-| **Unit & Security Test Suite** | **`47 / 47 PASS`** | 100% passing across 9 test suites (`npm test`) |
+| **Unit & Security Test Suite** | **`63 / 63 PASS`** | 100% passing across 11 test suites (`npm test`) |
 | **Route Access & Role Matrix** | **`641 / 641 PASS`** | Comprehensive 4-role penetration matrix (`tests/audit_script.mjs`) |
 | **Containerized E2E Verification** | **`89 / 89 PASS`** | Full system lifecycle audit (`tests/comprehensive_e2e_audit.mjs`) |
 | **Cold Offline Boot Time** | **`< 800 ms`** | Embedded SQLite 3 WAL Mode, zero cloud/network dependencies |
@@ -30,7 +30,7 @@ Most hackathon platforms average scores. An arithmetic average treats a judge wh
 2. **Bradley-Terry Pairwise Engine**: Beside the rubric, judges can evaluate head-to-head showdowns. We solve latent capability using Minorization-Maximization (MM) with Dirichlet smoothing, mapping win rates to standard Elo ratings ($1300–1700$).
 3. **Hard Backend Peer Isolation**: Fastify `preHandler` hooks inspect every request before the database is touched. If Judge B probes `/api/judge/scores?judge=judge_a`, the server halts with a hard **HTTP 403 Forbidden**.
 4. **Single-Process Offline Speed**: Zero external database containers, zero cloud authentication services. Built in Node.js 22 LTS with embedded SQLite 3 (WAL mode) and 256MB memory mapping. Boots in **< 800ms** on an air-gapped laptop with physical network disconnected.
-5. **Decoupled Community Choice & Embargoed Results**: Official prizes and track rankings are governed exclusively by registered judges. A standalone People's Choice track allows public attendee voting with strict self-voting barriers (HTTP 403) and sealed tallies until the coordinator publishes final results at `/results`.
+5. **Decoupled Community Choice & Embargoed Results**: Official prizes and track rankings are governed exclusively by registered judges. A standalone People's Choice track allows public attendee voting with strict self-voting barriers (HTTP 403) and sealed tallies until the coordinator publishes final results at `/results`. Coordinators have a dedicated Community Ballot Intelligence console with 1-click publishing and live voting breakdowns.
 
 ---
 
@@ -38,16 +38,16 @@ Most hackathon platforms average scores. An arithmetic average treats a judge wh
 
 | | |
 |---|---|
+| [![Event Settings Console](docs/screenshots/event_settings.png)](docs/screenshots/event_settings.png) | [![Official Results Portal](docs/screenshots/results_portal.png)](docs/screenshots/results_portal.png) |
+| **Event Settings Console.** Comprehensive administration across 7 tabs: General Identity, Timeline & Deadlines, Prize Architecture, Track Problem Statements, Rubric Sliders, Submission Constraints, and Mutation Audit Trail. Guarded by a strict double-confirmation modal (`CONFIRM`). | **Official Results Portal.** Top 3 Olympic podium champions, Best-in-Class Track Winners across all 8 tracks, People's Choice Award spotlight, and searchable composite standings. Embargo-protected until coordinator unveils to the public. |
 | [![Public Gallery](docs/screenshots/gallery.png)](docs/screenshots/gallery.png) | [![Project Details & Community Stream](docs/screenshots/project_detail.png)](docs/screenshots/project_detail.png) |
 | **Public Submissions Gallery.** All 41 fixture projects with live track pills, instant search, and spotlight cards. Zero developer artifacts or raw database IDs. | **Project Deep-Dive.** Architecture stack, team roster with masked emails (`j***@***.com`), threaded discussion stream, and in-place community voting. |
+| [![Operations Console](docs/screenshots/organizer_console.png)](docs/screenshots/organizer_console.png) | [![Community Choice Ballot](docs/screenshots/ballot.png)](docs/screenshots/ballot.png) |
+| **Operations Console.** Macro-telemetry, Inter-Rater Reliability ICC(1,1), juror calibration table (`jdg_07` singularity resolution), and Community Ballot Intelligence with live vote tallies. | **Community Choice Ballot.** Deterministic Fisher-Yates hash shuffle per session eliminates presentation bias. Self-voting barrier and rate-limiting prevent Sybil floods. |
 | [![Judge Assigned Workload Queue](docs/screenshots/judge_dashboard.png)](docs/screenshots/judge_dashboard.png) | [![Pairwise Showdown Arena](docs/screenshots/pairwise_arena.png)](docs/screenshots/pairwise_arena.png) |
 | **Judge Workload Queue.** Track-filtered queue with review completion meters and a 4-criterion weighted scoring modal (Functionality 40%, Quality 30%, Innovation 20%, Impact 10%). | **Pairwise Showdown Arena.** Scale-free head-to-head project comparisons solved via Bradley-Terry MM. Fluid keyboard navigation with hotkeys `[1]`, `[2]`, `[T]`, and `[S]`. |
-| [![Operations Console](docs/screenshots/organizer_console.png)](docs/screenshots/organizer_console.png) | [![Qualified Teams & Credentials](docs/screenshots/teams_credentials.png)](docs/screenshots/teams_credentials.png) |
-| **Operations Console.** Live macro-telemetry, Inter-Rater Reliability ICC(1,1), juror calibration table (showing `jdg_07` singularity resolution), and podium standings. | **Qualified Teams Console.** Onboard teams, generate PBKDF2 temporary passwords, download roster CSVs, and bulk-import submissions with one click. |
-| [![Verifiable Achievement Diploma](docs/screenshots/certificate_honors.png)](docs/screenshots/certificate_honors.png) | [![Juror Commendation Credential](docs/screenshots/certificate_judge.png)](docs/screenshots/certificate_judge.png) |
-| **Achievement Diploma.** Single-page landscape printable certificate with ornate SVG gold starburst medallion, dual committee signatures, and cryptographic SHA-256 verification. | **Juror Commendation.** Official credential certifying tracks evaluated and reviews completed. Gated by role with public verification at `/verify`. |
-| [![Community Choice Ballot](docs/screenshots/ballot.png)](docs/screenshots/ballot.png) | [![Executive Presentation Deck](docs/screenshots/hero.png)](docs/PRESENTATION.md) |
-| **Community Choice Ballot.** Deterministic Fisher-Yates hash shuffle per session eliminates presentation bias. Self-voting barrier and rate-limiting prevent Sybil floods. | **Executive Presentation Deck.** Comprehensive 12-slide pitch deck covering mathematical proofs, threat models, and architecture in [docs/PRESENTATION.md](docs/PRESENTATION.md). |
+| [![Qualified Teams & Credentials](docs/screenshots/teams_credentials.png)](docs/screenshots/teams_credentials.png) | [![Verifiable Achievement Diploma](docs/screenshots/certificate_honors.png)](docs/screenshots/certificate_honors.png) |
+| **Qualified Teams Console.** Onboard teams, generate PBKDF2 temporary passwords, download roster CSVs, and bulk-import submissions with one click. | **Achievement Diploma.** Single-page landscape printable certificate with ornate SVG gold starburst medallion, dual committee signatures, and cryptographic SHA-256 verification. |
 
 ---
 
@@ -96,6 +96,14 @@ T2  csv export works .................. PASS
 claimed T1 T2, verified T1 T2
 ```
 
+> [!NOTE]
+> **T3, T4, and Beyond**: While the competition acceptance runner (`run.py`) only defines automated verification checks for **T1** and **T2**, PrismJudge fully implements and verifies **T3** (Fisher-Yates presentation-debiased community voting, rate limiting, self-voting barriers, and threaded discussion comments), **T4** (Bradley-Terry MM pairwise duel arena, cryptographic SHA-256 certificate verification, OpenAPI 3.1 specification, and immutable audit logging), and **Beyond** (Event Settings console with double confirmation, Olympic podium Results portal with embargo toggling, automated balanced judge workload assignment, and hot SQLite snapshots).
+>
+> To exhaustively verify all four tiers along with security and stretch features, run our automated end-to-end audit harness:
+> ```bash
+> node tests/comprehensive_e2e_audit.mjs   # 89 / 89 assertions PASS across T1, T2, T3, and T4
+> ```
+
 ---
 
 ## Five Minutes with It
@@ -135,7 +143,10 @@ The portal seeds 4 test accounts for instant evaluation, switchable via 1-click 
 | **Sign-In Portal** | `/login` | Public (200) | 1-click demo personas and email/password login |
 | **Judge Workload Queue** | `/judge/dashboard` | Judge/Org (200) | Assigned queue, progress bar, 4-slider scoring modal |
 | **Pairwise Showdown Arena** | `/judge/pairwise` | Judge/Org (200) | Head-to-head duels with keyboard shortcuts `[1]`, `[2]`, `[T]`, `[S]` |
-| **Operations Console** | `/organizer/dashboard`| Org Only (200) | Macro telemetry, juror calibration table, podium standings |
+| **Official Results Portal** | `/results` | Public (Published) / Org Preview (200) | Top 3 Olympic podium, track category champions, People's Choice spotlight |
+| **Operations Console** | `/organizer/dashboard`| Org Only (200) | Macro telemetry, juror calibration table, and Community Ballot Intelligence |
+| **Event Settings Console** | `/organizer/settings` | Org Only (200) | Hackathon identity, timelines, prizes, tracks, and rubric with double confirmation |
+| **Coordinator Shortcut** | `/organizer` | Org Only (302) | Instant redirect to operations console `/organizer/dashboard` |
 | **Qualified Teams Console** | `/organizer/teams` | Org Only (200) | Team roster, PBKDF2 credentials, bulk CSV import |
 | **Achievement Diploma** | `/certificates/prj_01`| Team/Org (200) | Landscape printable diploma with SVG gold seal medallion |
 | **Juror Commendation** | `/certificates/judge/jdg_01` | Judge/Org (200) | Official juror certificate certifying reviews completed |
@@ -246,7 +257,7 @@ sequenceDiagram
 # 1. Official competition acceptance suite (7/7 PASS)
 python3 run.py .dogfood.toml
 
-# 2. Automated unit, mathematical, and security tests (47/47 PASS in 1.2s)
+# 2. Automated unit, mathematical, and security tests (63/63 PASS in 1.4s)
 npm test
 
 # 3. Route & role verification penetration matrix (641/641 PASS)

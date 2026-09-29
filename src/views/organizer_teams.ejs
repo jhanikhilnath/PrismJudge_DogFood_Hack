@@ -242,6 +242,8 @@ function filterTeams() {
 function copyText(text) {
   navigator.clipboard.writeText(text).then(() => {
     if (window.showToast) window.showToast('Copied to clipboard', 'success');
+  }).catch(() => {
+    if (window.showToast) window.showToast('Failed to copy to clipboard', 'error');
   });
 }
 
@@ -249,6 +251,8 @@ function copyCredentials(teamName, email, userId, pwd) {
   const text = `Team: ${teamName}\nLogin Email: ${email}\nUser ID: ${userId}\nTemporary Password: ${pwd}\nLogin URL: ${window.location.origin}/login`;
   navigator.clipboard.writeText(text).then(() => {
     if (window.showToast) window.showToast(`Credentials copied for ${teamName}`, 'success');
+  }).catch(() => {
+    if (window.showToast) window.showToast('Failed to copy to clipboard', 'error');
   });
 }
 

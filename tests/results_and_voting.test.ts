@@ -120,5 +120,10 @@ test('Results Portal & Community Voting Standings Verification Suite', async (t)
     assert.match(resDash.payload, /Community Ballot &amp; People's Choice Intelligence/i);
     assert.match(resDash.payload, /Total Ballots Cast/i);
     assert.match(resDash.payload, /Results Live/i);
+
+    // Reset flags
+    const { toggleResultsPublished, toggleVotingResultsPublished } = await import('../src/db/queries.js');
+    toggleResultsPublished(false);
+    toggleVotingResultsPublished(false);
   });
 });

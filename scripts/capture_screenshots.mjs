@@ -111,6 +111,16 @@ async function run() {
         cookie: { name: 'session', value: 'org_7f2a', domain: 'localhost', path: '/' },
       },
       {
+        name: 'event_settings.png',
+        url: 'http://localhost:8080/organizer/settings?tab=timeline',
+        cookie: { name: 'session', value: 'org_7f2a', domain: 'localhost', path: '/' },
+      },
+      {
+        name: 'results_portal.png',
+        url: 'http://localhost:8080/results',
+        cookie: { name: 'session', value: 'org_7f2a', domain: 'localhost', path: '/' },
+      },
+      {
         name: 'teams_credentials.png',
         url: 'http://localhost:8080/organizer/teams',
         cookie: { name: 'session', value: 'org_7f2a', domain: 'localhost', path: '/' },

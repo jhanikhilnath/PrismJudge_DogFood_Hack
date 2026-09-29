@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { execute, transaction } from './index.js';
 import { initializeSchema } from './schema.js';
 import { config } from '../config.js';
@@ -204,6 +205,16 @@ export function seedDatabase(fixtures?: FixtureData): void {
         JSON.stringify(sc.criteria),
         rawTotal,
         sc.comment || '',
+        new Date().toISOString()
+      );
+
+      const asgnId = `asgn_seed_${crypto.createHash('md5').update(`${sc.judge}_${sc.project}`).digest('hex').substring(0, 12)}`;
+      execute(
+        `INSERT OR REPLACE INTO judge_assignments (id, judge_id, project_id, batch_id, status, created_at)
+         VALUES (?, ?, ?, 'batch_fixtures', 'completed', ?)`,
+        asgnId,
+        sc.judge,
+        sc.project,
         new Date().toISOString()
       );
     }

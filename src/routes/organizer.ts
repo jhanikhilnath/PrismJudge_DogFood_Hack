@@ -2,7 +2,15 @@ import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } f
 import { requireRole } from '../core/rbac.js';
 import { generateCSVExport, generateLeaderboard } from '../engine/ranking.js';
 import { computeBayesianNormalization, generateNormalizationProofArtifact } from '../engine/normalization.js';
-import { generateBalancedAssignments, getAssignmentStats } from '../engine/assignment.js';
+import {
+  generateBalancedAssignments,
+  distributePendingAssignments,
+  reassignProjectJudge,
+  removeProjectAssignment,
+  getAssignmentStats,
+  getAllProjectAssignments,
+  getJudgesWorkloadList,
+} from '../engine/assignment.js';
 import { getJudgeProgressList, getRecentAuditLogs, getSystemStats } from '../db/index.js';
 import { logAuditEvent } from '../core/audit.js';
 
@@ -64,13 +72,15 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
       preHandler: [requireRole(['organizer', 'admin'])],
     },
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const body = (req.body || {}) as { reviewsPerProject?: number; seed?: number };
-      const report = generateBalancedAssignments(body);
+      const body = (req.body || {}) as { reviewsPerProject?: number; seed?: number; mode?: string };
+      const report = body.mode === 'pending_only'
+        ? distributePendingAssignments(body)
+        : generateBalancedAssignments(body);
 
       logAuditEvent({
         actorId: req.user!.userId,
         actorRole: req.user!.role,
-        action: 'JUDGE_WORKLOAD_ASSIGNED',
+        action: body.mode === 'pending_only' ? 'PENDING_WORKLOAD_DISTRIBUTED' : 'JUDGE_WORKLOAD_ASSIGNED',
         resourceType: 'assignments',
         payload: report,
         ipAddress: req.ip,
@@ -78,9 +88,86 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
 
       return reply.code(200).send({
         ok: true,
-        message: 'Evaluator workloads balanced successfully',
+        message: body.mode === 'pending_only'
+          ? 'Pending submissions successfully distributed to evaluators'
+          : 'Evaluator workloads balanced successfully',
         report,
       });
+    }
+  );
+
+  fastify.post<{
+    Body: {
+      projectId: string;
+      oldJudgeId?: string;
+      newJudgeId: string;
+    };
+  }>(
+    '/api/organizer/assignments/reassign',
+    {
+      preHandler: [requireRole(['organizer', 'admin'])],
+    },
+    async (req, reply: FastifyReply) => {
+      const { projectId, oldJudgeId, newJudgeId } = req.body || {};
+      if (!projectId || !newJudgeId) {
+        return reply.code(400).send({ ok: false, error: 'projectId and newJudgeId are required' });
+      }
+
+      const result = reassignProjectJudge({ projectId, oldJudgeId, newJudgeId });
+      if (!result.success) {
+        return reply.code(400).send({ ok: false, error: result.message });
+      }
+
+      logAuditEvent({
+        actorId: req.user!.userId,
+        actorRole: req.user!.role,
+        action: 'JUDGE_REASSIGNED',
+        resourceType: 'assignments',
+        resourceId: projectId,
+        payload: { projectId, oldJudgeId, newJudgeId, assignmentId: result.assignmentId },
+        ipAddress: req.ip,
+      });
+
+      return reply.code(200).send({
+        ok: true,
+        message: result.message,
+        assignmentId: result.assignmentId,
+      });
+    }
+  );
+
+  fastify.post<{
+    Body: {
+      projectId: string;
+      judgeId: string;
+    };
+  }>(
+    '/api/organizer/assignments/remove',
+    {
+      preHandler: [requireRole(['organizer', 'admin'])],
+    },
+    async (req, reply: FastifyReply) => {
+      const { projectId, judgeId } = req.body || {};
+      if (!projectId || !judgeId) {
+        return reply.code(400).send({ ok: false, error: 'projectId and judgeId are required' });
+      }
+
+      const result = removeProjectAssignment(projectId, judgeId);
+      if (!result.success) {
+        return reply.code(400).send({ ok: false, error: result.message });
+      }
+
+      logAuditEvent({
+        actorId: req.user!.userId,
+        actorRole: req.user!.role,
+        action: 'JUDGE_ASSIGNMENT_REMOVED',
+        resourceType: 'assignments',
+        resourceId: projectId,
+        payload: { projectId, judgeId },
+        ipAddress: req.ip,
+      });
+
+      return reply.code(200).send({ ok: true, message: result.message });
     }
   );
 
@@ -92,6 +179,20 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const stats = getAssignmentStats();
       return reply.code(200).send({ stats });
+    }
+  );
+
+  fastify.get(
+    '/api/organizer/assignments/matrix',
+    {
+      preHandler: [requireRole(['organizer', 'admin'])],
+    },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      return reply.code(200).send({
+        stats: getAssignmentStats(),
+        projects: getAllProjectAssignments(),
+        judges: getJudgesWorkloadList(),
+      });
     }
   );
 
@@ -152,6 +253,10 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
   );
 
   // 4. Operations Console (HTML)
+  fastify.get('/organizer', async (_req: FastifyRequest, reply: FastifyReply) => {
+    return reply.redirect('/organizer/dashboard');
+  });
+
   fastify.get('/organizer/dashboard', async (req: FastifyRequest, reply: FastifyReply) => {
     if (!req.user) {
       return reply.redirect('/login?redirect=/organizer/dashboard&error=Organizer+access+required');
@@ -182,6 +287,9 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     const judgeProgress = getJudgeProgressList();
     const underservedProjects = leaderboard.filter((p) => p.reviewCount < 3);
     const recentAuditLogs = getRecentAuditLogs(15);
+    const projectAssignments = getAllProjectAssignments();
+    const judgesWorkload = getJudgesWorkloadList();
+    const assignmentStats = getAssignmentStats();
 
     return reply.view('organizer_dash.ejs', {
       title: 'Organizer Live Dashboard — PrismJudge',
@@ -194,6 +302,9 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
       underservedProjects,
       recentAuditLogs,
       votingBreakdown,
+      projectAssignments,
+      judgesWorkload,
+      assignmentStats,
     });
   });
 
@@ -532,12 +643,16 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
   });
 
   // 13. Update Event Settings (Form & API) with DOUBLE CONFIRMATION
-  fastify.post('/organizer/settings', async (req: FastifyRequest, reply: FastifyReply) => {
+  const handleUpdateSettings = async (req: FastifyRequest, reply: FastifyReply) => {
+    const isJson = Boolean(req.headers['content-type']?.includes('application/json') || req.headers.accept?.includes('application/json'));
+
     if (!req.user) {
+      if (isJson) return reply.code(401).send({ error: 'Unauthorized: Organizer access required' });
       return reply.redirect('/login?redirect=/organizer/settings&error=Organizer+access+required');
     }
 
     if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
+      if (isJson) return reply.code(403).send({ error: 'Forbidden: Organizer role required' });
       return reply.code(403).view('403.ejs', {
         title: 'Access Restricted — PrismJudge',
         user: req.user,
@@ -551,10 +666,10 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     // Requires confirm_action === 'CONFIRM' or confirmed === true
     const isConfirmed = body.confirm_action === 'CONFIRM' || body.confirmed === true || body.confirmed === '1' || body.confirmed === 'true';
     if (!isConfirmed) {
-      if (req.headers.accept?.includes('application/json')) {
+      if (isJson) {
         return reply.code(400).send({
           error: 'Double confirmation required',
-          message: 'Critical event configuration changes require explicit double confirmation.',
+          message: 'Critical event configuration changes require explicit double confirmation (confirm_action: "CONFIRM").',
         });
       }
       return reply.redirect('/organizer/settings?error=Double+confirmation+required.+Type+CONFIRM+to+authorize+changes.');
@@ -569,10 +684,17 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     // Process Rubric Weights
     let rubricWeightsStr = currentEvent.rubric_weights;
     if (body.weight_func !== undefined && body.weight_qual !== undefined) {
-      const func = parseFloat(body.weight_func) || 0.4;
-      const qual = parseFloat(body.weight_qual) || 0.3;
-      const inno = parseFloat(body.weight_inno) || 0.2;
-      const imp = parseFloat(body.weight_imp) || 0.1;
+      const func = !isNaN(parseFloat(body.weight_func)) ? parseFloat(body.weight_func) : 0.4;
+      const qual = !isNaN(parseFloat(body.weight_qual)) ? parseFloat(body.weight_qual) : 0.3;
+      const inno = !isNaN(parseFloat(body.weight_inno)) ? parseFloat(body.weight_inno) : 0.2;
+      const imp = !isNaN(parseFloat(body.weight_imp)) ? parseFloat(body.weight_imp) : 0.1;
+      const sum = Math.round((func + qual + inno + imp) * 100);
+      if (sum !== 100) {
+        if (isJson) {
+          return reply.code(400).send({ error: `Rubric criteria weights must sum to exactly 100% (currently ${sum}%)` });
+        }
+        return reply.redirect(`/organizer/settings?error=Rubric+criteria+weights+must+sum+to+exactly+100%25+(currently+${sum}%25)`);
+      }
       rubricWeightsStr = JSON.stringify({ functionality: func, quality: qual, innovation: inno, impact: imp });
     } else if (body.rubric_weights) {
       rubricWeightsStr = typeof body.rubric_weights === 'string' ? body.rubric_weights : JSON.stringify(body.rubric_weights);
@@ -588,25 +710,42 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     if (body.name) updates.name = String(body.name).trim();
     if (body.tagline !== undefined) updates.tagline = String(body.tagline).trim();
     if (body.description !== undefined) updates.description = String(body.description).trim();
-    if (body.submissions_open) updates.submissions_open = String(body.submissions_open).trim();
-    if (body.submissions_close) updates.submissions_close = String(body.submissions_close).trim();
-    if (body.judging_open) updates.judging_open = String(body.judging_open).trim();
-    if (body.judging_close) updates.judging_close = String(body.judging_close).trim();
-    if (body.voting_open) updates.voting_open = String(body.voting_open).trim();
-    if (body.voting_close) updates.voting_close = String(body.voting_close).trim();
-    if (body.results_announced_at) updates.results_announced_at = String(body.results_announced_at).trim();
+
+    const validateDate = (val: any): string | null => {
+      if (!val) return null;
+      const s = String(val).trim();
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    };
+
+    if (body.submissions_open) { const d = validateDate(body.submissions_open); if (d) updates.submissions_open = d; }
+    if (body.submissions_close) { const d = validateDate(body.submissions_close); if (d) updates.submissions_close = d; }
+    if (body.judging_open) { const d = validateDate(body.judging_open); if (d) updates.judging_open = d; }
+    if (body.judging_close) { const d = validateDate(body.judging_close); if (d) updates.judging_close = d; }
+    if (body.voting_open) { const d = validateDate(body.voting_open); if (d) updates.voting_open = d; }
+    if (body.voting_close) { const d = validateDate(body.voting_close); if (d) updates.voting_close = d; }
+    if (body.results_announced_at) { const d = validateDate(body.results_announced_at); if (d) updates.results_announced_at = d; }
+
     if (body.prize_pool !== undefined) updates.prize_pool = String(body.prize_pool).trim();
     if (prizesStr) updates.prizes = prizesStr;
     if (rubricWeightsStr) updates.rubric_weights = rubricWeightsStr;
-    if (body.min_reviews_per_project !== undefined) updates.min_reviews_per_project = parseInt(body.min_reviews_per_project, 10) || 3;
-    if (body.max_team_size !== undefined) updates.max_team_size = parseInt(body.max_team_size, 10) || 4;
-    if (body.require_repo_url !== undefined) updates.require_repo_url = body.require_repo_url === '1' || body.require_repo_url === true || body.require_repo_url === 'on' ? 1 : 0;
-    if (body.require_demo_url !== undefined) updates.require_demo_url = body.require_demo_url === '1' || body.require_demo_url === true || body.require_demo_url === 'on' ? 1 : 0;
+    if (body.min_reviews_per_project !== undefined) updates.min_reviews_per_project = Math.max(1, parseInt(body.min_reviews_per_project, 10) || 3);
+    if (body.max_team_size !== undefined) updates.max_team_size = Math.max(1, parseInt(body.max_team_size, 10) || 4);
+
+    const parseBool = (val: any, defaultVal: number): number => {
+      if (val === undefined || val === null) return defaultVal;
+      if (val === '0' || val === false || val === 0 || val === 'false') return 0;
+      if (val === '1' || val === true || val === 1 || val === 'true' || val === 'on') return 1;
+      return defaultVal;
+    };
+
+    if (body.require_repo_url !== undefined) updates.require_repo_url = parseBool(body.require_repo_url, 1);
+    if (body.require_demo_url !== undefined) updates.require_demo_url = parseBool(body.require_demo_url, 0);
     if (body.voting_mode) updates.voting_mode = String(body.voting_mode).trim();
-    if (body.prevent_self_voting !== undefined) updates.prevent_self_voting = body.prevent_self_voting === '0' || body.prevent_self_voting === false ? 0 : 1;
-    if (body.pairwise_enabled !== undefined) updates.pairwise_enabled = body.pairwise_enabled === '0' || body.pairwise_enabled === false ? 0 : 1;
-    if (body.voting_results_published !== undefined) updates.voting_results_published = body.voting_results_published === '1' || body.voting_results_published === true || body.voting_results_published === 'on' ? 1 : 0;
-    if (body.results_published !== undefined) updates.results_published = body.results_published === '1' || body.results_published === true || body.results_published === 'on' ? 1 : 0;
+    if (body.prevent_self_voting !== undefined) updates.prevent_self_voting = parseBool(body.prevent_self_voting, 1);
+    if (body.pairwise_enabled !== undefined) updates.pairwise_enabled = parseBool(body.pairwise_enabled, 1);
+    if (body.voting_results_published !== undefined) updates.voting_results_published = parseBool(body.voting_results_published, 0);
+    if (body.results_published !== undefined) updates.results_published = parseBool(body.results_published, 0);
 
     // Compute diff for immutable audit logging
     const diff: Record<string, { from: any; to: any }> = {};
@@ -634,7 +773,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
       ipAddress: req.ip,
     });
 
-    if (req.headers.accept?.includes('application/json')) {
+    if (isJson) {
       return reply.code(200).send({
         ok: true,
         message: 'Event settings updated successfully with audit trail recording',
@@ -644,7 +783,11 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     }
 
     return reply.redirect('/organizer/settings?saved=1');
-  });
+  };
+
+  fastify.post('/organizer/settings', handleUpdateSettings);
+  fastify.post('/api/organizer/settings', handleUpdateSettings);
+  fastify.post('/api/organizer/settings/save', handleUpdateSettings);
 
   // 14. Save/Update Track with Double Confirmation
   fastify.post('/api/organizer/tracks/save', async (req: FastifyRequest, reply: FastifyReply) => {

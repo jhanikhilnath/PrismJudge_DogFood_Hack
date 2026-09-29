@@ -2,14 +2,17 @@
   <div class="hero-content">
     <h1 class="page-title">Judging Portal</h1>
     <p class="page-subtitle">
-      Logged in as <strong><%= user.name %></strong> (<%= user.userId %>) · <span id="queue-completed-count"><%= completedCount %></span> of <span id="queue-total-count"><%= totalAssigned %></span> assigned reviews completed.
+      Logged in as <strong><%= user.name %></strong> (<%= user.userId %>) · <span id="queue-completed-count"><%= typeof assignedCompletedCount !== 'undefined' ? assignedCompletedCount : completedCount %></span> of <span id="queue-total-count"><%= totalAssigned %></span> assigned reviews completed.
     </p>
 
     <!-- Progress Bar with Clean Rounded Percentage -->
-    <% const progressPct = totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 0; %>
+    <% 
+      const activeCompleted = typeof assignedCompletedCount !== 'undefined' ? assignedCompletedCount : completedCount;
+      const progressPct = totalAssigned > 0 ? Math.round((activeCompleted / totalAssigned) * 100) : 0; 
+    %>
     <div style="margin-top: 1rem; max-width: 480px;">
       <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-family: var(--font-mono); margin-bottom: 0.35rem; color: var(--text-secondary);">
-        <span>Evaluation Progress</span>
+        <span>Assigned Evaluation Progress</span>
         <span id="queue-progress-text"><%= progressPct %>%</span>
       </div>
       <div style="height: 8px; background: var(--bg-subtle); border-radius: 9999px; overflow: hidden; border: 1px solid var(--border);">
@@ -36,7 +39,23 @@
   </div>
 </div>
 
-<!-- Judge Queue Filter Toolbar -->
+<!-- Judge Queue Scope & Filter Toolbar -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem; background: var(--bg-surface); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border);">
+  <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-family: var(--font-mono);">Queue View:</span>
+    <button type="button" class="btn btn-sm <%= totalAssigned > 0 ? 'btn-primary' : 'btn-secondary' %>" id="scope-assigned-btn" onclick="setJudgeScope('assigned')" style="font-weight: 700; cursor: pointer;">⭐ My Assigned Queue (<span id="scope-assigned-count"><%= totalAssigned %></span>)</button>
+    <button type="button" class="btn btn-sm <%= totalAssigned > 0 ? 'btn-secondary' : 'btn-primary' %>" id="scope-all-btn" onclick="setJudgeScope('all')" style="cursor: pointer;">🌐 All Hackathon Submissions (<%= assigned.length %>)</button>
+  </div>
+  
+  <div id="queue-banner-notice" style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 500;">
+    <% if (totalAssigned > 0) { %>
+      Focused on your <%= totalAssigned %> assigned reviews
+    <% } else { %>
+      All submissions open for technical review
+    <% } %>
+  </div>
+</div>
+
 <div class="gallery-toolbar-section" style="margin-bottom: 1.25rem;">
   <div class="search-bar-row" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
     <div class="search-input-wrapper" style="flex: 1; min-width: 240px;">
@@ -53,7 +72,7 @@
     <% if (typeof tracks !== 'undefined' && tracks.length > 0) { %>
       <div style="min-width: 180px;">
         <select id="judge-track-select" class="form-select" onchange="filterJudgeQueue()">
-          <option value="">All Tracks (<%= totalAssigned %>)</option>
+          <option value="">All Tracks</option>
           <% tracks.forEach(function(t) { %>
             <option value="<%= t.name %>"><%= t.name %></option>
           <% }); %>
@@ -62,9 +81,9 @@
     <% } %>
 
     <div class="btn-group" style="display: flex; gap: 0.35rem;">
-      <button type="button" class="btn btn-secondary btn-sm active-status-btn" id="filter-all-btn" onclick="setJudgeStatusFilter('all')">All (<%= totalAssigned %>)</button>
-      <button type="button" class="btn btn-secondary btn-sm" id="filter-pending-btn" onclick="setJudgeStatusFilter('pending')">Pending (<%= totalAssigned - completedCount %>)</button>
-      <button type="button" class="btn btn-secondary btn-sm" id="filter-scored-btn" onclick="setJudgeStatusFilter('scored')">Scored (<%= completedCount %>)</button>
+      <button type="button" class="btn btn-primary btn-sm active-status-btn" id="filter-all-btn" onclick="setJudgeStatusFilter('all')">All (<span id="count-stat-all"><%= totalAssigned %></span>)</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="filter-pending-btn" onclick="setJudgeStatusFilter('pending')">Pending (<span id="count-stat-pending"><%= typeof assignedPendingCount !== 'undefined' ? assignedPendingCount : (totalAssigned - completedCount) %></span>)</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="filter-scored-btn" onclick="setJudgeStatusFilter('scored')">Scored (<span id="count-stat-scored"><%= typeof assignedCompletedCount !== 'undefined' ? assignedCompletedCount : completedCount %></span>)</button>
     </div>
   </div>
 </div>
@@ -91,11 +110,16 @@
            }
       %>
         <tr>
-          <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);" id="row-<%= p.id %>" class="queue-row" data-project-id="<%= p.id.toLowerCase() %>" data-title="<%= p.title.toLowerCase() %>" data-track="<%= (p.track_name || '').toLowerCase() %>" data-status="<%= p.hasScored ? 'scored' : 'pending' %>"><%= p.id %></td>
+          <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);" id="row-<%= p.id %>" class="queue-row" data-project-id="<%= p.id.toLowerCase() %>" data-title="<%= p.title.toLowerCase() %>" data-track="<%= (p.track_name || '').toLowerCase() %>" data-status="<%= p.hasScored ? 'scored' : 'pending' %>" data-assigned="<%= p.isDirectlyAssigned ? 'assigned' : 'other' %>"><%= p.id %></td>
           <td>
-            <a href="/projects/<%= p.id %>" style="font-weight: 600; color: var(--text-primary); text-decoration: none;" class="hover-underline">
-              <%= p.title %>
-            </a>
+            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+              <a href="/projects/<%= p.id %>" style="font-weight: 600; color: var(--text-primary); text-decoration: none;" class="hover-underline">
+                <%= p.title %>
+              </a>
+              <% if (p.isDirectlyAssigned) { %>
+                <span class="badge-status" style="background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 4px;">⭐ ASSIGNED TO YOU</span>
+              <% } %>
+            </div>
           </td>
           <td>
             <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary);"><%= p.track_name || 'General' %></span>
@@ -142,7 +166,7 @@
 
 <!-- Scoring Modal Dialog -->
 <div id="scoring-modal" class="modal-backdrop" style="display: none;" onclick="if(event.target===this) closeModal()">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-header">
       <div>
         <h2 id="modal-project-title" class="modal-title">Evaluate Project</h2>
@@ -160,8 +184,9 @@
       </div>
     </div>
     
-    <form id="scoring-form" onsubmit="submitScore(event)">
+    <form id="scoring-form" onsubmit="submitScore(event)" style="display: flex; flex-direction: column; overflow: hidden; flex: 1 1 auto; margin: 0;">
       <input type="hidden" id="modal-project-id" name="project_id">
+      <div class="modal-body">
 
       <div class="form-group">
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
@@ -215,28 +240,31 @@
         </div>
       </div>
 
-      <!-- Deliberation Notes (Optional) -->
-      <div class="form-group" style="margin-top: 1rem;">
-        <label class="form-label" for="modal-judge-comment" style="margin-bottom: 0.35rem;">Deliberation Notes (Optional)</label>
-        <textarea 
-          id="modal-judge-comment" 
-          rows="2" 
-          placeholder="Private evaluator notes, observations, or rationale..." 
-          style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); padding: 0.65rem; font-family: inherit; font-size: 0.85rem; box-sizing: border-box; background: var(--bg-surface); color: var(--text-primary);"
-        ></textarea>
+        <!-- Deliberation Notes (Optional) -->
+        <div class="form-group" style="margin-top: 1rem; margin-bottom: 0.5rem;">
+          <label class="form-label" for="modal-judge-comment" style="margin-bottom: 0.35rem;">Deliberation Notes (Optional)</label>
+          <textarea 
+            id="modal-judge-comment" 
+            rows="2" 
+            placeholder="Private evaluator notes, observations, or rationale..." 
+            style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); padding: 0.65rem; font-family: inherit; font-size: 0.85rem; box-sizing: border-box; background: var(--bg-surface); color: var(--text-primary);"
+          ></textarea>
+        </div>
       </div>
 
-      <!-- Computed Score Readout -->
-      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center; margin: 1.25rem 0;">
-        <span style="font-weight: 600; font-size: 0.85rem;">Calculated Weighted Total</span>
-        <span style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
-          <span id="computed-raw-total">3.00</span> <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">/ 5.0</span>
-        </span>
-      </div>
+      <div class="modal-footer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <!-- Computed Score Readout -->
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 600; font-size: 0.85rem;">Calculated Weighted Total</span>
+          <span style="font-family: var(--font-mono); font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+            <span id="computed-raw-total">3.00</span> <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted);">/ 5.0</span>
+          </span>
+        </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="btn-submit-score">Submit Evaluation</button>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-score">Submit Evaluation</button>
+        </div>
       </div>
     </form>
   </div>
@@ -244,6 +272,9 @@
 
 <script>
   let currentStatusFilter = 'all';
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewParam = urlParams.get('view');
+  let currentScope = viewParam === 'all' ? 'all' : (<%= totalAssigned %> > 0 ? 'assigned' : 'all');
 
   function openScoringModal(projectId, projectTitle, func = 3, qual = 3, inno = 3, imp = 3, comment = '', summary = '', track = '', repo = '') {
     document.getElementById('modal-project-id').value = projectId;
@@ -290,11 +321,94 @@
     document.getElementById('computed-raw-total').textContent = total.toFixed(2);
   }
 
+  function setJudgeScope(scope) {
+    currentScope = scope;
+    const btnAssigned = document.getElementById('scope-assigned-btn');
+    const btnAll = document.getElementById('scope-all-btn');
+    if (btnAssigned) {
+      if (scope === 'assigned') {
+        btnAssigned.classList.remove('btn-secondary');
+        btnAssigned.classList.add('btn-primary');
+        btnAssigned.style.fontWeight = '700';
+      } else {
+        btnAssigned.classList.remove('btn-primary');
+        btnAssigned.classList.add('btn-secondary');
+        btnAssigned.style.fontWeight = '500';
+      }
+    }
+    if (btnAll) {
+      if (scope === 'all') {
+        btnAll.classList.remove('btn-secondary');
+        btnAll.classList.add('btn-primary');
+        btnAll.style.fontWeight = '700';
+      } else {
+        btnAll.classList.remove('btn-primary');
+        btnAll.classList.add('btn-secondary');
+        btnAll.style.fontWeight = '500';
+      }
+    }
+    const notice = document.getElementById('queue-banner-notice');
+    if (notice) {
+      notice.textContent = scope === 'assigned' 
+        ? 'Focused on your <%= totalAssigned %> assigned reviews'
+        : 'Displaying all <%= assigned.length %> hackathon submissions';
+    }
+    const searchInput = document.getElementById('judge-queue-search');
+    if (searchInput) {
+      searchInput.placeholder = scope === 'assigned' 
+        ? 'Search assigned queue by title or ID...' 
+        : 'Search all submissions by title or ID...';
+    }
+    try {
+      const url = new URL(window.location.href);
+      if (scope === 'all') {
+        url.searchParams.set('view', 'all');
+      } else {
+        url.searchParams.delete('view');
+      }
+      window.history.replaceState({}, '', url.toString());
+    } catch(e) {}
+
+    updateFilterCounts();
+    filterJudgeQueue();
+  }
+
+  function updateFilterCounts() {
+    const cells = document.querySelectorAll('.queue-row');
+    let total = 0, pending = 0, scored = 0;
+    cells.forEach(cell => {
+      const isAssigned = cell.getAttribute('data-assigned') || 'other';
+      if (currentScope === 'all' || isAssigned === 'assigned') {
+        total++;
+        const st = cell.getAttribute('data-status');
+        if (st === 'scored') scored++;
+        else pending++;
+      }
+    });
+    const cAll = document.getElementById('count-stat-all');
+    const cPending = document.getElementById('count-stat-pending');
+    const cScored = document.getElementById('count-stat-scored');
+    if (cAll) cAll.textContent = total;
+    if (cPending) cPending.textContent = pending;
+    if (cScored) cScored.textContent = scored;
+  }
+
   function setJudgeStatusFilter(status) {
     currentStatusFilter = status;
-    document.getElementById('filter-all-btn').classList.toggle('active-status-btn', status === 'all');
-    document.getElementById('filter-pending-btn').classList.toggle('active-status-btn', status === 'pending');
-    document.getElementById('filter-scored-btn').classList.toggle('active-status-btn', status === 'scored');
+    const btnAll = document.getElementById('filter-all-btn');
+    const btnPending = document.getElementById('filter-pending-btn');
+    const btnScored = document.getElementById('filter-scored-btn');
+    [btnAll, btnPending, btnScored].forEach(b => {
+      if (b) {
+        b.classList.remove('btn-primary', 'active-status-btn');
+        b.classList.add('btn-secondary');
+      }
+    });
+    const activeBtn = status === 'all' ? btnAll : (status === 'pending' ? btnPending : btnScored);
+    if (activeBtn) {
+      activeBtn.classList.remove('btn-secondary');
+      activeBtn.classList.add('btn-primary', 'active-status-btn');
+    }
     filterJudgeQueue();
   }
 
@@ -312,12 +426,14 @@
       const pid = cell.getAttribute('data-project-id') || '';
       const track = cell.getAttribute('data-track') || '';
       const status = cell.getAttribute('data-status') || '';
+      const isAssigned = cell.getAttribute('data-assigned') || 'other';
 
+      const matchesScope = currentScope === 'all' || isAssigned === 'assigned';
       const matchesSearch = !q || title.includes(q) || pid.includes(q);
       const matchesTrack = !selectedTrack || track === selectedTrack;
       const matchesStatus = currentStatusFilter === 'all' || status === currentStatusFilter;
 
-      if (matchesSearch && matchesTrack && matchesStatus) {
+      if (matchesScope && matchesSearch && matchesTrack && matchesStatus) {
         tr.style.display = '';
         visibleCount++;
       } else {
@@ -388,16 +504,19 @@
           }
         }
 
-        // Update progress bar counter
-        const scoredRows = document.querySelectorAll('.queue-row[data-status="scored"]').length;
-        const totalRows = document.querySelectorAll('.queue-row').length;
+        // Update progress bar counter for assigned reviews
+        const assignedScored = document.querySelectorAll('.queue-row[data-assigned="assigned"][data-status="scored"]').length;
+        const assignedTotal = document.querySelectorAll('.queue-row[data-assigned="assigned"]').length || document.querySelectorAll('.queue-row').length;
         const compElem = document.getElementById('queue-completed-count');
-        if (compElem) compElem.textContent = scoredRows;
-        const pct = Math.round((scoredRows / totalRows) * 100);
+        if (compElem) compElem.textContent = assignedScored;
+        const pct = Math.round((assignedScored / assignedTotal) * 100);
         const pText = document.getElementById('queue-progress-text');
         if (pText) pText.textContent = pct + '%';
         const pBar = document.getElementById('queue-progress-bar');
         if (pBar) pBar.style.width = pct + '%';
+
+        updateFilterCounts();
+        filterJudgeQueue();
 
         closeModal();
       } else {
@@ -412,5 +531,21 @@
       btn.disabled = false;
       btn.textContent = 'Submit Evaluation';
     }
+  }
+
+  // Initialize queue view and counters on load
+  function initJudgeQueue() {
+    if (currentScope === 'all') {
+      setJudgeScope('all');
+    } else {
+      updateFilterCounts();
+      filterJudgeQueue();
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initJudgeQueue);
+  } else {
+    initJudgeQueue();
   }
 </script>

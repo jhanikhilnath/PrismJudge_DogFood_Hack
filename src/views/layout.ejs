@@ -48,7 +48,7 @@
 
         <% const isResultsLive = (typeof event !== 'undefined' && event && event.results_published === 1); %>
         <% if (isResultsLive || (currentUser && (currentUser.role === 'organizer' || currentUser.role === 'admin'))) { %>
-          <a href="/results" class="nav-link" data-path="/results">Results 🏆</a>
+          <a href="/results" class="nav-link" data-path="/results">Results</a>
         <% } %>
 
         <% if (currentUser && currentUser.role === 'judge') { %>
@@ -97,7 +97,7 @@
               </a>
               <a href="/api/auth/switch/judge_b" class="dropdown-item <%= user.role === 'judge' && user.userId === 'jdg_02' ? 'active-item' : '' %>">
                 <span class="item-tag tag-judge">JDG</span>
-                <span>Judge B (Elena)</span>
+                <span>Judge B (Wei)</span>
               </a>
               <a href="/api/auth/switch/participant" class="dropdown-item <%= user.role === 'participant' ? 'active-item' : '' %>">
                 <span class="item-tag tag-part">PRT</span>
@@ -147,7 +147,7 @@
                 </a>
                 <a href="/api/auth/switch/judge_b" class="dropdown-item">
                   <span class="item-tag tag-judge">JDG</span>
-                  <span>Judge B (Elena)</span>
+                  <span>Judge B (Wei)</span>
                 </a>
                 <a href="/api/auth/switch/participant" class="dropdown-item">
                   <span class="item-tag tag-part">PRT</span>

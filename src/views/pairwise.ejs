@@ -2,22 +2,9 @@
   <div class="hero-content">
     <h1 class="page-title">Pairwise Arena</h1>
     <p class="page-subtitle">
-      Compare two projects side-by-side using the Bradley-Terry Maximum Likelihood model. Keyboard shortcuts enabled: <kbd class="search-kbd">1</kbd> Select Left, <kbd class="search-kbd">2</kbd> Select Right, <kbd class="search-kbd">T</kbd> Declare Tie, <kbd class="search-kbd">S</kbd> Skip.
+      Compare two projects side-by-side using the Bradley-Terry Maximum Likelihood model. Keyboard shortcuts enabled: <kbd class="kbd-badge">1</kbd> Select Left, <kbd class="kbd-badge">2</kbd> Select Right, <kbd class="kbd-badge">T</kbd> Declare Tie, <kbd class="kbd-badge">S</kbd> Skip.
     </p>
   </div>
-</div>
-
-<div class="normalization-card">
-  <div class="normalization-header">
-    <div class="normalization-title-group">
-      <span class="norm-indicator-dot"></span>
-      <h3 class="normalization-title">Bradley-Terry Maximum Likelihood Estimator</h3>
-    </div>
-    <span class="norm-pill">PAIRWISE</span>
-  </div>
-  <p class="normalization-desc">
-    Pairwise judgments fit latent project skill ratings via Majorization-Minimization (MM) iterations, eliminating individual judge rubric scaling disparities and anchoring relative project quality.
-  </p>
 </div>
 
 <% if (project_a && project_b) { %>
@@ -72,7 +59,7 @@
         onclick="submitPairwiseVote('<%= project_a.id %>', '<%= project_b.id %>', 'tie')"
       >
         <span>Equal / Tie</span>
-        <kbd class="search-kbd" style="font-size: 0.7rem;">T</kbd>
+        <kbd class="kbd-badge" style="font-size: 0.7rem;">T</kbd>
       </button>
 
       <button 
@@ -83,7 +70,7 @@
         onclick="window.location.reload()"
       >
         <span>Skip Pair</span>
-        <kbd class="search-kbd" style="font-size: 0.7rem;">S</kbd>
+        <kbd class="kbd-badge" style="font-size: 0.7rem;">S</kbd>
       </button>
 
       <div class="vs-line"></div>

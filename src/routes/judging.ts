@@ -179,13 +179,19 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
       });
     }
 
+    const assignedCompletedCount = assigned.filter((p) => p.isDirectlyAssigned && p.hasScored).length;
+    const totalAssignedCount = assignedProjectIds.size > 0 ? assignedProjectIds.size : allProjects.length;
+    const assignedPendingCount = Math.max(0, totalAssignedCount - assignedCompletedCount);
+
     return reply.view('judge_dashboard.ejs', {
       title: 'Judge Evaluation Dashboard — PrismJudge',
       user: req.user,
       assigned,
       tracks,
       completedCount: scores.length,
-      totalAssigned: assignedProjectIds.size > 0 ? assignedProjectIds.size : allProjects.length,
+      assignedCompletedCount,
+      assignedPendingCount,
+      totalAssigned: totalAssignedCount,
       assignments: judgeAssignments,
     });
   });

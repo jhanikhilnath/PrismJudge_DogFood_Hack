@@ -40,7 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
         minute: '2-digit',
         timeZoneName: 'short'
       });
-      el.textContent = `${localStr} (6:00 PM UTC)`;
+      const utcStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }) + ' UTC';
+      el.textContent = `${localStr} (${utcStr})`;
     } catch (e) {}
   });
 
@@ -89,11 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 5. Live Search & Track Filter
-  const searchInput = document.getElementById('gallery-search') || document.getElementById('ballot-search');
+  // 5. Gallery Live Search & Track Filter (scoped strictly to gallery)
+  const searchInput = document.getElementById('gallery-search');
   const trackFilter = document.getElementById('gallery-track');
-  const trackPillButtons = document.querySelectorAll('.track-pill-btn');
-  const projectCards = document.querySelectorAll('.grid-cards .project-card');
+  const trackPillButtons = document.querySelectorAll('#track-pills-wrapper .track-pill-btn');
+  const projectCards = document.querySelectorAll('#gallery-grid .project-card, .gallery-view .project-card');
   const noProjectsBanner = document.getElementById('no-projects-banner');
   const clearFiltersBtn = document.getElementById('btn-clear-filters');
 
@@ -144,13 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const active = document.activeElement;
     const tag = active?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
-    if (e.key === '/' && searchInput) {
+    const targetSearch = searchInput || document.getElementById('ballot-search') || document.getElementById('judge-queue-search');
+    if (e.key === '/' && targetSearch) {
       e.preventDefault();
-      searchInput.focus();
+      targetSearch.focus();
     }
   });
 
-  // Track Pill Click Handlers
+  // Track Pill Click Handlers for Gallery
   trackPillButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const selectedTrack = btn.getAttribute('data-track-id') || '';

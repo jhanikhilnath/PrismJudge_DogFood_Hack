@@ -18,7 +18,7 @@ export interface UserSession {
 export const DEMO_PERSONAS = {
   organizer: { token: 'org_7f2a', userId: 'usr_org', name: 'Lead Organizer', role: 'organizer' },
   judge_a: { token: 'jdg_a_91bc', userId: 'jdg_01', name: 'Tomas Varga', role: 'judge' },
-  judge_b: { token: 'jdg_b_44de', userId: 'jdg_02', name: 'Elena Chen', role: 'judge' },
+  judge_b: { token: 'jdg_b_44de', userId: 'jdg_02', name: 'Wei Lindqvist', role: 'judge' },
   participant: { token: 'prt_2e88', userId: 'usr_part', name: 'Sample Participant', role: 'participant' },
 } as const;
 

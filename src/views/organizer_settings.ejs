@@ -41,25 +41,25 @@
 <!-- Section Navigation Tabs -->
 <div class="filter-pills-scroll" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
   <button type="button" class="btn btn-sm settings-tab-btn active" id="tab-btn-general" onclick="switchSettingsTab('general')">
-    📋 General &amp; Identity
+    General &amp; Identity
   </button>
   <button type="button" class="btn btn-sm settings-tab-btn" id="tab-btn-timeline" onclick="switchSettingsTab('timeline')">
-    ⏱️ Deadlines &amp; Timeline
+    Deadlines &amp; Timeline
   </button>
   <button type="button" class="btn btn-sm settings-tab-btn" id="tab-btn-prizes" onclick="switchSettingsTab('prizes')">
-    🏆 Prizes &amp; Awards
+    Prizes &amp; Awards
   </button>
   <button type="button" class="btn btn-sm settings-tab-btn" id="tab-btn-tracks" onclick="switchSettingsTab('tracks')">
-    🎯 Tracks Management (<%= tracks.length %>)
+    Tracks Management (<%= tracks.length %>)
   </button>
   <button type="button" class="btn btn-sm settings-tab-btn" id="tab-btn-rubric" onclick="switchSettingsTab('rubric')">
-    ⚖️ Judging &amp; Rubric
+    Judging &amp; Rubric
   </button>
   <button type="button" class="btn btn-sm settings-tab-btn" id="tab-btn-rules" onclick="switchSettingsTab('rules')">
-    🛡️ Submission &amp; Voting
+    Submission &amp; Voting
   </button>
   <button type="button" class="btn btn-sm settings-tab-btn" id="tab-btn-audit" onclick="switchSettingsTab('audit')">
-    📜 Audit Ledger
+    Audit Ledger
   </button>
 </div>
 
@@ -130,137 +130,553 @@
   <!-- TAB 2: Timeline & Deadlines -->
   <div id="section-timeline" class="settings-section" style="display: none;">
     <div class="card" style="margin-bottom: 1.5rem;">
-      <div class="card-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+      <div class="card-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
         <div>
           <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Schedule, Milestones &amp; Gating Deadlines</h3>
           <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0 0;">
             Controls phase transitions, project submission guards, judging window, and community ballot sealing.
           </p>
         </div>
-        <span class="status-pill status-warning" style="font-size: 0.75rem; font-weight: 600;">HIGH-IMPACT SETTING</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span class="status-pill status-warning" style="font-size: 0.75rem; font-weight: 600;">HIGH-IMPACT SETTING</span>
+        </div>
       </div>
       <div class="card-body" style="padding: 1.5rem;">
+        <!-- Global Toolbar for Pickers -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; background: var(--bg-subtle, #f8fafc); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-primary);">Timezone Display:</span>
+            <div class="dt-tz-pill-group">
+              <button type="button" class="dt-tz-pill global-tz-btn active" data-tz="utc" onclick="setAllPickersTz('utc')">🌐 All in UTC</button>
+              <button type="button" class="dt-tz-pill global-tz-btn" data-tz="local" onclick="setAllPickersTz('local')">📍 All in Local Time</button>
+            </div>
+            <span id="detected-tz-label" style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); margin-left: 0.25rem;"></span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Bulk Adjust:</span>
+            <button type="button" class="dt-preset-btn" onclick="bulkAdjustAllMilestones(24)" title="Add 24 hours to all 7 timeline milestones">+24h to All</button>
+            <button type="button" class="dt-preset-btn" onclick="bulkAdjustAllMilestones(168)" title="Add 7 days to all 7 timeline milestones">+7d to All</button>
+          </div>
+        </div>
+
         <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.5rem; font-size: 0.82rem; color: #92400e;">
           <strong>Security Notice:</strong> The <code>submissions_close</code> timestamp is strictly enforced by Fastify pre-handlers. Any submission attempt after this deadline will be rejected with HTTP 403 Forbidden.
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
-          <!-- Submissions Open -->
-          <div>
-            <label class="form-label" for="field-submissions-open" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">
-              Submissions Open (UTC)
-            </label>
-            <input 
-              type="text" 
-              id="field-submissions-open" 
-              name="submissions_open" 
-              class="form-input font-mono" 
-              value="<%= event.submissions_open || '2026-02-25T00:00:00Z' %>"
-              style="width: 100%;"
-            >
-            <div class="local-time-preview" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+          <!-- 1. Submissions Open -->
+          <div class="dt-picker-card" data-field-id="field-submissions-open">
+            <div class="dt-picker-header">
+              <div class="dt-picker-title-col">
+                <div class="dt-picker-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Submissions Open</span>
+                </div>
+                <div class="dt-picker-desc">Participants may begin publishing submission entries</div>
+              </div>
+              <div class="dt-tz-pill-group">
+                <button type="button" class="dt-tz-pill active" data-tz="utc" onclick="setPickerTz('field-submissions-open', 'utc')">UTC</button>
+                <button type="button" class="dt-tz-pill" data-tz="local" onclick="setPickerTz('field-submissions-open', 'local')">Local</button>
+              </div>
+            </div>
+
+            <div class="dt-input-wrapper">
+              <input 
+                type="datetime-local" 
+                class="form-input dt-native-input" 
+                step="60"
+                onchange="onNativePickerChange('field-submissions-open')"
+                title="Select date and time from calendar"
+              >
+              <button type="button" class="dt-calendar-trigger" title="Open Calendar" onclick="openPickerFor('field-submissions-open')">📅</button>
+            </div>
+
+            <div class="dt-presets-row">
+              <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-open', 1, 'hour')">+1h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-open', 24, 'hour')">+24h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-open', 7, 'day')">+7d</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-open', 0, 'endOfDay')">23:59</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-open', 0, 'now')">Now</button>
+            </div>
+
+            <div class="dt-preview-panel">
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">🌐 UTC:</span>
+                <span class="dt-preview-val dt-preview-utc">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">📍 <span class="dt-preview-local-name">Local</span>:</span>
+                <span class="dt-preview-val dt-preview-local">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">⏱️ Status:</span>
+                <span class="dt-preview-val dt-preview-relative">...</span>
+              </div>
+            </div>
+
+            <div class="dt-raw-iso-details">
+              <button type="button" class="dt-raw-iso-toggle" onclick="toggleRawIso('field-submissions-open-iso-wrapper')">
+                ⚙️ Advanced: Raw ISO 8601 String
+              </button>
+              <div id="field-submissions-open-iso-wrapper" style="display: none; margin-top: 0.4rem;">
+                <input 
+                  type="text" 
+                  id="field-submissions-open" 
+                  name="submissions_open" 
+                  class="form-input font-mono dt-canonical-input" 
+                  value="<%= event.submissions_open || '2026-02-25T00:00:00Z' %>"
+                  oninput="onCanonicalInputChange('field-submissions-open')"
+                  style="width: 100%; font-size: 0.8rem;"
+                >
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  Exact ISO timestamp sent to the server. Updates automatically with the picker.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Submissions Close -->
-          <div>
-            <label class="form-label" for="field-submissions-close" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">
-              Submissions Deadline (submissions_close) *
-            </label>
-            <input 
-              type="text" 
-              id="field-submissions-close" 
-              name="submissions_close" 
-              class="form-input font-mono" 
-              value="<%= event.submissions_close %>" 
-              required
-              style="width: 100%; border-color: #f59e0b;"
-            >
-            <div class="local-time-preview" style="font-size: 0.75rem; color: #b45309; margin-top: 0.25rem;"></div>
+          <!-- 2. Submissions Deadline (CRITICAL) -->
+          <div class="dt-picker-card is-critical" data-field-id="field-submissions-close">
+            <div class="dt-picker-header">
+              <div class="dt-picker-title-col">
+                <div class="dt-picker-title" style="color: #b45309;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>Submissions Deadline *</span>
+                  <span class="status-pill status-warning" style="font-size: 0.65rem; padding: 0.1rem 0.35rem; font-weight: 700;">ENFORCED</span>
+                </div>
+                <div class="dt-picker-desc">Hard cutoff: submissions refused after this instant (HTTP 403)</div>
+              </div>
+              <div class="dt-tz-pill-group">
+                <button type="button" class="dt-tz-pill active" data-tz="utc" onclick="setPickerTz('field-submissions-close', 'utc')">UTC</button>
+                <button type="button" class="dt-tz-pill" data-tz="local" onclick="setPickerTz('field-submissions-close', 'local')">Local</button>
+              </div>
+            </div>
+
+            <div class="dt-input-wrapper">
+              <input 
+                type="datetime-local" 
+                class="form-input dt-native-input" 
+                step="60"
+                style="border-color: #f59e0b;"
+                onchange="onNativePickerChange('field-submissions-close')"
+                title="Select date and time from calendar"
+              >
+              <button type="button" class="dt-calendar-trigger" title="Open Calendar" onclick="openPickerFor('field-submissions-close')">📅</button>
+            </div>
+
+            <div class="dt-presets-row">
+              <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-close', 1, 'hour')">+1h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-close', 24, 'hour')">+24h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-close', 48, 'hour')">+48h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-close', 7, 'day')">+7d</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-close', 0, 'endOfDay')">23:59</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-submissions-close', 0, 'now')">Now</button>
+            </div>
+
+            <div class="dt-preview-panel" style="background: #fffbeb; border-color: #fde68a;">
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">🌐 UTC:</span>
+                <span class="dt-preview-val dt-preview-utc">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">📍 <span class="dt-preview-local-name">Local</span>:</span>
+                <span class="dt-preview-val dt-preview-local">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">⏱️ Status:</span>
+                <span class="dt-preview-val dt-preview-relative">...</span>
+              </div>
+            </div>
+
+            <div class="dt-raw-iso-details">
+              <button type="button" class="dt-raw-iso-toggle" onclick="toggleRawIso('field-submissions-close-iso-wrapper')">
+                ⚙️ Advanced: Raw ISO 8601 String
+              </button>
+              <div id="field-submissions-close-iso-wrapper" style="display: none; margin-top: 0.4rem;">
+                <input 
+                  type="text" 
+                  id="field-submissions-close" 
+                  name="submissions_close" 
+                  class="form-input font-mono dt-canonical-input" 
+                  value="<%= event.submissions_close %>"
+                  required
+                  oninput="onCanonicalInputChange('field-submissions-close')"
+                  style="width: 100%; font-size: 0.8rem; border-color: #f59e0b;"
+                >
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  Exact ISO timestamp sent to the server. Updates automatically with the picker.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Judging Open -->
-          <div>
-            <label class="form-label" for="field-judging-open" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">
-              Judging Starts (UTC)
-            </label>
-            <input 
-              type="text" 
-              id="field-judging-open" 
-              name="judging_open" 
-              class="form-input font-mono" 
-              value="<%= event.judging_open || '2026-03-01T18:00:00Z' %>"
-              style="width: 100%;"
-            >
-            <div class="local-time-preview" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+          <!-- 3. Judging Starts -->
+          <div class="dt-picker-card" data-field-id="field-judging-open">
+            <div class="dt-picker-header">
+              <div class="dt-picker-title-col">
+                <div class="dt-picker-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Judging Starts</span>
+                </div>
+                <div class="dt-picker-desc">Official evaluator scoring begins across rubric queue</div>
+              </div>
+              <div class="dt-tz-pill-group">
+                <button type="button" class="dt-tz-pill active" data-tz="utc" onclick="setPickerTz('field-judging-open', 'utc')">UTC</button>
+                <button type="button" class="dt-tz-pill" data-tz="local" onclick="setPickerTz('field-judging-open', 'local')">Local</button>
+              </div>
+            </div>
+
+            <div class="dt-input-wrapper">
+              <input 
+                type="datetime-local" 
+                class="form-input dt-native-input" 
+                step="60"
+                onchange="onNativePickerChange('field-judging-open')"
+                title="Select date and time from calendar"
+              >
+              <button type="button" class="dt-calendar-trigger" title="Open Calendar" onclick="openPickerFor('field-judging-open')">📅</button>
+            </div>
+
+            <div class="dt-presets-row">
+              <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-open', 1, 'hour')">+1h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-open', 24, 'hour')">+24h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-open', 7, 'day')">+7d</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-open', 0, 'endOfDay')">23:59</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-open', 0, 'now')">Now</button>
+            </div>
+
+            <div class="dt-preview-panel">
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">🌐 UTC:</span>
+                <span class="dt-preview-val dt-preview-utc">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">📍 <span class="dt-preview-local-name">Local</span>:</span>
+                <span class="dt-preview-val dt-preview-local">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">⏱️ Status:</span>
+                <span class="dt-preview-val dt-preview-relative">...</span>
+              </div>
+            </div>
+
+            <div class="dt-raw-iso-details">
+              <button type="button" class="dt-raw-iso-toggle" onclick="toggleRawIso('field-judging-open-iso-wrapper')">
+                ⚙️ Advanced: Raw ISO 8601 String
+              </button>
+              <div id="field-judging-open-iso-wrapper" style="display: none; margin-top: 0.4rem;">
+                <input 
+                  type="text" 
+                  id="field-judging-open" 
+                  name="judging_open" 
+                  class="form-input font-mono dt-canonical-input" 
+                  value="<%= event.judging_open || '2026-03-01T18:00:00Z' %>"
+                  oninput="onCanonicalInputChange('field-judging-open')"
+                  style="width: 100%; font-size: 0.8rem;"
+                >
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  Exact ISO timestamp sent to the server. Updates automatically with the picker.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Judging Close -->
-          <div>
-            <label class="form-label" for="field-judging-close" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">
-              Judging Deadline (judging_close)
-            </label>
-            <input 
-              type="text" 
-              id="field-judging-close" 
-              name="judging_close" 
-              class="form-input font-mono" 
-              value="<%= event.judging_close || '2026-03-03T18:00:00Z' %>"
-              style="width: 100%;"
-            >
-            <div class="local-time-preview" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+          <!-- 4. Judging Deadline -->
+          <div class="dt-picker-card" data-field-id="field-judging-close">
+            <div class="dt-picker-header">
+              <div class="dt-picker-title-col">
+                <div class="dt-picker-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Judging Deadline</span>
+                </div>
+                <div class="dt-picker-desc">Juror evaluation window locks and final rankings freeze</div>
+              </div>
+              <div class="dt-tz-pill-group">
+                <button type="button" class="dt-tz-pill active" data-tz="utc" onclick="setPickerTz('field-judging-close', 'utc')">UTC</button>
+                <button type="button" class="dt-tz-pill" data-tz="local" onclick="setPickerTz('field-judging-close', 'local')">Local</button>
+              </div>
+            </div>
+
+            <div class="dt-input-wrapper">
+              <input 
+                type="datetime-local" 
+                class="form-input dt-native-input" 
+                step="60"
+                onchange="onNativePickerChange('field-judging-close')"
+                title="Select date and time from calendar"
+              >
+              <button type="button" class="dt-calendar-trigger" title="Open Calendar" onclick="openPickerFor('field-judging-close')">📅</button>
+            </div>
+
+            <div class="dt-presets-row">
+              <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-close', 1, 'hour')">+1h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-close', 24, 'hour')">+24h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-close', 7, 'day')">+7d</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-close', 0, 'endOfDay')">23:59</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-judging-close', 0, 'now')">Now</button>
+            </div>
+
+            <div class="dt-preview-panel">
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">🌐 UTC:</span>
+                <span class="dt-preview-val dt-preview-utc">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">📍 <span class="dt-preview-local-name">Local</span>:</span>
+                <span class="dt-preview-val dt-preview-local">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">⏱️ Status:</span>
+                <span class="dt-preview-val dt-preview-relative">...</span>
+              </div>
+            </div>
+
+            <div class="dt-raw-iso-details">
+              <button type="button" class="dt-raw-iso-toggle" onclick="toggleRawIso('field-judging-close-iso-wrapper')">
+                ⚙️ Advanced: Raw ISO 8601 String
+              </button>
+              <div id="field-judging-close-iso-wrapper" style="display: none; margin-top: 0.4rem;">
+                <input 
+                  type="text" 
+                  id="field-judging-close" 
+                  name="judging_close" 
+                  class="form-input font-mono dt-canonical-input" 
+                  value="<%= event.judging_close || '2026-03-03T18:00:00Z' %>"
+                  oninput="onCanonicalInputChange('field-judging-close')"
+                  style="width: 100%; font-size: 0.8rem;"
+                >
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  Exact ISO timestamp sent to the server. Updates automatically with the picker.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Voting Open -->
-          <div>
-            <label class="form-label" for="field-voting-open" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">
-              Community Voting Starts (UTC)
-            </label>
-            <input 
-              type="text" 
-              id="field-voting-open" 
-              name="voting_open" 
-              class="form-input font-mono" 
-              value="<%= event.voting_open || '2026-03-01T18:00:00Z' %>"
-              style="width: 100%;"
-            >
-            <div class="local-time-preview" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+          <!-- 5. Community Voting Starts -->
+          <div class="dt-picker-card" data-field-id="field-voting-open">
+            <div class="dt-picker-header">
+              <div class="dt-picker-title-col">
+                <div class="dt-picker-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Community Voting Starts</span>
+                </div>
+                <div class="dt-picker-desc">Public ballot opens for People's Choice balloting</div>
+              </div>
+              <div class="dt-tz-pill-group">
+                <button type="button" class="dt-tz-pill active" data-tz="utc" onclick="setPickerTz('field-voting-open', 'utc')">UTC</button>
+                <button type="button" class="dt-tz-pill" data-tz="local" onclick="setPickerTz('field-voting-open', 'local')">Local</button>
+              </div>
+            </div>
+
+            <div class="dt-input-wrapper">
+              <input 
+                type="datetime-local" 
+                class="form-input dt-native-input" 
+                step="60"
+                onchange="onNativePickerChange('field-voting-open')"
+                title="Select date and time from calendar"
+              >
+              <button type="button" class="dt-calendar-trigger" title="Open Calendar" onclick="openPickerFor('field-voting-open')">📅</button>
+            </div>
+
+            <div class="dt-presets-row">
+              <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-open', 1, 'hour')">+1h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-open', 24, 'hour')">+24h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-open', 7, 'day')">+7d</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-open', 0, 'endOfDay')">23:59</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-open', 0, 'now')">Now</button>
+            </div>
+
+            <div class="dt-preview-panel">
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">🌐 UTC:</span>
+                <span class="dt-preview-val dt-preview-utc">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">📍 <span class="dt-preview-local-name">Local</span>:</span>
+                <span class="dt-preview-val dt-preview-local">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">⏱️ Status:</span>
+                <span class="dt-preview-val dt-preview-relative">...</span>
+              </div>
+            </div>
+
+            <div class="dt-raw-iso-details">
+              <button type="button" class="dt-raw-iso-toggle" onclick="toggleRawIso('field-voting-open-iso-wrapper')">
+                ⚙️ Advanced: Raw ISO 8601 String
+              </button>
+              <div id="field-voting-open-iso-wrapper" style="display: none; margin-top: 0.4rem;">
+                <input 
+                  type="text" 
+                  id="field-voting-open" 
+                  name="voting_open" 
+                  class="form-input font-mono dt-canonical-input" 
+                  value="<%= event.voting_open || '2026-03-01T18:00:00Z' %>"
+                  oninput="onCanonicalInputChange('field-voting-open')"
+                  style="width: 100%; font-size: 0.8rem;"
+                >
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  Exact ISO timestamp sent to the server. Updates automatically with the picker.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Voting Close -->
-          <div>
-            <label class="form-label" for="field-voting-close" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">
-              Community Voting Deadline (voting_close)
-            </label>
-            <input 
-              type="text" 
-              id="field-voting-close" 
-              name="voting_close" 
-              class="form-input font-mono" 
-              value="<%= event.voting_close || '2026-03-04T12:00:00Z' %>"
-              style="width: 100%;"
-            >
-            <div class="local-time-preview" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+          <!-- 6. Community Voting Deadline -->
+          <div class="dt-picker-card" data-field-id="field-voting-close">
+            <div class="dt-picker-header">
+              <div class="dt-picker-title-col">
+                <div class="dt-picker-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Community Voting Deadline</span>
+                </div>
+                <div class="dt-picker-desc">Public ballot closes and People's Choice tallies lock</div>
+              </div>
+              <div class="dt-tz-pill-group">
+                <button type="button" class="dt-tz-pill active" data-tz="utc" onclick="setPickerTz('field-voting-close', 'utc')">UTC</button>
+                <button type="button" class="dt-tz-pill" data-tz="local" onclick="setPickerTz('field-voting-close', 'local')">Local</button>
+              </div>
+            </div>
+
+            <div class="dt-input-wrapper">
+              <input 
+                type="datetime-local" 
+                class="form-input dt-native-input" 
+                step="60"
+                onchange="onNativePickerChange('field-voting-close')"
+                title="Select date and time from calendar"
+              >
+              <button type="button" class="dt-calendar-trigger" title="Open Calendar" onclick="openPickerFor('field-voting-close')">📅</button>
+            </div>
+
+            <div class="dt-presets-row">
+              <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-close', 1, 'hour')">+1h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-close', 24, 'hour')">+24h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-close', 7, 'day')">+7d</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-close', 0, 'endOfDay')">23:59</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-voting-close', 0, 'now')">Now</button>
+            </div>
+
+            <div class="dt-preview-panel">
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">🌐 UTC:</span>
+                <span class="dt-preview-val dt-preview-utc">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">📍 <span class="dt-preview-local-name">Local</span>:</span>
+                <span class="dt-preview-val dt-preview-local">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">⏱️ Status:</span>
+                <span class="dt-preview-val dt-preview-relative">...</span>
+              </div>
+            </div>
+
+            <div class="dt-raw-iso-details">
+              <button type="button" class="dt-raw-iso-toggle" onclick="toggleRawIso('field-voting-close-iso-wrapper')">
+                ⚙️ Advanced: Raw ISO 8601 String
+              </button>
+              <div id="field-voting-close-iso-wrapper" style="display: none; margin-top: 0.4rem;">
+                <input 
+                  type="text" 
+                  id="field-voting-close" 
+                  name="voting_close" 
+                  class="form-input font-mono dt-canonical-input" 
+                  value="<%= event.voting_close || '2026-03-04T12:00:00Z' %>"
+                  oninput="onCanonicalInputChange('field-voting-close')"
+                  style="width: 100%; font-size: 0.8rem;"
+                >
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  Exact ISO timestamp sent to the server. Updates automatically with the picker.
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Results Announcement -->
-          <div>
-            <label class="form-label" for="field-results-announced" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.35rem;">
-              Results Unveiling Ceremony (UTC)
-            </label>
-            <input 
-              type="text" 
-              id="field-results-announced" 
-              name="results_announced_at" 
-              class="form-input font-mono" 
-              value="<%= event.results_announced_at || '2026-03-05T15:00:00Z' %>"
-              style="width: 100%;"
-            >
-            <div class="local-time-preview" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;"></div>
+          <!-- 7. Results Unveiling Ceremony -->
+          <div class="dt-picker-card" data-field-id="field-results-announced">
+            <div class="dt-picker-header">
+              <div class="dt-picker-title-col">
+                <div class="dt-picker-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Results Unveiling Ceremony</span>
+                </div>
+                <div class="dt-picker-desc">Target instant for official awards release and podium reveal</div>
+              </div>
+              <div class="dt-tz-pill-group">
+                <button type="button" class="dt-tz-pill active" data-tz="utc" onclick="setPickerTz('field-results-announced', 'utc')">UTC</button>
+                <button type="button" class="dt-tz-pill" data-tz="local" onclick="setPickerTz('field-results-announced', 'local')">Local</button>
+              </div>
+            </div>
+
+            <div class="dt-input-wrapper">
+              <input 
+                type="datetime-local" 
+                class="form-input dt-native-input" 
+                step="60"
+                onchange="onNativePickerChange('field-results-announced')"
+                title="Select date and time from calendar"
+              >
+              <button type="button" class="dt-calendar-trigger" title="Open Calendar" onclick="openPickerFor('field-results-announced')">📅</button>
+            </div>
+
+            <div class="dt-presets-row">
+              <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">Presets:</span>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-results-announced', 1, 'hour')">+1h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-results-announced', 24, 'hour')">+24h</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-results-announced', 7, 'day')">+7d</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-results-announced', 0, 'endOfDay')">23:59</button>
+              <button type="button" class="dt-preset-btn" onclick="adjustPickerTime('field-results-announced', 0, 'now')">Now</button>
+            </div>
+
+            <div class="dt-preview-panel">
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">🌐 UTC:</span>
+                <span class="dt-preview-val dt-preview-utc">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">📍 <span class="dt-preview-local-name">Local</span>:</span>
+                <span class="dt-preview-val dt-preview-local">Loading...</span>
+              </div>
+              <div class="dt-preview-item">
+                <span class="dt-preview-label">⏱️ Status:</span>
+                <span class="dt-preview-val dt-preview-relative">...</span>
+              </div>
+            </div>
+
+            <div class="dt-raw-iso-details">
+              <button type="button" class="dt-raw-iso-toggle" onclick="toggleRawIso('field-results-announced-iso-wrapper')">
+                ⚙️ Advanced: Raw ISO 8601 String
+              </button>
+              <div id="field-results-announced-iso-wrapper" style="display: none; margin-top: 0.4rem;">
+                <input 
+                  type="text" 
+                  id="field-results-announced" 
+                  name="results_announced_at" 
+                  class="form-input font-mono dt-canonical-input" 
+                  value="<%= event.results_announced_at || '2026-03-05T15:00:00Z' %>"
+                  oninput="onCanonicalInputChange('field-results-announced')"
+                  style="width: 100%; font-size: 0.8rem;"
+                >
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  Exact ISO timestamp sent to the server. Updates automatically with the picker.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
 
   <!-- TAB 3: Prizes & Awards -->
   <div id="section-prizes" class="settings-section" style="display: none;">
@@ -378,7 +794,11 @@
                       type="button" 
                       class="btn btn-secondary btn-sm" 
                       style="padding: 0.25rem 0.55rem; font-size: 0.75rem;"
-                      onclick="editTrack('<%= t.id %>', '<%= t.name.replace(/'/g, "\\'") %>', '<%= (t.description || '').replace(/'/g, "\\'") %>', '<%= t.prize_amount || '$500' %>')"
+                      data-track-id="<%= t.id %>"
+                      data-track-name="<%= t.name %>"
+                      data-track-desc="<%= t.description || '' %>"
+                      data-track-prize="<%= t.prize_amount || '$500' %>"
+                      onclick="editTrackFromBtn(this)"
                     >
                       Edit
                     </button>
@@ -386,7 +806,9 @@
                       type="button" 
                       class="btn btn-secondary btn-sm" 
                       style="padding: 0.25rem 0.55rem; font-size: 0.75rem; color: #dc2626;"
-                      onclick="confirmDeleteTrack('<%= t.id %>', '<%= t.name.replace(/'/g, "\\'") %>')"
+                      data-track-id="<%= t.id %>"
+                      data-track-name="<%= t.name %>"
+                      onclick="confirmDeleteTrackFromBtn(this)"
                     >
                       Delete
                     </button>
@@ -532,6 +954,7 @@
               Bradley-Terry Pairwise Showdowns
             </label>
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+              <input type="hidden" name="pairwise_enabled" value="0">
               <input type="checkbox" name="pairwise_enabled" value="1" <%= event.pairwise_enabled !== 0 ? 'checked' : '' %>>
               <span>Enable side-by-side pairwise comparison arena at <code>/judge/pairwise</code></span>
             </label>
@@ -585,26 +1008,31 @@
 
         <div style="border-top: 1px solid var(--border-light); padding-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+            <input type="hidden" name="prevent_self_voting" value="0">
             <input type="checkbox" name="prevent_self_voting" value="1" <%= event.prevent_self_voting !== 0 ? 'checked' : '' %>>
             <span><strong>Anti-Self-Voting Barrier (PRD FR-205):</strong> Strictly reject votes cast by team members for their own project (HTTP 403)</span>
           </label>
 
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+            <input type="hidden" name="require_repo_url" value="0">
             <input type="checkbox" name="require_repo_url" value="1" <%= event.require_repo_url !== 0 ? 'checked' : '' %>>
             <span><strong>Require Source Code Repository:</strong> Mandatory public repository URL during submission</span>
           </label>
 
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+            <input type="hidden" name="require_demo_url" value="0">
             <input type="checkbox" name="require_demo_url" value="1" <%= event.require_demo_url === 1 ? 'checked' : '' %>>
             <span><strong>Require Live Demo / Artifact Link:</strong> Mandatory deployment URL during submission</span>
           </label>
 
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+            <input type="hidden" name="voting_results_published" value="0">
             <input type="checkbox" name="voting_results_published" value="1" <%= event.voting_results_published === 1 ? 'checked' : '' %>>
             <span><strong>Publish Community Choice Voting Standings:</strong> Reveal live community vote counts and rank badges to voters and participants</span>
           </label>
 
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+            <input type="hidden" name="results_published" value="0">
             <input type="checkbox" name="results_published" value="1" <%= event.results_published === 1 ? 'checked' : '' %>>
             <span><strong>Publish Official Results Portal (/results):</strong> Unveil podium grand champions, track awards, and full normalized leaderboard to all visitors</span>
           </label>
@@ -828,39 +1256,318 @@
 </div>
 
 <script>
-  // Initial Snapshot for Diff Comparison
-  const INITIAL_CONFIG = {
-    name: <%- JSON.stringify(event.name || '') %>,
-    tagline: <%- JSON.stringify(event.tagline || '') %>,
-    description: <%- JSON.stringify(event.description || '') %>,
-    submissions_open: <%- JSON.stringify(event.submissions_open || '') %>,
-    submissions_close: <%- JSON.stringify(event.submissions_close || '') %>,
-    judging_open: <%- JSON.stringify(event.judging_open || '') %>,
-    judging_close: <%- JSON.stringify(event.judging_close || '') %>,
-    voting_open: <%- JSON.stringify(event.voting_open || '') %>,
-    voting_close: <%- JSON.stringify(event.voting_close || '') %>,
-    results_announced_at: <%- JSON.stringify(event.results_announced_at || '') %>,
-    prize_pool: <%- JSON.stringify(event.prize_pool || '') %>,
-    weight_func: <%= rubricWeights.functionality || 0.4 %>,
-    weight_qual: <%= rubricWeights.quality || 0.3 %>,
-    weight_inno: <%= rubricWeights.innovation || 0.2 %>,
-    weight_imp: <%= rubricWeights.impact || 0.1 %>,
-    min_reviews_per_project: <%= event.min_reviews_per_project || 3 %>,
-    max_team_size: <%= event.max_team_size || 4 %>,
-    voting_mode: <%- JSON.stringify(event.voting_mode || 'open') %>,
-    prevent_self_voting: <%= event.prevent_self_voting !== 0 ? 1 : 0 %>,
-    require_repo_url: <%= event.require_repo_url !== 0 ? 1 : 0 %>,
-    require_demo_url: <%= event.require_demo_url === 1 ? 1 : 0 %>,
-    pairwise_enabled: <%= event.pairwise_enabled !== 0 ? 1 : 0 %>,
-    voting_results_published: <%= event.voting_results_published === 1 ? 1 : 0 %>,
-    results_published: <%= event.results_published === 1 ? 1 : 0 %>
-  };
+  function serializePrizes() {
+    const rows = document.querySelectorAll('.prize-row');
+    const list = [];
+    rows.forEach((r, idx) => {
+      const name = r.querySelector('.prz-name')?.value?.trim();
+      const amount = r.querySelector('.prz-amount')?.value?.trim();
+      const desc = r.querySelector('.prz-desc')?.value?.trim();
+      if (name) {
+        list.push({ id: 'prz_' + (idx + 1).toString().padStart(2, '0'), name, amount: amount || '$0', description: desc || '' });
+      }
+    });
+    return JSON.stringify(list);
+  }
 
+  function editTrackFromBtn(btn) {
+    const id = btn.getAttribute('data-track-id') || '';
+    const name = btn.getAttribute('data-track-name') || '';
+    const desc = btn.getAttribute('data-track-desc') || '';
+    const prize = btn.getAttribute('data-track-prize') || '$500';
+    editTrack(id, name, desc, prize);
+  }
+
+  function confirmDeleteTrackFromBtn(btn) {
+    const id = btn.getAttribute('data-track-id') || '';
+    const name = btn.getAttribute('data-track-name') || '';
+    confirmDeleteTrack(id, name);
+  }
+
+  function captureCurrentFormValues() {
+    const f = parseFloat(document.getElementById('slider-func')?.value) || 0;
+    const q = parseFloat(document.getElementById('slider-qual')?.value) || 0;
+    const i = parseFloat(document.getElementById('slider-inno')?.value) || 0;
+    const m = parseFloat(document.getElementById('slider-imp')?.value) || 0;
+    return {
+      name: document.getElementById('field-name')?.value?.trim() || '',
+      tagline: document.getElementById('field-tagline')?.value?.trim() || '',
+      description: document.getElementById('field-description')?.value?.trim() || '',
+      submissions_open: document.getElementById('field-submissions-open')?.value?.trim() || '',
+      submissions_close: document.getElementById('field-submissions-close')?.value?.trim() || '',
+      judging_open: document.getElementById('field-judging-open')?.value?.trim() || '',
+      judging_close: document.getElementById('field-judging-close')?.value?.trim() || '',
+      voting_open: document.getElementById('field-voting-open')?.value?.trim() || '',
+      voting_close: document.getElementById('field-voting-close')?.value?.trim() || '',
+      results_announced_at: document.getElementById('field-results-announced')?.value?.trim() || '',
+      prize_pool: document.getElementById('field-prize-pool')?.value?.trim() || '',
+      prizes_json: typeof serializePrizes === 'function' ? serializePrizes() : '',
+      weight_func: f,
+      weight_qual: q,
+      weight_inno: i,
+      weight_imp: m,
+      min_reviews_per_project: parseInt(document.getElementById('field-min-reviews')?.value, 10) || 3,
+      max_team_size: parseInt(document.getElementById('field-max-team-size')?.value, 10) || 4,
+      voting_mode: document.getElementById('field-voting-mode')?.value || 'open',
+      prevent_self_voting: document.querySelector('input[name="prevent_self_voting"]')?.checked ? 1 : 0,
+      require_repo_url: document.querySelector('input[name="require_repo_url"]')?.checked ? 1 : 0,
+      require_demo_url: document.querySelector('input[name="require_demo_url"]')?.checked ? 1 : 0,
+      pairwise_enabled: document.querySelector('input[name="pairwise_enabled"]')?.checked ? 1 : 0,
+      voting_results_published: document.querySelector('input[name="voting_results_published"]')?.checked ? 1 : 0,
+      results_published: document.querySelector('input[name="results_published"]')?.checked ? 1 : 0
+    };
+  }
+
+  // Initial Snapshot captured dynamically on load
+  let INITIAL_CONFIG = {};
   let pendingDeleteTrackId = null;
+
+  // =========================================================================
+  // Enhanced Interactive Date & Time Picker System
+  // =========================================================================
+  const USER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local';
+  const PICKER_TIMEZONES = {}; // fieldId -> 'utc' | 'local'
+
+  function padZero(n) {
+    return String(n).padStart(2, '0');
+  }
+
+  function toDatetimeLocalString(date, mode) {
+    if (!date || isNaN(date.getTime())) return '';
+    if (mode === 'utc') {
+      return `${date.getUTCFullYear()}-${padZero(date.getUTCMonth() + 1)}-${padZero(date.getUTCDate())}T${padZero(date.getUTCHours())}:${padZero(date.getUTCMinutes())}`;
+    } else {
+      return `${date.getFullYear()}-${padZero(date.getMonth() + 1)}-${padZero(date.getDate())}T${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
+    }
+  }
+
+  function parseDatetimeLocalString(str, mode) {
+    if (!str) return null;
+    const parts = str.split('T');
+    if (parts.length !== 2) return null;
+    const [y, m, d] = parts[0].split('-').map(Number);
+    const [h, min] = parts[1].split(':').map(Number);
+    if ([y, m, d, h, min].some(isNaN)) return null;
+    if (mode === 'utc') {
+      return new Date(Date.UTC(y, m - 1, d, h, min, 0));
+    } else {
+      return new Date(y, m - 1, d, h, min, 0);
+    }
+  }
+
+  function formatUtcFriendly(d) {
+    if (!d || isNaN(d.getTime())) return '(Not set)';
+    return d.toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }) + ' at ' + d.toLocaleTimeString('en-US', {
+      timeZone: 'UTC',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+  }
+
+  function formatLocalFriendly(d) {
+    if (!d || isNaN(d.getTime())) return '(Not set)';
+    return d.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }) + ' at ' + d.toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit'
+    }) + ' (' + USER_TIMEZONE + ')';
+  }
+
+  function formatRelativeStatus(d) {
+    if (!d || isNaN(d.getTime())) return '';
+    const diff = d.getTime() - Date.now();
+    const absDiff = Math.abs(diff);
+    const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    let timeStr = '';
+    if (days > 0) timeStr = `${days}d ${hours}h`;
+    else if (hours > 0) timeStr = `${hours}h ${minutes}m`;
+    else timeStr = `${minutes}m`;
+
+    if (diff < 0) {
+      return `<span style="color: #dc2626; font-weight: 600;">⚠️ Passed (${timeStr} ago)</span>`;
+    } else {
+      return `<span style="color: #059669; font-weight: 600;">✅ Active (in ${timeStr})</span>`;
+    }
+  }
+
+  function updatePickerCardDisplay(fieldId) {
+    const card = document.querySelector(`.dt-picker-card[data-field-id="${fieldId}"]`);
+    if (!card) return;
+
+    const canonicalInput = document.getElementById(fieldId);
+    const nativeInput = card.querySelector('.dt-native-input');
+    const mode = PICKER_TIMEZONES[fieldId] || 'utc';
+
+    const d = canonicalInput?.value ? new Date(canonicalInput.value) : null;
+    if (d && !isNaN(d.getTime())) {
+      if (nativeInput) {
+        nativeInput.value = toDatetimeLocalString(d, mode);
+      }
+      const utcEl = card.querySelector('.dt-preview-utc');
+      if (utcEl) utcEl.textContent = formatUtcFriendly(d);
+
+      const localEl = card.querySelector('.dt-preview-local');
+      if (localEl) localEl.textContent = formatLocalFriendly(d);
+
+      const relEl = card.querySelector('.dt-preview-relative');
+      if (relEl) relEl.innerHTML = formatRelativeStatus(d);
+    } else {
+      if (nativeInput) nativeInput.value = '';
+      const utcEl = card.querySelector('.dt-preview-utc');
+      if (utcEl) utcEl.textContent = '(Not set)';
+      const localEl = card.querySelector('.dt-preview-local');
+      if (localEl) localEl.textContent = '(Not set)';
+      const relEl = card.querySelector('.dt-preview-relative');
+      if (relEl) relEl.textContent = '(Not set)';
+    }
+
+    // Update active pill
+    card.querySelectorAll('.dt-tz-pill').forEach(btn => {
+      if (btn.getAttribute('data-tz') === mode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    const localNameEl = card.querySelector('.dt-preview-local-name');
+    if (localNameEl) localNameEl.textContent = USER_TIMEZONE;
+  }
+
+  function initAllDateTimePickers() {
+    document.querySelectorAll('.dt-picker-card').forEach(card => {
+      const fieldId = card.getAttribute('data-field-id');
+      if (!fieldId) return;
+      if (!PICKER_TIMEZONES[fieldId]) {
+        PICKER_TIMEZONES[fieldId] = 'utc';
+      }
+      updatePickerCardDisplay(fieldId);
+    });
+
+    const tzLabel = document.getElementById('detected-tz-label');
+    if (tzLabel) {
+      tzLabel.textContent = `(Detected: ${USER_TIMEZONE})`;
+    }
+  }
+
+  function setPickerTz(fieldId, tz) {
+    PICKER_TIMEZONES[fieldId] = tz;
+    updatePickerCardDisplay(fieldId);
+  }
+
+  function setAllPickersTz(tz) {
+    document.querySelectorAll('.dt-picker-card').forEach(card => {
+      const fieldId = card.getAttribute('data-field-id');
+      if (fieldId) {
+        PICKER_TIMEZONES[fieldId] = tz;
+        updatePickerCardDisplay(fieldId);
+      }
+    });
+    document.querySelectorAll('.global-tz-btn').forEach(btn => {
+      if (btn.getAttribute('data-tz') === tz) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+  }
+
+  function onNativePickerChange(fieldId) {
+    const card = document.querySelector(`.dt-picker-card[data-field-id="${fieldId}"]`);
+    if (!card) return;
+    const nativeInput = card.querySelector('.dt-native-input');
+    const canonicalInput = document.getElementById(fieldId);
+    if (!nativeInput || !canonicalInput) return;
+
+    const mode = PICKER_TIMEZONES[fieldId] || 'utc';
+    const parsed = parseDatetimeLocalString(nativeInput.value, mode);
+    if (parsed && !isNaN(parsed.getTime())) {
+      canonicalInput.value = parsed.toISOString();
+      updatePickerCardDisplay(fieldId);
+    }
+  }
+
+  function onCanonicalInputChange(fieldId) {
+    updatePickerCardDisplay(fieldId);
+  }
+
+  function openPickerFor(fieldId) {
+    const card = document.querySelector(`.dt-picker-card[data-field-id="${fieldId}"]`);
+    if (!card) return;
+    const nativeInput = card.querySelector('.dt-native-input');
+    if (!nativeInput) return;
+    if (typeof nativeInput.showPicker === 'function') {
+      try {
+        nativeInput.showPicker();
+      } catch (err) {
+        nativeInput.focus();
+      }
+    } else {
+      nativeInput.focus();
+    }
+  }
+
+  function adjustPickerTime(fieldId, amount, unit) {
+    const canonicalInput = document.getElementById(fieldId);
+    if (!canonicalInput) return;
+
+    let base = canonicalInput.value ? new Date(canonicalInput.value) : new Date();
+    if (isNaN(base.getTime())) base = new Date();
+
+    const mode = PICKER_TIMEZONES[fieldId] || 'utc';
+
+    if (unit === 'now') {
+      base = new Date();
+    } else if (unit === 'endOfDay') {
+      if (mode === 'utc') {
+        base = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate(), 23, 59, 0));
+      } else {
+        base = new Date(base.getFullYear(), base.getMonth(), base.getDate(), 23, 59, 0);
+      }
+    } else if (unit === 'hour') {
+      base = new Date(base.getTime() + amount * 3600 * 1000);
+    } else if (unit === 'day') {
+      base = new Date(base.getTime() + amount * 24 * 3600 * 1000);
+    }
+
+    canonicalInput.value = base.toISOString();
+    updatePickerCardDisplay(fieldId);
+  }
+
+  function bulkAdjustAllMilestones(hours) {
+    document.querySelectorAll('.dt-picker-card').forEach(card => {
+      const fieldId = card.getAttribute('data-field-id');
+      if (fieldId) {
+        adjustPickerTime(fieldId, hours, 'hour');
+      }
+    });
+    if (window.showToast) {
+      window.showToast(`Adjusted all timeline milestones by ${hours > 0 ? '+' : ''}${hours} hours.`, 'success');
+    }
+  }
+
+  function toggleRawIso(wrapperId) {
+    const el = document.getElementById(wrapperId);
+    if (el) {
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     updateRubricWeights();
-    renderLocalTimes();
+    initAllDateTimePickers();
+    INITIAL_CONFIG = captureCurrentFormValues();
     const urlParams = new URLSearchParams(window.location.search);
     const initialTab = urlParams.get('tab') || '<%- tab || "general" %>';
     switchSettingsTab(initialTab);
@@ -877,42 +1584,31 @@
     if (btn) btn.classList.add('active');
   }
 
-  function renderLocalTimes() {
-    document.querySelectorAll('.local-time-preview').forEach(el => {
-      const input = el.previousElementSibling;
-      if (input && input.value) {
-        try {
-          const d = new Date(input.value);
-          if (!isNaN(d.getTime())) {
-            el.textContent = 'Local: ' + d.toLocaleString(undefined, { 
-              dateStyle: 'medium', 
-              timeStyle: 'short' 
-            });
-          }
-        } catch {}
-      }
-    });
-  }
-
   function updateRubricWeights() {
-    const f = parseFloat(document.getElementById('slider-func').value) || 0;
-    const q = parseFloat(document.getElementById('slider-qual').value) || 0;
-    const i = parseFloat(document.getElementById('slider-inno').value) || 0;
-    const m = parseFloat(document.getElementById('slider-imp').value) || 0;
+    const f = parseFloat(document.getElementById('slider-func')?.value) || 0;
+    const q = parseFloat(document.getElementById('slider-qual')?.value) || 0;
+    const i = parseFloat(document.getElementById('slider-inno')?.value) || 0;
+    const m = parseFloat(document.getElementById('slider-imp')?.value) || 0;
 
-    document.getElementById('disp-weight-func').textContent = Math.round(f * 100) + '%';
-    document.getElementById('disp-weight-qual').textContent = Math.round(q * 100) + '%';
-    document.getElementById('disp-weight-inno').textContent = Math.round(i * 100) + '%';
-    document.getElementById('disp-weight-imp').textContent = Math.round(m * 100) + '%';
+    const dispFunc = document.getElementById('disp-weight-func');
+    const dispQual = document.getElementById('disp-weight-qual');
+    const dispInno = document.getElementById('disp-weight-inno');
+    const dispImp = document.getElementById('disp-weight-imp');
+
+    if (dispFunc) dispFunc.textContent = Math.round(f * 100) + '%';
+    if (dispQual) dispQual.textContent = Math.round(q * 100) + '%';
+    if (dispInno) dispInno.textContent = Math.round(i * 100) + '%';
+    if (dispImp) dispImp.textContent = Math.round(m * 100) + '%';
 
     const sum = Math.round((f + q + i + m) * 100);
     const badge = document.getElementById('rubric-sum-badge');
-    badge.textContent = 'WEIGHT TOTAL: ' + sum + '%';
-    
-    if (sum === 100) {
-      badge.className = 'status-pill status-completed';
-    } else {
-      badge.className = 'status-pill status-warning';
+    if (badge) {
+      badge.textContent = 'WEIGHT TOTAL: ' + sum + '%';
+      if (sum === 100) {
+        badge.className = 'status-pill status-completed';
+      } else {
+        badge.className = 'status-pill status-warning';
+      }
     }
   }
 
@@ -944,60 +1640,25 @@
     if (tr) tr.remove();
   }
 
-  function serializePrizes() {
-    const rows = document.querySelectorAll('.prize-row');
-    const list = [];
-    rows.forEach((r, idx) => {
-      const name = r.querySelector('.prz-name')?.value?.trim();
-      const amount = r.querySelector('.prz-amount')?.value?.trim();
-      const desc = r.querySelector('.prz-desc')?.value?.trim();
-      if (name) {
-        list.push({ id: 'prz_' + (idx + 1).toString().padStart(2, '0'), name, amount: amount || '$0', description: desc || '' });
-      }
-    });
-    return JSON.stringify(list);
-  }
-
   function triggerSaveFlow() {
     // 1. Validate rubric sum
-    const f = parseFloat(document.getElementById('slider-func').value) || 0;
-    const q = parseFloat(document.getElementById('slider-qual').value) || 0;
-    const i = parseFloat(document.getElementById('slider-inno').value) || 0;
-    const m = parseFloat(document.getElementById('slider-imp').value) || 0;
+    const f = parseFloat(document.getElementById('slider-func')?.value) || 0;
+    const q = parseFloat(document.getElementById('slider-qual')?.value) || 0;
+    const i = parseFloat(document.getElementById('slider-inno')?.value) || 0;
+    const m = parseFloat(document.getElementById('slider-imp')?.value) || 0;
     const sum = Math.round((f + q + i + m) * 100);
     if (sum !== 100) {
-      alert('Rubric criteria weights must sum to exactly 100% (currently ' + sum + '%). Please adjust sliders before saving.');
+      if (window.showToast) {
+        window.showToast('Rubric criteria weights must sum to exactly 100% (currently ' + sum + '%).', 'error');
+      } else {
+        alert('Rubric criteria weights must sum to exactly 100% (currently ' + sum + '%). Please adjust sliders before saving.');
+      }
       switchSettingsTab('rubric');
       return;
     }
 
     // 2. Collect current form values
-    const currentValues = {
-      name: document.getElementById('field-name').value.trim(),
-      tagline: document.getElementById('field-tagline').value.trim(),
-      description: document.getElementById('field-description').value.trim(),
-      submissions_open: document.getElementById('field-submissions-open').value.trim(),
-      submissions_close: document.getElementById('field-submissions-close').value.trim(),
-      judging_open: document.getElementById('field-judging-open').value.trim(),
-      judging_close: document.getElementById('field-judging-close').value.trim(),
-      voting_open: document.getElementById('field-voting-open').value.trim(),
-      voting_close: document.getElementById('field-voting-close').value.trim(),
-      results_announced_at: document.getElementById('field-results-announced').value.trim(),
-      prize_pool: document.getElementById('field-prize-pool').value.trim(),
-      weight_func: f,
-      weight_qual: q,
-      weight_inno: i,
-      weight_imp: m,
-      min_reviews_per_project: parseInt(document.getElementById('field-min-reviews').value, 10) || 3,
-      max_team_size: parseInt(document.getElementById('field-max-team-size').value, 10) || 4,
-      voting_mode: document.getElementById('field-voting-mode').value,
-      prevent_self_voting: document.querySelector('input[name="prevent_self_voting"]').checked ? 1 : 0,
-      require_repo_url: document.querySelector('input[name="require_repo_url"]').checked ? 1 : 0,
-      require_demo_url: document.querySelector('input[name="require_demo_url"]').checked ? 1 : 0,
-      pairwise_enabled: document.querySelector('input[name="pairwise_enabled"]').checked ? 1 : 0,
-      voting_results_published: document.querySelector('input[name="voting_results_published"]').checked ? 1 : 0,
-      results_published: document.querySelector('input[name="results_published"]').checked ? 1 : 0
-    };
+    const currentValues = captureCurrentFormValues();
 
     // 3. Compute diff
     const diffs = [];
@@ -1013,6 +1674,7 @@
       voting_close: 'Voting Deadline',
       results_announced_at: 'Results Announcement',
       prize_pool: 'Prize Pool Headline',
+      prizes_json: 'Prize Tiers & Categories',
       weight_func: 'Functionality Weight',
       weight_qual: 'Quality Weight',
       weight_inno: 'Innovation Weight',
@@ -1031,13 +1693,48 @@
     let hasCriticalChange = false;
     let criticalWarning = '';
 
+    const dateKeys = [
+      'submissions_open',
+      'submissions_close',
+      'judging_open',
+      'judging_close',
+      'voting_open',
+      'voting_close',
+      'results_announced_at'
+    ];
+
     for (const key of Object.keys(currentValues)) {
-      if (String(currentValues[key]) !== String(INITIAL_CONFIG[key])) {
+      let isDiff = String(currentValues[key]) !== String(INITIAL_CONFIG[key]);
+
+      // Normalize date comparisons to prevent phantom diffs on identical timestamps
+      if (isDiff && dateKeys.includes(key) && INITIAL_CONFIG[key] && currentValues[key]) {
+        const dOld = new Date(INITIAL_CONFIG[key]);
+        const dNew = new Date(currentValues[key]);
+        if (!isNaN(dOld.getTime()) && !isNaN(dNew.getTime()) && dOld.getTime() === dNew.getTime()) {
+          isDiff = false;
+        }
+      }
+
+      if (isDiff) {
+        let displayOld = String(INITIAL_CONFIG[key]);
+        let displayNew = String(currentValues[key]);
+
+        if (dateKeys.includes(key)) {
+          const dOld = new Date(INITIAL_CONFIG[key]);
+          const dNew = new Date(currentValues[key]);
+          if (!isNaN(dOld.getTime())) {
+            displayOld = formatUtcFriendly(dOld) + '<br><span style="font-size: 0.72rem; color: var(--text-muted);">' + INITIAL_CONFIG[key] + '</span>';
+          }
+          if (!isNaN(dNew.getTime())) {
+            displayNew = formatUtcFriendly(dNew) + '<br><span style="font-size: 0.72rem; color: #059669;">' + currentValues[key] + '</span>';
+          }
+        }
+
         diffs.push({
           key,
           label: labelMap[key] || key,
-          oldVal: String(INITIAL_CONFIG[key]),
-          newVal: String(currentValues[key])
+          oldVal: displayOld,
+          newVal: displayNew
         });
 
         if (key === 'submissions_close') {
@@ -1165,10 +1862,12 @@
       if (res.ok) {
         window.location.href = '/organizer/settings?tab=tracks&track_saved=1';
       } else {
-        alert(data.error || 'Failed to save track');
+        if (window.showToast) window.showToast(data.error || 'Failed to save track', 'error');
+        else alert(data.error || 'Failed to save track');
       }
     } catch {
-      alert('Network error while saving track');
+      if (window.showToast) window.showToast('Network error while saving track', 'error');
+      else alert('Network error while saving track');
     }
   }
 
@@ -1203,10 +1902,12 @@
       if (res.ok) {
         window.location.href = '/organizer/settings?tab=tracks&track_deleted=1';
       } else {
-        alert(data.error || 'Failed to delete track');
+        if (window.showToast) window.showToast(data.error || 'Failed to delete track', 'error');
+        else alert(data.error || 'Failed to delete track');
       }
     } catch {
-      alert('Network error while deleting track');
+      if (window.showToast) window.showToast('Network error while deleting track', 'error');
+      else alert('Network error while deleting track');
     }
   }
 </script>

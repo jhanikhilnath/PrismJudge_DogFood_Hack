@@ -127,11 +127,19 @@ export function updateEventSettings(updates: Partial<EventRecord>): void {
   const current = getEvent();
   if (!current) return;
 
+  const ALLOWED_COLUMNS = new Set([
+    'name', 'tagline', 'description', 'submissions_open', 'submissions_close',
+    'judging_open', 'judging_close', 'voting_open', 'voting_close', 'results_announced_at',
+    'prize_pool', 'prizes', 'rubric_weights', 'min_reviews_per_project', 'max_team_size',
+    'require_repo_url', 'require_demo_url', 'voting_mode', 'prevent_self_voting',
+    'pairwise_enabled', 'results_published', 'voting_results_published'
+  ]);
+
   const fields: string[] = [];
   const values: any[] = [];
 
   for (const [key, val] of Object.entries(updates)) {
-    if (key === 'id') continue;
+    if (key === 'id' || !ALLOWED_COLUMNS.has(key)) continue;
     fields.push(`${key} = ?`);
     values.push(val);
   }
@@ -299,11 +307,34 @@ export function getProjectById(id: string): ProjectDetails | undefined {
 /**
  * Retrieve lightweight project list for voting or pairwise comparison.
  */
-export function getProjectsForComparison(): Array<{ id: string; title: string; track_name: string; summary: string }> {
-  return queryAll<{ id: string; title: string; track_name: string; summary: string }>(`
-    SELECT p.id, p.title, COALESCE(tr.name, p.track_id) as track_name, p.summary
+export function getProjectsForComparison(): Array<{
+  id: string;
+  title: string;
+  track_id: string;
+  track_name: string;
+  summary: string;
+  team_id: string;
+  team_name: string;
+  repo_url?: string;
+  demo_url?: string;
+}> {
+  return queryAll<{
+    id: string;
+    title: string;
+    track_id: string;
+    track_name: string;
+    summary: string;
+    team_id: string;
+    team_name: string;
+    repo_url?: string;
+    demo_url?: string;
+  }>(`
+    SELECT p.id, p.title, p.track_id, COALESCE(tr.name, p.track_id) as track_name, p.summary,
+           p.repo_url, p.demo_url,
+           p.team_id, COALESCE(tm.name, p.team_id) as team_name
     FROM projects p
     LEFT JOIN tracks tr ON p.track_id = tr.id
+    LEFT JOIN teams tm ON p.team_id = tm.id
     WHERE p.is_draft = 0
     ORDER BY p.id ASC
   `);
@@ -726,6 +757,7 @@ export function getCommunityVotingBreakdown(): {
     JOIN teams t ON p.team_id = t.id
     JOIN tracks tr ON p.track_id = tr.id
     LEFT JOIN community_votes cv ON cv.project_id = p.id
+    WHERE p.is_draft = 0
     GROUP BY p.id
     ORDER BY vote_count DESC, p.title ASC
   `);
@@ -757,12 +789,12 @@ export function getCommunityVotingBreakdown(): {
  * Toggle whether the final results portal (/results) is published to the public.
  */
 export function toggleResultsPublished(published: boolean): void {
-  execute('UPDATE events SET results_published = ?', published ? 1 : 0);
+  execute('UPDATE events SET results_published = ? WHERE id = (SELECT id FROM events LIMIT 1)', published ? 1 : 0);
 }
 
 /**
  * Toggle whether community ballot standings and vote counts are published to the public.
  */
 export function toggleVotingResultsPublished(published: boolean): void {
-  execute('UPDATE events SET voting_results_published = ?', published ? 1 : 0);
+  execute('UPDATE events SET voting_results_published = ? WHERE id = (SELECT id FROM events LIMIT 1)', published ? 1 : 0);
 }

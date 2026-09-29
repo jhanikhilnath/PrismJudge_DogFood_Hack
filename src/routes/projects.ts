@@ -97,6 +97,18 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         ipAddress: req.ip,
       });
 
+      if (req.headers.accept?.includes('text/html') && !req.headers['content-type']?.includes('json')) {
+        const tracks = getAllTracks();
+        return reply.code(403).view('submit.ejs', {
+          title: 'Submissions Closed — PrismJudge',
+          tracks,
+          event,
+          user: req.user,
+          isClosed: true,
+          error: `Submissions closed at ${event?.submissions_close || 'the designated deadline'}. Late submissions are refused by platform governance rules.`,
+        });
+      }
+
       return reply.code(403).send({
         error: 'Submissions closed',
         detail: `The event closed for submissions at ${event?.submissions_close}. Late submissions are refused.`,

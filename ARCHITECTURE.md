@@ -167,7 +167,16 @@ The platform contains two distinct mathematical engines that operate on evaluati
 
 ## 5. Operations Console & Team Credentials Architecture
 
-The coordinator console (`/organizer/dashboard` and `/organizer/teams`) enables real-time event operations:
+The coordinator console (`/organizer/dashboard`, `/organizer/settings`, `/organizer/teams`) and public results portal (`/results`) enable real-time event operations:
+* **Event Settings Console & Double-Confirmation Shield** (`/organizer/settings`):
+  - Comprehensive hackathon administration across 7 tabs: General Identity, Timeline & Deadlines, Prize Architecture & Bounty Pool, Competitive Tracks Management, Rubric Criteria Weights & Min Review Quota, Submission & Voting Anti-Abuse Rules, and Configuration Mutation Audit Trail.
+  - Guarded by a strict client-side and server-side double confirmation flow requiring explicit `CONFIRM` authorization and field-level diff calculation before mutating high-impact event parameters.
+* **Official Results Portal & Embargo Protocol** (`/results`):
+  - Renders Top 3 Olympic podium grand champions, Best-in-Class Track Winners for all 8 competition tracks, People's Choice Award winner, and complete searchable final standings with normalized Bayesian scores.
+  - Governed by an embargo state machine: unauthenticated visitors and participants see a polite announcement countdown, while coordinators have an Organizer Preview banner with 1-click publishing toggle (`POST /api/organizer/results/toggle`).
+* **Community Ballot & People's Choice Intelligence**:
+  - Live console telemetry displaying total ballots cast, unique browser fingerprints, leading project, and complete project-by-project vote breakdown with percentage shares.
+  - 1-click toggle to publish or seal community choice voting results (`POST /api/organizer/voting-results/toggle`).
 * **Juror Calibration Diagnostics**: Live table of all 30 evaluators displaying raw mean, severity offset $\Delta = \bar{S}_j - \mu_0$, shrunk variance $(\sigma_j^{\star})^2$, and singularity resolution status.
 * **Underserved Project Tracking**: Automatically identifies submissions with review counts below the confidence threshold ($n < 3$) and flags them in high-visibility warning banners.
 * **Qualified Team Onboarding & Temporary Credential Generation**:

@@ -143,10 +143,33 @@
 
         <!-- Security & Public Provenance Strip -->
         <div class="diploma-audit-strip">
-          <span>CREDENTIAL ID: <code>DF26-JDG-<%= judge.id.toUpperCase() %></code></span>
-          <span>ISSUED: <time datetime="<%= judge.created_at %>">September 2026</time></span>
-          <span>INTEGRITY SEAL: <code>HMAC-SHA256 (<%= signature.substring(0, 16) %>...)</code></span>
-          <span>VERIFY: <code>/certificates/judge/<%= judge.id %>/verify</code></span>
+          <div class="audit-item">
+            <span class="audit-label">CREDENTIAL NUMBER</span>
+            <span class="audit-value">DF26-<%= judge.id.toUpperCase() %>-<%= signature.slice(0, 8).toUpperCase() %></span>
+          </div>
+          <div class="audit-item">
+            <span class="audit-label">DATE OF ISSUANCE</span>
+            <span class="audit-value">September 2026</span>
+          </div>
+          <div class="audit-item">
+            <span class="audit-label">STATUS</span>
+            <span class="audit-value" style="color: #059669;">Recorded in Immutable Ledger</span>
+          </div>
+          <div class="audit-item">
+            <span class="audit-label">PUBLIC VERIFICATION</span>
+            <a href="/certificates/judge/<%= judge.id %>/verify" class="audit-value hover-underline" target="_blank" style="color: var(--accent-blue); text-decoration: none;">Verify Record ↗</a>
+          </div>
+          <div class="audit-item qr-item">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="7" height="7" stroke-width="2"/>
+              <rect x="14" y="3" width="7" height="7" stroke-width="2"/>
+              <rect x="3" y="14" width="7" height="7" stroke-width="2"/>
+              <rect x="15" y="15" width="2" height="2" fill="currentColor"/>
+              <rect x="19" y="15" width="2" height="2" fill="currentColor"/>
+              <rect x="15" y="19" width="2" height="2" fill="currentColor"/>
+              <rect x="19" y="19" width="2" height="2" fill="currentColor"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
