@@ -55,26 +55,58 @@ export function seedDatabase(fixtures?: FixtureData): void {
 
   transaction(() => {
     // 1. Seed Event
-    const defaultRubric = JSON.stringify({ functionality: 0.4, quality: 0.3, innovation: 0.3 });
+    const defaultRubric = JSON.stringify({ functionality: 0.4, quality: 0.3, innovation: 0.2, impact: 0.1 });
+    const defaultPrizes = JSON.stringify([
+      { id: 'prz_01', name: '1st Place Grand Champion', amount: '$20,000', description: 'Top overall submission by composite normalized score across all tracks' },
+      { id: 'prz_02', name: '2nd Place Runner-Up', amount: '$12,000', description: 'Second highest composite normalized evaluation score' },
+      { id: 'prz_03', name: '3rd Place Podium Finalist', amount: '$6,000', description: 'Third highest composite normalized evaluation score' },
+      { id: 'prz_04', name: 'Community Choice Award', amount: '$4,000', description: 'Most popular project chosen by public and peer community voting' },
+      { id: 'prz_05', name: 'Best Technical Architecture', amount: '$3,000', description: 'Outstanding code quality, schema elegance, and systems design' },
+      { id: 'prz_06', name: 'Innovation & Impact Award', amount: '$2,500', description: 'Most inventive concept with demonstrable real-world deployment potential' },
+      { id: 'prz_07', name: 'Track Category Winners (8x)', amount: '$500 each', description: 'Highest ranked project within each of the 8 competitive tracks' }
+    ]);
+
     execute(
-      `INSERT OR REPLACE INTO events (id, name, submissions_close, rubric_weights, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT OR REPLACE INTO events (
+        id, name, tagline, description, submissions_open, submissions_close,
+        judging_open, judging_close, voting_open, voting_close, results_announced_at,
+        prize_pool, prizes, rubric_weights, min_reviews_per_project, max_team_size,
+        require_repo_url, require_demo_url, voting_mode, prevent_self_voting, pairwise_enabled, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       data.event.id,
       data.event.name,
+      'Precision Hackathon Evaluation & Shrinkage Normalization Platform',
+      'The premier technical hackathon evaluating engineering elegance, algorithmic innovation, and offline-first systems design with mathematical scoring rigor.',
+      '2026-02-25T00:00:00Z',
       data.event.submissions_close,
+      null,
+      null,
+      null,
+      null,
+      null,
+      '$50,000 USD',
+      defaultPrizes,
       defaultRubric,
+      3,
+      4,
+      1,
+      0,
+      'open',
+      1,
+      1,
       new Date().toISOString()
     );
 
     // 2. Seed Tracks
     for (const track of data.tracks) {
       execute(
-        `INSERT OR REPLACE INTO tracks (id, event_id, name, description)
-         VALUES (?, ?, ?, ?)`,
+        `INSERT OR REPLACE INTO tracks (id, event_id, name, description, prize_amount)
+         VALUES (?, ?, ?, ?, ?)`,
         track.id,
         data.event.id,
         track.name,
-        `Track for ${track.name}`
+        `Track for ${track.name} — Building next-generation solutions in ${track.name}.`,
+        '$500'
       );
     }
 

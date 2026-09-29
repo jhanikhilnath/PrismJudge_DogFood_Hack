@@ -1,6 +1,6 @@
-# DOGFOOD 2026 — Judging Engine & Normalization Proof
+# PrismJudge — Judging Engine & Normalization Proof
 **Specification:** Empirical Bayesian Shrinkage, Bradley-Terry Pairwise Engine & Bipartite Connectivity  
-**Authors:** Dogfood Portal Engineering Team  
+**Authors:** PrismJudge Engineering Team  
 **Verification Suite:** `tests/normalization.test.ts`, `tests/pairwise.test.ts`, `tests/role_isolation.test.ts`  
 
 ---
@@ -12,7 +12,7 @@ Existing hackathon platforms suffer from three systemic judging failures:
 2. **Judge Harshness / Lenience Bias**: A project assigned to a strict judge (mean score 2.2/5.0) is unfairly penalized relative to a project assigned to a generous judge (mean score 4.5/5.0).
 3. **Cosmetic Role Isolation**: Platforms hide peer scores in client-side HTML templates while exposing them over public REST/GraphQL APIs.
 
-DOGFOOD 2026 resolves all three pathologies:
+PrismJudge resolves all three pathologies:
 - **Backend-Enforced Role Isolation**: Hard pre-handler hooks returning HTTP 403 on curl inspection.
 - **Empirical Bayesian Shrinkage Z-Score Normalization**: A mathematically proven algorithm that eliminates judge scale distortion while gracefully resolving zero-variance judges (e.g. `jdg_07` in `fixtures.json`).
 - **Bradley-Terry Pairwise Evaluation**: A paired-comparison Minorization-Maximization (MM) solver providing an independent, scale-free ranking channel.
@@ -23,7 +23,7 @@ DOGFOOD 2026 resolves all three pathologies:
 
 Organizers define rubric criteria weights $w_k \in [0, 1]$ such that $\sum_{k=1}^K w_k = 1.0$.
 
-In DOGFOOD 2026, the default rubric configuration is:
+In PrismJudge, the default rubric configuration is:
 - **Functionality** ($w_1 = 0.40$): Does the application work end-to-end? Does it satisfy the offline one-command rule?
 - **Code Quality & Architecture** ($w_2 = 0.30$): Is the schema normalized? Is error handling robust? Are types safe?
 - **Innovation & Impact** ($w_3 = 0.30$): Originality and real-world adoption potential.
@@ -241,7 +241,7 @@ This guarantees that any attempt by Judge B to inspect Judge A's evaluations—w
 
 ## 7. Juror Calibration Diagnostics & Inter-Rater Reliability (ICC)
 
-To give organizers deep diagnostic insight into grading dynamics, DOGFOOD 2026 computes statistical psychometrics across all 30 jurors:
+To give organizers deep diagnostic insight into grading dynamics, PrismJudge computes statistical psychometrics across all 30 jurors:
 
 ### 7.1 Evaluator Severity Offset ($\Delta_j$)
 Each juror's raw tendency is benchmarked against the global prior mean $\mu_0$:

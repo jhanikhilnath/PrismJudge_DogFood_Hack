@@ -1,4 +1,4 @@
-// DOGFOOD 2026 — Master Client Script & Progressive Interactivity
+// PrismJudge — Master Client Script & Progressive Interactivity
 
 document.addEventListener('DOMContentLoaded', () => {
   // 1. Toast Notification System

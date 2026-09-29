@@ -1,6 +1,13 @@
 import crypto from 'node:crypto';
 import { queryAll, queryOne, execute, transaction } from './index.js';
 
+export interface PrizeTier {
+  id: string;
+  name: string;
+  amount: string;
+  description: string;
+}
+
 export interface EventRecord {
   id: string;
   name: string;
@@ -9,12 +16,30 @@ export interface EventRecord {
   voting_close?: string | null;
   rubric_weights?: string;
   created_at?: string;
+  tagline?: string | null;
+  description?: string | null;
+  submissions_open?: string | null;
+  judging_open?: string | null;
+  voting_open?: string | null;
+  results_announced_at?: string | null;
+  prize_pool?: string | null;
+  prizes?: string | null;
+  min_reviews_per_project?: number;
+  max_team_size?: number;
+  require_repo_url?: number;
+  require_demo_url?: number;
+  voting_mode?: string;
+  prevent_self_voting?: number;
+  pairwise_enabled?: number;
+  results_published?: number;
+  voting_results_published?: number;
 }
 
 export interface TrackRecord {
   id: string;
   name: string;
   description?: string | null;
+  prize_amount?: string | null;
 }
 
 export interface ProjectDetails {
@@ -74,9 +99,7 @@ export interface AuditLogRecord {
  * Retrieve primary hackathon event information.
  */
 export function getEvent(): EventRecord | undefined {
-  return queryOne<EventRecord>(
-    'SELECT id, name, submissions_close, judging_close, voting_close, rubric_weights FROM events LIMIT 1'
-  );
+  return queryOne<EventRecord>('SELECT * FROM events LIMIT 1');
 }
 
 /**
@@ -98,10 +121,75 @@ export function isVotingClosed(event?: EventRecord): boolean {
 }
 
 /**
+ * Update event configuration settings.
+ */
+export function updateEventSettings(updates: Partial<EventRecord>): void {
+  const current = getEvent();
+  if (!current) return;
+
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  for (const [key, val] of Object.entries(updates)) {
+    if (key === 'id') continue;
+    fields.push(`${key} = ?`);
+    values.push(val);
+  }
+
+  if (fields.length === 0) return;
+  values.push(current.id);
+
+  execute(`UPDATE events SET ${fields.join(', ')} WHERE id = ?`, ...values);
+}
+
+/**
  * Fetch all competition tracks sorted by identifier.
  */
 export function getAllTracks(): TrackRecord[] {
-  return queryAll<TrackRecord>('SELECT id, name, description FROM tracks ORDER BY id ASC');
+  return queryAll<TrackRecord>('SELECT id, name, description, prize_amount FROM tracks ORDER BY id ASC');
+}
+
+/**
+ * Create or update a track.
+ */
+export function saveTrack(id: string, name: string, description: string, prizeAmount?: string): void {
+  const currentEvent = getEvent();
+  const eventId = currentEvent ? currentEvent.id : 'evt_01';
+
+  const existing = queryOne<{ id: string }>('SELECT id FROM tracks WHERE id = ?', id);
+  if (existing) {
+    execute(
+      'UPDATE tracks SET name = ?, description = ?, prize_amount = ? WHERE id = ?',
+      name,
+      description,
+      prizeAmount || '$500',
+      id
+    );
+  } else {
+    execute(
+      'INSERT INTO tracks (id, event_id, name, description, prize_amount) VALUES (?, ?, ?, ?, ?)',
+      id,
+      eventId,
+      name,
+      description,
+      prizeAmount || '$500'
+    );
+  }
+}
+
+/**
+ * Delete a track safely (preventing orphan project records).
+ */
+export function deleteTrack(id: string): { success: boolean; error?: string } {
+  const projectCount = queryOne<{ cnt: number }>('SELECT count(*) as cnt FROM projects WHERE track_id = ?', id)?.cnt || 0;
+  if (projectCount > 0) {
+    return {
+      success: false,
+      error: `Cannot delete track: ${projectCount} project(s) are currently submitted to this track. Reassign or remove those projects first.`,
+    };
+  }
+  execute('DELETE FROM tracks WHERE id = ?', id);
+  return { success: true };
 }
 
 /**
@@ -590,3 +678,91 @@ export function getJudgeParticipationRecord(judgeId: string) {
   };
 }
 
+export interface CommunityVoteBreakdown {
+  project_id: string;
+  project_title: string;
+  team_id: string;
+  team_name: string;
+  track_id: string;
+  track_name: string;
+  vote_count: number;
+  vote_share_pct: number;
+  rank: number;
+}
+
+/**
+ * Retrieve comprehensive breakdown of community ballot votes across all projects.
+ */
+export function getCommunityVotingBreakdown(): {
+  items: CommunityVoteBreakdown[];
+  totalVotes: number;
+  uniqueVoters: number;
+  leadingProject: CommunityVoteBreakdown | null;
+} {
+  const totalVotesRow = queryOne<{ count: number }>('SELECT COUNT(*) as count FROM community_votes');
+  const totalVotes = totalVotesRow?.count ?? 0;
+
+  const uniqueVotersRow = queryOne<{ count: number }>('SELECT COUNT(DISTINCT voter_hash) as count FROM community_votes');
+  const uniqueVoters = uniqueVotersRow?.count ?? 0;
+
+  const rows = queryAll<{
+    project_id: string;
+    project_title: string;
+    team_id: string;
+    team_name: string;
+    track_id: string;
+    track_name: string;
+    vote_count: number;
+  }>(`
+    SELECT 
+      p.id as project_id,
+      p.title as project_title,
+      t.id as team_id,
+      t.name as team_name,
+      tr.id as track_id,
+      COALESCE(tr.name, 'General') as track_name,
+      COUNT(cv.id) as vote_count
+    FROM projects p
+    JOIN teams t ON p.team_id = t.id
+    JOIN tracks tr ON p.track_id = tr.id
+    LEFT JOIN community_votes cv ON cv.project_id = p.id
+    GROUP BY p.id
+    ORDER BY vote_count DESC, p.title ASC
+  `);
+
+  const items: CommunityVoteBreakdown[] = rows.map((r, idx) => {
+    const voteShare = totalVotes > 0 ? (r.vote_count / totalVotes) * 100 : 0;
+    return {
+      project_id: r.project_id,
+      project_title: r.project_title,
+      team_id: r.team_id,
+      team_name: r.team_name,
+      track_id: r.track_id,
+      track_name: r.track_name,
+      vote_count: r.vote_count,
+      vote_share_pct: Math.round(voteShare * 10) / 10,
+      rank: idx + 1
+    };
+  });
+
+  return {
+    items,
+    totalVotes,
+    uniqueVoters,
+    leadingProject: items.length > 0 && items[0].vote_count > 0 ? items[0] : null
+  };
+}
+
+/**
+ * Toggle whether the final results portal (/results) is published to the public.
+ */
+export function toggleResultsPublished(published: boolean): void {
+  execute('UPDATE events SET results_published = ?', published ? 1 : 0);
+}
+
+/**
+ * Toggle whether community ballot standings and vote counts are published to the public.
+ */
+export function toggleVotingResultsPublished(published: boolean): void {
+  execute('UPDATE events SET voting_results_published = ?', published ? 1 : 0);
+}

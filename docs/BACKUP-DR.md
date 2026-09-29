@@ -1,7 +1,7 @@
-# BACKUP & DISASTER RECOVERY (DR) RUNBOOK — DOGFOOD 2026
+# BACKUP & DISASTER RECOVERY (DR) RUNBOOK — PrismJudge
 
 ## 1. Executive Summary & Recovery Objectives
-The **DOGFOOD 2026** platform operates an offline-first, embedded SQLite 3 engine configured with write-ahead logging (`journal_mode = WAL`), explicit timeouts (`busy_timeout = 10000`), and synchronous normal durability (`synchronous = NORMAL`). 
+The **PrismJudge** platform operates an offline-first, embedded SQLite 3 engine configured with write-ahead logging (`journal_mode = WAL`), explicit timeouts (`busy_timeout = 10000`), and synchronous normal durability (`synchronous = NORMAL`). 
 
 ### Core Recovery Targets
 | Objective | Metric | Mechanism |

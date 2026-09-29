@@ -190,4 +190,37 @@ export function initializeSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_judge_assignments_project ON judge_assignments(project_id);
     CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id);
   `);
+
+  runEventSchemaMigrations();
+}
+
+function runEventSchemaMigrations(): void {
+  try {
+    const eventCols = db.prepare('PRAGMA table_info(events)').all() as { name: string }[];
+    const colNames = new Set(eventCols.map((c) => c.name));
+
+    if (!colNames.has('tagline')) db.exec('ALTER TABLE events ADD COLUMN tagline TEXT');
+    if (!colNames.has('description')) db.exec('ALTER TABLE events ADD COLUMN description TEXT');
+    if (!colNames.has('submissions_open')) db.exec('ALTER TABLE events ADD COLUMN submissions_open TEXT');
+    if (!colNames.has('judging_open')) db.exec('ALTER TABLE events ADD COLUMN judging_open TEXT');
+    if (!colNames.has('voting_open')) db.exec('ALTER TABLE events ADD COLUMN voting_open TEXT');
+    if (!colNames.has('results_announced_at')) db.exec('ALTER TABLE events ADD COLUMN results_announced_at TEXT');
+    if (!colNames.has('prize_pool')) db.exec('ALTER TABLE events ADD COLUMN prize_pool TEXT');
+    if (!colNames.has('prizes')) db.exec('ALTER TABLE events ADD COLUMN prizes TEXT');
+    if (!colNames.has('min_reviews_per_project')) db.exec('ALTER TABLE events ADD COLUMN min_reviews_per_project INTEGER DEFAULT 3');
+    if (!colNames.has('max_team_size')) db.exec('ALTER TABLE events ADD COLUMN max_team_size INTEGER DEFAULT 4');
+    if (!colNames.has('require_repo_url')) db.exec('ALTER TABLE events ADD COLUMN require_repo_url INTEGER DEFAULT 1');
+    if (!colNames.has('require_demo_url')) db.exec('ALTER TABLE events ADD COLUMN require_demo_url INTEGER DEFAULT 0');
+    if (!colNames.has('voting_mode')) db.exec("ALTER TABLE events ADD COLUMN voting_mode TEXT DEFAULT 'open'");
+    if (!colNames.has('prevent_self_voting')) db.exec('ALTER TABLE events ADD COLUMN prevent_self_voting INTEGER DEFAULT 1');
+    if (!colNames.has('pairwise_enabled')) db.exec('ALTER TABLE events ADD COLUMN pairwise_enabled INTEGER DEFAULT 1');
+    if (!colNames.has('results_published')) db.exec('ALTER TABLE events ADD COLUMN results_published INTEGER DEFAULT 0');
+    if (!colNames.has('voting_results_published')) db.exec('ALTER TABLE events ADD COLUMN voting_results_published INTEGER DEFAULT 0');
+
+    const trackCols = db.prepare('PRAGMA table_info(tracks)').all() as { name: string }[];
+    const trackColNames = new Set(trackCols.map((c) => c.name));
+    if (!trackColNames.has('prize_amount')) db.exec("ALTER TABLE tracks ADD COLUMN prize_amount TEXT DEFAULT '$500'");
+  } catch (err) {
+    // Migration handled gracefully
+  }
 }

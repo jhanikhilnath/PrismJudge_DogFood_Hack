@@ -18,7 +18,7 @@ async function main(): Promise<void> {
     await app.listen({ port: config.port, host: config.host });
 
     // Startup banner as expected by organizers and spec
-    console.log(`DOGFOOD 2026 portal listening on ${config.baseUrl}`);
+    console.log(`PrismJudge (DOGFOOD 2026) portal listening on ${config.baseUrl}`);
     console.log('seeded. test logins:');
     console.log('  organizer    Cookie: session=org_7f2a');
     console.log('  judge_a      Cookie: session=jdg_a_91bc');

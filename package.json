@@ -1,7 +1,7 @@
 {
   "name": "dogfood-portal",
   "version": "1.0.0",
-  "description": "DOGFOOD 2026 Hackathon Platform - Open source, self-hostable submission and judging platform",
+  "description": "PrismJudge (DOGFOOD 2026) Hackathon Platform - Open source, self-hostable submission and judging platform",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {

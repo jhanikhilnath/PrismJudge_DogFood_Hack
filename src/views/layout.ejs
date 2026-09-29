@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><%= typeof title !== 'undefined' ? title : 'DOGFOOD 2026 — Hackathon Platform' %></title>
+  <title><%= typeof title !== 'undefined' ? title : 'PrismJudge — Hackathon Platform' %></title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
   <link rel="stylesheet" href="/static/css/styles.css">
@@ -24,7 +24,7 @@
             </svg>
           </div>
           <div class="brand-text-group">
-            <span class="brand-name">DOGFOOD</span>
+            <span class="brand-name">PrismJudge</span>
             <span class="brand-badge">2026</span>
           </div>
         </a>
@@ -46,6 +46,11 @@
 
         <a href="/vote" class="nav-link" data-path="/vote">Ballot</a>
 
+        <% const isResultsLive = (typeof event !== 'undefined' && event && event.results_published === 1); %>
+        <% if (isResultsLive || (currentUser && (currentUser.role === 'organizer' || currentUser.role === 'admin'))) { %>
+          <a href="/results" class="nav-link" data-path="/results">Results 🏆</a>
+        <% } %>
+
         <% if (currentUser && currentUser.role === 'judge') { %>
           <a href="/judge/dashboard" class="nav-link" data-path="/judge/dashboard">Judging</a>
           <a href="/judge/pairwise" class="nav-link" data-path="/judge/pairwise">Pairwise</a>
@@ -53,6 +58,7 @@
 
         <% if (currentUser && (currentUser.role === 'organizer' || currentUser.role === 'admin')) { %>
           <a href="/organizer/dashboard" class="nav-link" data-path="/organizer/dashboard">Console</a>
+          <a href="/organizer/settings" class="nav-link" data-path="/organizer/settings">Settings</a>
         <% } %>
       </nav>
 
@@ -103,6 +109,14 @@
                 <a href="/certificates/prj_01" class="dropdown-item">
                   <span class="item-tag tag-part">CERT</span>
                   <span>My Team Certificate</span>
+                </a>
+              <% } %>
+
+              <% if (user.role === 'organizer' || user.role === 'admin') { %>
+                <div class="dropdown-divider"></div>
+                <a href="/organizer/settings" class="dropdown-item">
+                  <span class="item-tag tag-org">CFG</span>
+                  <span>Event Settings &amp; Rules</span>
                 </a>
               <% } %>
 
@@ -162,10 +176,11 @@
       <div class="footer-right">
         <a href="/projects" class="footer-link">Projects</a>
         <a href="/vote" class="footer-link">Community Ballot</a>
+        <a href="/results" class="footer-link">Results</a>
         <% if (user && user.role === 'organizer') { %>
           <a href="/docs" target="_blank" class="footer-link">API Docs</a>
         <% } %>
-        <span class="footer-badge">Sample Hack 2026</span>
+        <span class="footer-badge">PrismJudge 2026</span>
       </div>
     </div>
   </footer>

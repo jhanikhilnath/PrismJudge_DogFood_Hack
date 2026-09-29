@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "DOGFOOD 2026 Hackathon Platform API",
+    "title": "PrismJudge (DOGFOOD 2026) Hackathon Platform API",
     "description": "Complete, typed REST API for hackathon submissions, judging, normalization, and community voting.",
     "version": "1.0.0"
   },

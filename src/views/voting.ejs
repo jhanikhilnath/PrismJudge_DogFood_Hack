@@ -22,12 +22,33 @@
   </div>
 </div>
 
-<div class="security-banner">
-  <svg class="security-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-  <div class="security-text">
-    <strong>Privacy Guard:</strong> Real-time vote tallies remain sealed until the voting window officially closes to ensure untampered outcomes.
+<% const votingPublished = (typeof event !== 'undefined' && event && event.voting_results_published === 1); %>
+<% if (votingPublished) { %>
+  <div class="alert alert-success" style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <span style="font-size: 1.75rem;">🎉</span>
+      <div>
+        <strong style="color: #6d28d9; font-size: 1.05rem;">Official Community Choice Standings are Published!</strong>
+        <div style="color: #5b21b6; font-size: 0.88rem; margin-top: 0.2rem;">
+          Public vote tallies and people's choice standings are now officially unveiled.
+          <% if (typeof votingBreakdown !== 'undefined' && votingBreakdown.leadingProject) { %>
+            Leading Community Favorite: <strong><%= votingBreakdown.leadingProject.project_title %></strong> (<%= votingBreakdown.leadingProject.vote_count %> votes).
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <a href="/results" class="btn btn-primary btn-sm" style="background: #7c3aed; border-color: #7c3aed; font-weight: 700;">
+      🏆 View Full Results Portal
+    </a>
   </div>
-</div>
+<% } else { %>
+  <div class="security-banner">
+    <svg class="security-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <div class="security-text">
+      <strong>Privacy Guard:</strong> Real-time vote tallies remain sealed until the voting window officially closes to ensure untampered outcomes.
+    </div>
+  </div>
+<% } %>
 
 <!-- Search & Track Toolbar -->
 <div class="filter-toolbar">
@@ -88,7 +109,14 @@
       </div>
 
       <div class="card-body <%= info.cls %>">
-        <span class="card-track-name"><%= p.track_name || 'General' %></span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+          <span class="card-track-name"><%= p.track_name || 'General' %></span>
+          <% if (votingPublished && typeof p.vote_count !== 'undefined') { %>
+            <span class="badge-status" style="background: rgba(139, 92, 246, 0.15); color: #6d28d9; font-weight: 700; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 4px;">
+              💜 <%= p.vote_count %> <%= p.vote_count === 1 ? 'Vote' : 'Votes' %>
+            </span>
+          <% } %>
+        </div>
         <h2 class="card-title">
           <a href="/projects/<%= p.id %>"><%= p.title %></a>
         </h2>

@@ -54,7 +54,7 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     }
 
     return reply.view('gallery.ejs', {
-      title: 'Project Gallery — DOGFOOD 2026',
+      title: 'Project Gallery — PrismJudge',
       projects,
       tracks,
       trackCounts,
@@ -72,7 +72,7 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const tracks = getAllTracks();
 
     return reply.view('submit.ejs', {
-      title: 'Submit Project — DOGFOOD 2026',
+      title: 'Submit Project — PrismJudge',
       tracks,
       event,
       user: req.user,
@@ -179,7 +179,7 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     if (!project) {
       if (req.headers.accept?.includes('text/html')) {
         return reply.code(404).view('404.ejs', {
-          title: 'Project Not Found — DOGFOOD 2026',
+          title: 'Project Not Found — PrismJudge',
           user: req.user,
           path: req.url,
         });
@@ -218,13 +218,84 @@ export async function projectRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     }
 
     return reply.view('project_detail.ejs', {
-      title: `${project.title} — DOGFOOD 2026`,
+      title: `${project.title} — PrismJudge`,
       project,
       members,
       comments,
       user: req.user,
       hasVotedForThis,
       formError,
+    });
+  });
+
+  // 4. Official Hackathon Results Portal (Embargo & Publishing)
+  fastify.get('/results', async (req: FastifyRequest, reply: FastifyReply) => {
+    const event = getEvent();
+    const isOrganizer = req.user?.role === 'organizer' || req.user?.role === 'admin';
+    const isPublished = event?.results_published === 1;
+
+    // If results are embargoed and user is not an organizer/admin, render polite embargo notice
+    if (!isPublished && !isOrganizer) {
+      return reply.view('results_embargoed.ejs', {
+        title: 'Results Embargoed — PrismJudge',
+        event,
+        user: req.user,
+      });
+    }
+
+    const { generateLeaderboard } = await import('../engine/ranking.js');
+    const { getCommunityVotingBreakdown } = await import('../db/queries.js');
+
+    const rawLeaderboard = generateLeaderboard();
+    const votingBreakdown = getCommunityVotingBreakdown();
+    const tracks = getAllTracks();
+    const allProjects = getProjects();
+    const projectMap = new Map(allProjects.map((p) => [p.id, p]));
+
+    const leaderboard = rawLeaderboard.map((entry) => {
+      const proj = projectMap.get(entry.projectId);
+      return {
+        id: entry.projectId,
+        title: entry.projectTitle,
+        teamId: entry.teamId,
+        teamName: proj?.team_name || entry.teamId,
+        trackId: entry.trackId,
+        trackName: proj?.track_name || entry.trackId,
+        summary: proj?.summary || '',
+        score: entry.compositeScore,
+        normalizedScore: entry.normalizedScore,
+        rawAverage: entry.rawAverage,
+        reviewCount: entry.reviewCount,
+        rank: entry.rank,
+      };
+    });
+
+    // Top 3 Podium Overall
+    const podium = leaderboard.slice(0, 3);
+
+    // Track Champions: Highest scoring project in each track
+    const trackWinners = tracks.map((track) => {
+      const projectsInTrack = leaderboard.filter((p) => p.trackId === track.id || p.trackName === track.name);
+      return {
+        track,
+        winner: projectsInTrack.length > 0 ? projectsInTrack[0] : null,
+      };
+    });
+
+    // Community Choice Winner
+    const communityWinner = votingBreakdown.leadingProject;
+
+    return reply.view('results.ejs', {
+      title: 'Official Hackathon Results & Winners — PrismJudge',
+      event,
+      user: req.user,
+      isOrganizerPreview: !isPublished,
+      leaderboard,
+      podium,
+      trackWinners,
+      communityWinner,
+      votingBreakdown,
+      tracks,
     });
   });
 }

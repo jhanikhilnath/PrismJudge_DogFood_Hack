@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * DOGFOOD 2026 — Standalone Offline Credential Verifier CLI
+ * PrismJudge — Standalone Offline Credential Verifier CLI
  * Evaluates authenticity of participant and evaluator diplomas completely offline.
  *
  * Usage:
@@ -41,7 +41,7 @@ const targetId = args[0] && !args[0].startsWith('--') ? args[0] : 'prj_01';
 const db = new DatabaseSync(dbPath);
 
 console.log('='.repeat(65));
-console.log('       DOGFOOD 2026 — DIPLOMA & CREDENTIAL VERIFIER');
+console.log('       PRISMJUDGE — DIPLOMA & CREDENTIAL VERIFIER');
 console.log('='.repeat(65));
 console.log(`Database: ${dbPath}`);
 console.log(`Target:   ${targetId}`);
@@ -75,7 +75,7 @@ if (targetId.startsWith('judge/') || targetId.startsWith('jdg_')) {
   console.log(`REVIEWS CAST:  ${reviewCount} evaluations`);
   console.log(`TRACKS:        ${tracks.join(', ') || 'General'}`);
   console.log(`SIGNATURE:     ${digest.substring(0, 32)}...`);
-  console.log(`ISSUER:        DOGFOOD 2026 Hackathon Organizing Committee`);
+  console.log(`ISSUER:        PrismJudge Hackathon Organizing Committee`);
   console.log('='.repeat(65));
 } else {
   // Participant Diploma Verification
@@ -111,6 +111,6 @@ if (targetId.startsWith('judge/') || targetId.startsWith('jdg_')) {
   console.log(`TRACK:         ${proj.track_name}`);
   console.log(`SUBMITTED:     ${proj.submitted_at}`);
   console.log(`SIGNATURE:     ${digest.substring(0, 32)}...`);
-  console.log(`ISSUER:        DOGFOOD 2026 Hackathon Organizing Committee`);
+  console.log(`ISSUER:        PrismJudge Hackathon Organizing Committee`);
   console.log('='.repeat(65));
 }

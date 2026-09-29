@@ -53,7 +53,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     openapi: {
       openapi: '3.1.0',
       info: {
-        title: 'DOGFOOD 2026 Hackathon Platform API',
+        title: 'PrismJudge (DOGFOOD 2026) Hackathon Platform API',
         description: 'Complete, typed REST API for hackathon submissions, judging, normalization, and community voting.',
         version: '1.0.0',
       },
@@ -159,7 +159,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     }
 
     return reply.view('home.ejs', {
-      title: 'DOGFOOD 2026 — Self-Hostable Hackathon & Evaluation Platform',
+      title: 'PrismJudge — Self-Hostable Hackathon & Evaluation Platform',
       event,
       tracks,
       stats: publicStats,
@@ -173,7 +173,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   fastify.setNotFoundHandler(async (req, reply) => {
     if (req.headers.accept?.includes('text/html')) {
       return reply.code(404).view('404.ejs', {
-        title: 'Page Not Found — DOGFOOD 2026',
+        title: 'Page Not Found — PrismJudge',
         user: req.user,
         path: req.url,
       });
@@ -184,7 +184,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   fastify.setErrorHandler(async (error: any, req, reply) => {
     if (error?.statusCode === 403 && req.headers.accept?.includes('text/html')) {
       return reply.code(403).view('403.ejs', {
-        title: 'Access Restricted — DOGFOOD 2026',
+        title: 'Access Restricted — PrismJudge',
         user: req.user,
         message: error.message || 'You do not have permission to access this resource.',
       });

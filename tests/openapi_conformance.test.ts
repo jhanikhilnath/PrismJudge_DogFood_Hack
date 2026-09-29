@@ -12,7 +12,7 @@ test('OpenAPI 3.1 Specification & Route Conformance Tests', async (t) => {
 
     assert.equal(doc.openapi, '3.1.0', 'Must be OpenAPI 3.1.0');
     assert.ok(doc.info, 'Specification must contain info block');
-    assert.equal(doc.info.title, 'DOGFOOD 2026 Hackathon Platform API');
+    assert.ok(doc.info.title.includes('PrismJudge'), 'Title must contain PrismJudge');
     assert.ok(doc.paths, 'Specification must declare paths');
     assert.ok(Object.keys(doc.paths).length >= 20, 'Must document at least 20 paths');
   });

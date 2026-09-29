@@ -75,7 +75,7 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
   fastify.get('/login', async (req: FastifyRequest<{ Querystring: AuthQuery }>, reply: FastifyReply) => {
     const query = req.query || {};
     return reply.view('login.ejs', {
-      title: 'Sign In — DOGFOOD 2026',
+      title: 'Sign In — PrismJudge',
       user: req.user,
       redirect: sanitizeRedirect(query.redirect),
       error: query.error || null,

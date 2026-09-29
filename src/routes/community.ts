@@ -64,11 +64,21 @@ export async function communityRoutes(fastify: FastifyInstance, _opts: FastifyPl
       }
     }
 
+    const { getCommunityVotingBreakdown } = await import('../db/queries.js');
+    const votingBreakdown = getCommunityVotingBreakdown();
+    const voteMap = new Map(votingBreakdown.items.map(i => [i.project_id, i]));
+    const projectsWithVotes = shuffled.map(p => ({
+      ...p,
+      vote_count: voteMap.get(p.id)?.vote_count ?? 0,
+      vote_rank: voteMap.get(p.id)?.rank ?? 0
+    }));
+
     return reply.view('voting.ejs', {
-      title: 'Community Voting — DOGFOOD 2026',
-      projects: shuffled,
+      title: 'Community Voting — PrismJudge',
+      projects: projectsWithVotes,
       tracks,
       event,
+      votingBreakdown,
       user: req.user,
       isVotingClosed: votingClosed,
       userVotedProjectId: userVotedProjectIds[0] || null,

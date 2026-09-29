@@ -159,7 +159,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
 
     if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
       return reply.code(403).view('403.ejs', {
-        title: 'Access Restricted — DOGFOOD 2026',
+        title: 'Access Restricted — PrismJudge',
         user: req.user,
         message: `The Operations Console is restricted to event administrators and organizers. Your current active role is ${req.user.role}.`,
       });
@@ -168,6 +168,9 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     const leaderboard = generateLeaderboard();
     const normalization = computeBayesianNormalization();
     const stats = getSystemStats();
+    const { getCommunityVotingBreakdown, getEvent } = await import('../db/queries.js');
+    const event = getEvent();
+    const votingBreakdown = getCommunityVotingBreakdown();
 
     const counts = {
       projects: stats.projectCount,
@@ -181,14 +184,16 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     const recentAuditLogs = getRecentAuditLogs(15);
 
     return reply.view('organizer_dash.ejs', {
-      title: 'Organizer Live Dashboard — DOGFOOD 2026',
+      title: 'Organizer Live Dashboard — PrismJudge',
       user: req.user,
+      event,
       counts,
       leaderboard,
       normalization,
       judgeProgress,
       underservedProjects,
       recentAuditLogs,
+      votingBreakdown,
     });
   });
 
@@ -200,7 +205,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
 
     if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
       return reply.code(403).view('403.ejs', {
-        title: 'Access Restricted — DOGFOOD 2026',
+        title: 'Access Restricted — PrismJudge',
         user: req.user,
         message: 'The Qualified Teams Management console is restricted to organizers and platform administrators.',
       });
@@ -212,7 +217,7 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
     const query = req.query as Record<string, string> | undefined;
 
     return reply.view('organizer_teams.ejs', {
-      title: 'Qualified Teams & Credentials — DOGFOOD 2026',
+      title: 'Qualified Teams & Credentials — PrismJudge',
       user: req.user,
       teams,
       tracks,
@@ -470,4 +475,321 @@ export async function organizerRoutes(fastify: FastifyInstance, _opts: FastifyPl
       createdAt: new Date().toISOString(),
     });
   });
+
+  // 12. Event Settings & Hackathon Configuration (HTML Console)
+  fastify.get('/organizer/settings', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.user) {
+      return reply.redirect('/login?redirect=/organizer/settings&error=Organizer+access+required');
+    }
+
+    if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
+      return reply.code(403).view('403.ejs', {
+        title: 'Access Restricted — PrismJudge',
+        user: req.user,
+        message: 'The Event Settings console is restricted to organizers and platform administrators.',
+      });
+    }
+
+    const { getEvent, getAllTracks } = await import('../db/queries.js');
+    const event = getEvent();
+    const tracks = getAllTracks();
+    const query = req.query as Record<string, string> | undefined;
+
+    // Parse prizes JSON safely
+    let prizesList: any[] = [];
+    try {
+      if (event?.prizes) prizesList = JSON.parse(event.prizes);
+    } catch {
+      prizesList = [];
+    }
+
+    // Parse rubric weights safely
+    let rubricWeights = { functionality: 0.4, quality: 0.3, innovation: 0.2, impact: 0.1 };
+    try {
+      if (event?.rubric_weights) rubricWeights = JSON.parse(event.rubric_weights);
+    } catch {
+      // fallback
+    }
+
+    const configAuditLogs = getRecentAuditLogs(20).filter(
+      (l) => l.action.startsWith('EVENT_') || l.action.startsWith('TRACK_')
+    );
+
+    return reply.view('organizer_settings.ejs', {
+      title: 'Event Settings & Hackathon Configuration — PrismJudge',
+      user: req.user,
+      event,
+      tracks,
+      prizesList,
+      rubricWeights,
+      configAuditLogs,
+      saved: query?.saved === '1',
+      trackSaved: query?.track_saved === '1',
+      trackDeleted: query?.track_deleted === '1',
+      error: query?.error || null,
+      tab: query?.tab || 'general',
+    });
+  });
+
+  // 13. Update Event Settings (Form & API) with DOUBLE CONFIRMATION
+  fastify.post('/organizer/settings', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.user) {
+      return reply.redirect('/login?redirect=/organizer/settings&error=Organizer+access+required');
+    }
+
+    if (req.user.role !== 'organizer' && req.user.role !== 'admin') {
+      return reply.code(403).view('403.ejs', {
+        title: 'Access Restricted — PrismJudge',
+        user: req.user,
+        message: 'The Event Settings console is restricted to organizers and platform administrators.',
+      });
+    }
+
+    const body = (req.body || {}) as Record<string, any>;
+
+    // DOUBLE CONFIRMATION CHECK:
+    // Requires confirm_action === 'CONFIRM' or confirmed === true
+    const isConfirmed = body.confirm_action === 'CONFIRM' || body.confirmed === true || body.confirmed === '1' || body.confirmed === 'true';
+    if (!isConfirmed) {
+      if (req.headers.accept?.includes('application/json')) {
+        return reply.code(400).send({
+          error: 'Double confirmation required',
+          message: 'Critical event configuration changes require explicit double confirmation.',
+        });
+      }
+      return reply.redirect('/organizer/settings?error=Double+confirmation+required.+Type+CONFIRM+to+authorize+changes.');
+    }
+
+    const { getEvent, updateEventSettings } = await import('../db/queries.js');
+    const currentEvent = getEvent();
+    if (!currentEvent) {
+      return reply.code(500).send({ error: 'No event record found' });
+    }
+
+    // Process Rubric Weights
+    let rubricWeightsStr = currentEvent.rubric_weights;
+    if (body.weight_func !== undefined && body.weight_qual !== undefined) {
+      const func = parseFloat(body.weight_func) || 0.4;
+      const qual = parseFloat(body.weight_qual) || 0.3;
+      const inno = parseFloat(body.weight_inno) || 0.2;
+      const imp = parseFloat(body.weight_imp) || 0.1;
+      rubricWeightsStr = JSON.stringify({ functionality: func, quality: qual, innovation: inno, impact: imp });
+    } else if (body.rubric_weights) {
+      rubricWeightsStr = typeof body.rubric_weights === 'string' ? body.rubric_weights : JSON.stringify(body.rubric_weights);
+    }
+
+    // Process Prizes
+    let prizesStr = currentEvent.prizes;
+    if (body.prizes_json) {
+      prizesStr = typeof body.prizes_json === 'string' ? body.prizes_json : JSON.stringify(body.prizes_json);
+    }
+
+    const updates: Record<string, any> = {};
+    if (body.name) updates.name = String(body.name).trim();
+    if (body.tagline !== undefined) updates.tagline = String(body.tagline).trim();
+    if (body.description !== undefined) updates.description = String(body.description).trim();
+    if (body.submissions_open) updates.submissions_open = String(body.submissions_open).trim();
+    if (body.submissions_close) updates.submissions_close = String(body.submissions_close).trim();
+    if (body.judging_open) updates.judging_open = String(body.judging_open).trim();
+    if (body.judging_close) updates.judging_close = String(body.judging_close).trim();
+    if (body.voting_open) updates.voting_open = String(body.voting_open).trim();
+    if (body.voting_close) updates.voting_close = String(body.voting_close).trim();
+    if (body.results_announced_at) updates.results_announced_at = String(body.results_announced_at).trim();
+    if (body.prize_pool !== undefined) updates.prize_pool = String(body.prize_pool).trim();
+    if (prizesStr) updates.prizes = prizesStr;
+    if (rubricWeightsStr) updates.rubric_weights = rubricWeightsStr;
+    if (body.min_reviews_per_project !== undefined) updates.min_reviews_per_project = parseInt(body.min_reviews_per_project, 10) || 3;
+    if (body.max_team_size !== undefined) updates.max_team_size = parseInt(body.max_team_size, 10) || 4;
+    if (body.require_repo_url !== undefined) updates.require_repo_url = body.require_repo_url === '1' || body.require_repo_url === true || body.require_repo_url === 'on' ? 1 : 0;
+    if (body.require_demo_url !== undefined) updates.require_demo_url = body.require_demo_url === '1' || body.require_demo_url === true || body.require_demo_url === 'on' ? 1 : 0;
+    if (body.voting_mode) updates.voting_mode = String(body.voting_mode).trim();
+    if (body.prevent_self_voting !== undefined) updates.prevent_self_voting = body.prevent_self_voting === '0' || body.prevent_self_voting === false ? 0 : 1;
+    if (body.pairwise_enabled !== undefined) updates.pairwise_enabled = body.pairwise_enabled === '0' || body.pairwise_enabled === false ? 0 : 1;
+    if (body.voting_results_published !== undefined) updates.voting_results_published = body.voting_results_published === '1' || body.voting_results_published === true || body.voting_results_published === 'on' ? 1 : 0;
+    if (body.results_published !== undefined) updates.results_published = body.results_published === '1' || body.results_published === true || body.results_published === 'on' ? 1 : 0;
+
+    // Compute diff for immutable audit logging
+    const diff: Record<string, { from: any; to: any }> = {};
+    for (const [k, newVal] of Object.entries(updates)) {
+      const oldVal = (currentEvent as any)[k];
+      if (String(oldVal) !== String(newVal)) {
+        diff[k] = { from: oldVal, to: newVal };
+      }
+    }
+
+    updateEventSettings(updates);
+
+    logAuditEvent({
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      action: 'EVENT_SETTINGS_UPDATED',
+      resourceType: 'events',
+      resourceId: currentEvent.id,
+      payload: {
+        changedFields: Object.keys(diff),
+        diff,
+        confirmedBy: req.user.userId,
+        timestamp: new Date().toISOString(),
+      },
+      ipAddress: req.ip,
+    });
+
+    if (req.headers.accept?.includes('application/json')) {
+      return reply.code(200).send({
+        ok: true,
+        message: 'Event settings updated successfully with audit trail recording',
+        changes: Object.keys(diff),
+        event: getEvent(),
+      });
+    }
+
+    return reply.redirect('/organizer/settings?saved=1');
+  });
+
+  // 14. Save/Update Track with Double Confirmation
+  fastify.post('/api/organizer/tracks/save', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.user || (req.user.role !== 'organizer' && req.user.role !== 'admin')) {
+      return reply.code(403).send({ error: 'Forbidden' });
+    }
+
+    const body = (req.body || {}) as { id?: string; name?: string; description?: string; prize_amount?: string; confirm_action?: string };
+
+    if (body.confirm_action !== 'CONFIRM') {
+      return reply.code(400).send({ error: 'Track configuration modification requires typing CONFIRM' });
+    }
+
+    if (!body.name || !body.name.trim()) {
+      return reply.code(400).send({ error: 'Track name is required' });
+    }
+
+    const { saveTrack } = await import('../db/queries.js');
+    const trackId = body.id && body.id.trim() ? body.id.trim() : `trk_${Date.now().toString(36)}`;
+    saveTrack(trackId, body.name.trim(), (body.description || '').trim(), (body.prize_amount || '$500').trim());
+
+    logAuditEvent({
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      action: 'TRACK_SAVED',
+      resourceType: 'tracks',
+      resourceId: trackId,
+      payload: { name: body.name, prize_amount: body.prize_amount },
+      ipAddress: req.ip,
+    });
+
+    return reply.code(200).send({ ok: true, trackId, message: 'Track saved successfully' });
+  });
+
+  // 15. Delete Track with Double Confirmation & Project Collision Check
+  fastify.post('/api/organizer/tracks/delete', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.user || (req.user.role !== 'organizer' && req.user.role !== 'admin')) {
+      return reply.code(403).send({ error: 'Forbidden' });
+    }
+
+    const body = (req.body || {}) as { id: string; confirm_action?: string };
+
+    if (body.confirm_action !== 'CONFIRM') {
+      return reply.code(400).send({ error: 'Track deletion requires typing CONFIRM' });
+    }
+
+    const { deleteTrack } = await import('../db/queries.js');
+    const result = deleteTrack(body.id);
+    if (!result.success) {
+      return reply.code(400).send({ error: result.error });
+    }
+
+    logAuditEvent({
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      action: 'TRACK_DELETED',
+      resourceType: 'tracks',
+      resourceId: body.id,
+      payload: { trackId: body.id },
+      ipAddress: req.ip,
+    });
+
+    return reply.code(200).send({ ok: true, message: 'Track deleted successfully' });
+  });
+
+  // 16. Toggle Results Portal Publication (/results)
+  fastify.post('/api/organizer/results/toggle', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.user || (req.user.role !== 'organizer' && req.user.role !== 'admin')) {
+      return reply.code(403).send({ error: 'Forbidden' });
+    }
+
+    const { getEvent, toggleResultsPublished } = await import('../db/queries.js');
+    const ev = getEvent();
+    const body = (req.body || {}) as { published?: boolean | string };
+    
+    let targetState: boolean;
+    if (body.published !== undefined) {
+      targetState = body.published === true || body.published === '1' || body.published === 'true';
+    } else {
+      targetState = ev?.results_published !== 1;
+    }
+
+    toggleResultsPublished(targetState);
+
+    logAuditEvent({
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      action: 'RESULTS_PUBLICATION_TOGGLED',
+      resourceType: 'events',
+      resourceId: ev?.id || 'evt_01',
+      payload: { results_published: targetState ? 1 : 0 },
+      ipAddress: req.ip,
+    });
+
+    if (req.headers['content-type']?.includes('application/x-www-form-urlencoded')) {
+      const redirectUrl = (req.headers.referer as string) || '/organizer/dashboard';
+      return reply.redirect(redirectUrl);
+    }
+
+    return reply.code(200).send({
+      ok: true,
+      results_published: targetState ? 1 : 0,
+      message: targetState ? 'Results portal successfully published to the public' : 'Results portal embargoed (hidden from public)'
+    });
+  });
+
+  // 17. Toggle Community Choice Voting Standings Publication
+  fastify.post('/api/organizer/voting-results/toggle', async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.user || (req.user.role !== 'organizer' && req.user.role !== 'admin')) {
+      return reply.code(403).send({ error: 'Forbidden' });
+    }
+
+    const { getEvent, toggleVotingResultsPublished } = await import('../db/queries.js');
+    const ev = getEvent();
+    const body = (req.body || {}) as { published?: boolean | string };
+    
+    let targetState: boolean;
+    if (body.published !== undefined) {
+      targetState = body.published === true || body.published === '1' || body.published === 'true';
+    } else {
+      targetState = ev?.voting_results_published !== 1;
+    }
+
+    toggleVotingResultsPublished(targetState);
+
+    logAuditEvent({
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      action: 'VOTING_RESULTS_PUBLICATION_TOGGLED',
+      resourceType: 'events',
+      resourceId: ev?.id || 'evt_01',
+      payload: { voting_results_published: targetState ? 1 : 0 },
+      ipAddress: req.ip,
+    });
+
+    if (req.headers['content-type']?.includes('application/x-www-form-urlencoded')) {
+      const redirectUrl = (req.headers.referer as string) || '/organizer/dashboard';
+      return reply.redirect(redirectUrl);
+    }
+
+    return reply.code(200).send({
+      ok: true,
+      voting_results_published: targetState ? 1 : 0,
+      message: targetState ? 'Community voting standings successfully published' : 'Community voting standings sealed'
+    });
+  });
 }
+

@@ -1,4 +1,4 @@
-# DOGFOOD 2026 — Data Model & Schema Documentation
+# PrismJudge — Data Model & Schema Documentation
 
 **Platform:** Embedded SQLite 3 (WAL Mode, Foreign Keys Enforced)  
 **ORM / Data Layer:** Parameterized Prepared Statements via `node:sqlite` / `better-sqlite3`  

@@ -1,4 +1,4 @@
-# DOGFOOD 2026 — System Architecture & Design Rationale
+# PrismJudge — System Architecture & Design Rationale
 > *"Build the platform that will judge you."*  
 > **Core Runtime:** Node.js (v22 LTS) · TypeScript · Fastify v5 · Embedded SQLite 3 (WAL Mode) · EJS SSR · Studio Light CSS
 

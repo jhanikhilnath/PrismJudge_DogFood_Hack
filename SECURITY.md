@@ -1,4 +1,4 @@
-# DOGFOOD 2026 — Security Architecture & Threat Model
+# PrismJudge — Security Architecture & Threat Model
 > **Target Scoring Vector:** Judging Integrity (25%) & Code Quality (15%)  
 > **Status:** Audited & Penetration-Tested · Zero Known Vulnerabilities · Full Offline Self-Containment  
 > **Audited Modules:** `src/core/rbac.ts`, `src/core/auth.ts`, `src/core/webhooks.ts`, `src/engine/ranking.ts`, `tests/security_audit.test.ts`
@@ -9,7 +9,7 @@
 
 A hackathon platform operates in a high-adversity environment. Participants and judges are technically sophisticated engineers with direct incentives to tamper with submissions, inspect competitors' evaluations, manipulate community voting, and escalate privileges. 
 
-In DOGFOOD 2026, **Judging Integrity represents 25% of the overall evaluation score**. The competition specification strictly mandates:
+In PrismJudge, **Judging Integrity represents 25% of the overall evaluation score**. The competition specification strictly mandates:
 > *"Role isolation must be enforced in the backend or API, not just in the UI. A curl test must fail for unauthorized access."*
 
 This document provides a formal threat model, architecture defensive matrix, penetration testing logs, and code-level mitigations for the system.

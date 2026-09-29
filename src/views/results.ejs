@@ -1,0 +1,305 @@
+<% if (typeof isOrganizerPreview !== 'undefined' && isOrganizerPreview) { %>
+  <div class="alert" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-lg); padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <span style="font-size: 1.5rem;">🔒</span>
+      <div>
+        <strong style="color: #92400e; font-size: 0.95rem;">Organizer Confidential Preview:</strong>
+        <span style="color: #b45309; font-size: 0.88rem;"> The results page is currently <strong>EMBARGOED</strong>. Only organizers and platform administrators can see this view.</span>
+      </div>
+    </div>
+    <form method="POST" action="/api/organizer/results/toggle" style="margin: 0;">
+      <input type="hidden" name="published" value="true">
+      <button type="submit" class="btn btn-sm btn-primary" style="background: #059669; border-color: #059669; font-weight: 700;">
+        🚀 Publish Results to Public
+      </button>
+    </form>
+  </div>
+<% } else if (user && (user.role === 'organizer' || user.role === 'admin')) { %>
+  <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+    <form method="POST" action="/api/organizer/results/toggle" style="margin: 0;">
+      <input type="hidden" name="published" value="false">
+      <button type="submit" class="btn btn-sm btn-secondary" style="font-size: 0.78rem; color: #dc2626;">
+        🔒 Re-Embargo Results (Hide from Public)
+      </button>
+    </form>
+  </div>
+<% } %>
+
+<!-- Hero Header -->
+<div class="page-hero" style="text-align: center; margin-bottom: 2.5rem;">
+  <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 700; color: #d97706; margin-bottom: 0.75rem; font-family: var(--font-mono); text-transform: uppercase;">
+    <span>🏆 Official Results &amp; Champions</span>
+  </div>
+  <h1 class="page-title" style="font-size: 2.75rem; letter-spacing: -0.035em; margin-bottom: 0.5rem;">
+    <%= event ? event.name : 'PrismJudge 2026' %> Leaderboard
+  </h1>
+  <p class="page-subtitle" style="max-width: 680px; margin: 0 auto 1.5rem auto;">
+    Empirical Bayesian shrinkage-normalized standings, category honors, and verified grand champions.
+  </p>
+
+  <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+    <div class="card" style="padding: 0.6rem 1.25rem; display: inline-flex; align-items: center; gap: 0.6rem; border-radius: var(--radius-full);">
+      <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Total Prize Pool</span>
+      <span style="font-size: 1.05rem; font-weight: 800; color: #059669; font-family: var(--font-mono);"><%= event?.prize_pool || '$25,000' %></span>
+    </div>
+    <div class="card" style="padding: 0.6rem 1.25rem; display: inline-flex; align-items: center; gap: 0.6rem; border-radius: var(--radius-full);">
+      <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Submissions Evaluated</span>
+      <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); font-family: var(--font-mono);"><%= leaderboard.length %></span>
+    </div>
+    <% if (user && (user.role === 'organizer' || user.role === 'admin')) { %>
+      <a href="/api/export.csv" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem; border-radius: var(--radius-full); padding: 0.6rem 1.1rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Certified CSV Export
+      </a>
+    <% } %>
+  </div>
+</div>
+
+<!-- SECTION 1: PODIUM GRAND CHAMPIONS (Top 3) -->
+<% if (podium && podium.length >= 3) { %>
+  <div style="margin-bottom: 3.5rem;">
+    <div style="text-align: center; margin-bottom: 1.75rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.35rem 0;">Overall Podium Champions</h2>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0;">The three highest scoring technical implementations across all tracks.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; align-items: stretch;">
+      <!-- 2nd Place (Silver) -->
+      <div class="card" style="padding: 1.75rem; border: 2px solid #cbd5e1; background: linear-gradient(180deg, #f8fafc 0%, var(--bg-surface) 100%); border-radius: var(--radius-xl); display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <span class="status-pill" style="background: #e2e8f0; color: #475569; font-weight: 800; font-size: 0.8rem; border-color: #cbd5e1;">
+              🥈 1ST RUNNER-UP
+            </span>
+            <span class="font-mono" style="font-size: 1.75rem; font-weight: 800; color: #475569;">
+              <%= podium[1].score.toFixed(1) %>
+            </span>
+          </div>
+          <h3 style="font-size: 1.35rem; font-weight: 800; margin: 0 0 0.4rem 0;">
+            <a href="/projects/<%= podium[1].id %>" style="color: inherit; text-decoration: none;"><%= podium[1].title %></a>
+          </h3>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span>Team: <strong><%= podium[1].teamName %></strong></span>
+            <span>&bull;</span>
+            <span class="track-pill" style="font-size: 0.75rem;"><%= podium[1].trackName %></span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.25rem;">
+            <%= podium[1].summary %>
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="/projects/<%= podium[1].id %>" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center;">Inspect Architecture ↗</a>
+        </div>
+      </div>
+
+      <!-- 1st Place (Gold Champion) -->
+      <div class="card" style="padding: 2rem; border: 2px solid #f59e0b; background: linear-gradient(180deg, #fffbeb 0%, var(--bg-surface) 100%); border-radius: var(--radius-xl); display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15); transform: translateY(-6px); position: relative;">
+        <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: #ffffff; padding: 0.2rem 0.85rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">
+          GRAND CHAMPION
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; margin-top: 0.5rem;">
+            <span class="status-pill" style="background: rgba(245, 158, 11, 0.15); color: #b45309; font-weight: 800; font-size: 0.85rem; border-color: rgba(245, 158, 11, 0.3);">
+              🥇 1ST PLACE WINNER
+            </span>
+            <span class="font-mono" style="font-size: 2.2rem; font-weight: 900; color: #b45309;">
+              <%= podium[0].score.toFixed(1) %>
+            </span>
+          </div>
+          <h3 style="font-size: 1.6rem; font-weight: 800; margin: 0 0 0.4rem 0;">
+            <a href="/projects/<%= podium[0].id %>" style="color: inherit; text-decoration: none;"><%= podium[0].title %></a>
+          </h3>
+          <div style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span>Team: <strong><%= podium[0].teamName %></strong></span>
+            <span>&bull;</span>
+            <span class="track-pill" style="font-size: 0.78rem; font-weight: 700;"><%= podium[0].trackName %></span>
+          </div>
+          <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+            <%= podium[0].summary %>
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="/projects/<%= podium[0].id %>" class="btn btn-primary btn-sm" style="flex: 1; justify-content: center; font-weight: 700;">View Winning Project ↗</a>
+        </div>
+      </div>
+
+      <!-- 3rd Place (Bronze) -->
+      <div class="card" style="padding: 1.75rem; border: 2px solid #fed7aa; background: linear-gradient(180deg, #fff7ed 0%, var(--bg-surface) 100%); border-radius: var(--radius-xl); display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <span class="status-pill" style="background: rgba(234, 88, 12, 0.1); color: #c2410c; font-weight: 800; font-size: 0.8rem; border-color: #fed7aa;">
+              🥉 2ND RUNNER-UP
+            </span>
+            <span class="font-mono" style="font-size: 1.75rem; font-weight: 800; color: #c2410c;">
+              <%= podium[2].score.toFixed(1) %>
+            </span>
+          </div>
+          <h3 style="font-size: 1.35rem; font-weight: 800; margin: 0 0 0.4rem 0;">
+            <a href="/projects/<%= podium[2].id %>" style="color: inherit; text-decoration: none;"><%= podium[2].title %></a>
+          </h3>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span>Team: <strong><%= podium[2].teamName %></strong></span>
+            <span>&bull;</span>
+            <span class="track-pill" style="font-size: 0.75rem;"><%= podium[2].trackName %></span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.25rem;">
+            <%= podium[2].summary %>
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <a href="/projects/<%= podium[2].id %>" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center;">Inspect Architecture ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<!-- SECTION 2: TRACK CHAMPIONS & COMMUNITY CHOICE -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 3.5rem;">
+  <!-- Community Choice Winner Card -->
+  <% if (communityWinner && (event?.voting_results_published === 1 || (user && (user.role === 'organizer' || user.role === 'admin')))) { %>
+    <div class="card" style="padding: 1.5rem; border: 2px solid rgba(139, 92, 246, 0.4); background: linear-gradient(180deg, #f5f3ff 0%, var(--bg-surface) 100%); border-radius: var(--radius-lg);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <span class="status-pill" style="background: rgba(139, 92, 246, 0.15); color: #6d28d9; font-weight: 800; font-size: 0.78rem;">
+          💜 PEOPLE'S CHOICE AWARD
+        </span>
+        <span class="font-mono" style="font-weight: 800; color: #6d28d9; font-size: 1.1rem;">
+          <%= communityWinner.vote_count %> Votes (<%= communityWinner.vote_share_pct %>%)
+        </span>
+      </div>
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin: 0 0 0.35rem 0;">
+        <a href="/projects/<%= communityWinner.project_id %>" style="color: inherit; text-decoration: none;"><%= communityWinner.project_title %></a>
+      </h3>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+        Team: <strong><%= communityWinner.team_name %></strong> &bull; Track: <strong><%= communityWinner.track_name %></strong>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+        Awarded by community ballots and audience voting. Sealed throughout the hackathon and verified by anti-Sybil IP hashing and self-voting rejection.
+      </p>
+      <a href="/projects/<%= communityWinner.project_id %>" class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;">
+        View Community Favorite ↗
+      </a>
+    </div>
+  <% } %>
+
+  <!-- Track Champions Summary Card -->
+  <div class="card" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius-lg); <%= !communityWinner ? 'grid-column: 1 / -1;' : '' %>">
+    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 0.25rem;">
+      🎯 Category &amp; Track Best-in-Class
+    </div>
+    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+      Leading implementations within each specialized technical domain.
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem;">
+      <% trackWinners.forEach(({ track, winner }) => { %>
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <span style="font-size: 0.78rem; font-weight: 700; color: var(--primary);"><%= track.name %></span>
+            <span class="font-mono" style="font-size: 0.72rem; color: #059669; font-weight: 700;"><%= track.prize_amount || '$500' %></span>
+          </div>
+          <% if (winner) { %>
+            <div style="font-weight: 600; font-size: 0.9rem;">
+              <a href="/projects/<%= winner.id %>" style="color: inherit; text-decoration: none;"><%= winner.title %></a>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); display: flex; justify-content: space-between; margin-top: 0.2rem;">
+              <span><%= winner.teamName %></span>
+              <span class="font-mono" style="font-weight: 600;"><%= winner.score.toFixed(1) %> pts</span>
+            </div>
+          <% } else { %>
+            <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No submissions</div>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: FULL FINAL STANDINGS LEADERBOARD -->
+<div class="card" style="margin-bottom: 3rem;">
+  <div class="card-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+      <h2 style="font-size: 1.2rem; font-weight: 700; margin: 0;">Comprehensive Final Standings</h2>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0.25rem 0 0 0;">
+        Ranked strictly by Bayesian Empirical Shrinkage normalized score ($m=3.0$).
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <input 
+        type="text" 
+        id="results-search" 
+        class="form-input font-mono" 
+        placeholder="Filter project, track, team..." 
+        style="font-size: 0.82rem; padding: 0.35rem 0.75rem; width: 220px;"
+        oninput="filterResultsTable()"
+      >
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="table" id="results-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); font-size: 0.78rem; text-transform: uppercase; color: var(--text-secondary);">
+          <th style="padding: 0.75rem 1rem; width: 60px; text-align: center;">Rank</th>
+          <th style="padding: 0.75rem 1rem;">Project &amp; Team</th>
+          <th style="padding: 0.75rem 1rem;">Track</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; width: 110px;">Reviews</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; width: 140px;">Normalized Score</th>
+          <th style="padding: 0.75rem 1rem; text-align: center; width: 120px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% leaderboard.forEach((p, idx) => { %>
+          <tr class="result-row" style="border-bottom: 1px solid var(--border-light);" data-search="<%= (p.title + ' ' + p.teamName + ' ' + p.trackName).toLowerCase() %>">
+            <td style="padding: 0.85rem 1rem; text-align: center;">
+              <% if (idx === 0) { %>
+                <span style="font-size: 1.2rem;" title="1st Place Champion">🥇</span>
+              <% } else if (idx === 1) { %>
+                <span style="font-size: 1.2rem;" title="2nd Place">🥈</span>
+              <% } else if (idx === 2) { %>
+                <span style="font-size: 1.2rem;" title="3rd Place">🥉</span>
+              <% } else { %>
+                <span class="font-mono" style="font-weight: 700; color: var(--text-secondary); font-size: 0.85rem;">#<%= idx + 1 %></span>
+              <% } %>
+            </td>
+            <td style="padding: 0.85rem 1rem;">
+              <div style="font-weight: 700; font-size: 0.92rem;">
+                <a href="/projects/<%= p.id %>" style="color: inherit; text-decoration: none;"><%= p.title %></a>
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.15rem;">
+                Team: <strong><%= p.teamName %></strong>
+              </div>
+            </td>
+            <td style="padding: 0.85rem 1rem;">
+              <span class="track-pill" style="font-size: 0.75rem;"><%= p.trackName %></span>
+            </td>
+            <td style="padding: 0.85rem 1rem; text-align: right;">
+              <span class="font-mono" style="font-size: 0.82rem;"><%= p.reviewCount %></span>
+            </td>
+            <td style="padding: 0.85rem 1rem; text-align: right;">
+              <span class="font-mono" style="font-size: 1.05rem; font-weight: 800; color: <%= idx < 3 ? '#059669' : 'var(--text-primary)' %>;">
+                <%= p.score.toFixed(2) %>
+              </span>
+            </td>
+            <td style="padding: 0.85rem 1rem; text-align: center;">
+              <a href="/projects/<%= p.id %>" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+                Details ↗
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function filterResultsTable() {
+    const q = (document.getElementById('results-search')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('.result-row');
+    rows.forEach(r => {
+      const match = !q || r.getAttribute('data-search').includes(q);
+      r.style.display = match ? '' : 'none';
+    });
+  }
+</script>

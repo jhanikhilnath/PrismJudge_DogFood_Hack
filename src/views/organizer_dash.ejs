@@ -6,7 +6,7 @@
     </p>
   </div>
   <div class="hero-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-    <a href="/api/export.csv" class="btn btn-primary" download="dogfood-results.csv">
+    <a href="/api/export.csv" class="btn btn-primary" download="prismjudge-results.csv">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Download CSV Results
     </a>
@@ -18,6 +18,24 @@
       <option value="pairwise">Pairwise Match Showdowns</option>
       <option value="audit">System Audit Ledger</option>
     </select>
+    <% const resultsLive = (typeof event !== 'undefined' && event && event.results_published === 1); %>
+    <form method="POST" action="/api/organizer/results/toggle" style="margin: 0; display: inline-flex;">
+      <input type="hidden" name="published" value="<%= resultsLive ? 'false' : 'true' %>">
+      <button type="submit" class="btn <%= resultsLive ? 'btn-secondary' : 'btn-primary' %>" style="<%= resultsLive ? 'border-color: #059669; color: #059669;' : 'background: #059669; border-color: #059669;' %> font-weight: 700;">
+        <% if (resultsLive) { %>
+          <span style="color: #059669;">●</span> Results Live 🏆 (Click to Embargo)
+        <% } else { %>
+          🚀 Publish Results Portal
+        <% } %>
+      </button>
+    </form>
+    <a href="/results" class="btn btn-secondary" target="_blank" title="Preview /results">
+      View /results ↗
+    </a>
+    <a href="/organizer/settings" class="btn btn-secondary" style="border-color: var(--primary); color: var(--primary);">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Event Settings ⚙️
+    </a>
     <a href="/normalization-proof.txt" class="btn btn-secondary" target="_blank">
       Proof Artifact (.txt) ↗
     </a>
@@ -227,6 +245,122 @@
       <% }); %>
     </tbody>
   </table>
+</div>
+
+<!-- Community Ballot & People's Choice Intelligence Section -->
+<% const votingLive = (typeof event !== 'undefined' && event && event.voting_results_published === 1); %>
+<div class="card" style="margin-bottom: 2rem; border: 1px solid var(--border);">
+  <div class="card-header" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span style="font-size: 1.25rem;">💜</span>
+        <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0;">Community Ballot &amp; People's Choice Intelligence</h3>
+        <span class="status-pill <%= votingLive ? 'status-completed' : 'status-warning' %>" style="font-size: 0.72rem; font-weight: 700;">
+          <%= votingLive ? 'STANDINGS LIVE (PUBLIC)' : 'STANDINGS SEALED (PRIVATE)' %>
+        </span>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0;">
+        Audience, attendee, and peer voting tallies with anti-Sybil IP hashing and self-voting rejection (PRD §3.3.1).
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <form method="POST" action="/api/organizer/voting-results/toggle" style="margin: 0;">
+        <input type="hidden" name="published" value="<%= votingLive ? 'false' : 'true' %>">
+        <button type="submit" class="btn btn-sm <%= votingLive ? 'btn-secondary' : 'btn-primary' %>" style="<%= votingLive ? 'color: #dc2626; border-color: #fca5a5;' : 'background: #6d28d9; border-color: #6d28d9;' %>">
+          <%= votingLive ? '🔒 Seal Voting Results' : '📢 Publish Voting Results' %>
+        </button>
+      </form>
+      <a href="/vote" class="btn btn-secondary btn-sm" target="_blank">
+        View Public Ballot ↗
+      </a>
+    </div>
+  </div>
+
+  <div class="card-body" style="padding: 1.25rem 1.5rem;">
+    <!-- Macro Summary Chips -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Total Ballots Cast</div>
+        <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.2rem;">
+          <%= typeof votingBreakdown !== 'undefined' ? votingBreakdown.totalVotes : 0 %>
+        </div>
+      </div>
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">Unique Fingerprints</div>
+        <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-primary); margin-top: 0.2rem;">
+          <%= typeof votingBreakdown !== 'undefined' ? votingBreakdown.uniqueVoters : 0 %>
+        </div>
+      </div>
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono); font-weight: 600;">People's Choice Leader</div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: #6d28d9; margin-top: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          <% if (typeof votingBreakdown !== 'undefined' && votingBreakdown.leadingProject) { %>
+            🏆 <%= votingBreakdown.leadingProject.project_title %> (<%= votingBreakdown.leadingProject.vote_count %> votes)
+          <% } else { %>
+            No votes cast yet
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Voting Table -->
+    <div style="max-height: 320px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+      <table class="data-table" style="font-size: 0.82rem; width: 100%;">
+        <thead>
+          <tr>
+            <th style="width: 60px; text-align: center;">Rank</th>
+            <th>Project Title</th>
+            <th>Team</th>
+            <th>Track</th>
+            <th style="text-align: right; width: 120px;">Votes</th>
+            <th style="width: 140px; text-align: right;">Ballot Share</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof votingBreakdown !== 'undefined' && votingBreakdown.items.length > 0) { %>
+            <% votingBreakdown.items.forEach(function(item) { %>
+              <tr>
+                <td style="text-align: center;">
+                  <% if (item.vote_count > 0 && item.rank === 1) { %>
+                    🥇
+                  <% } else if (item.vote_count > 0 && item.rank === 2) { %>
+                    🥈
+                  <% } else if (item.vote_count > 0 && item.rank === 3) { %>
+                    🥉
+                  <% } else { %>
+                    <span class="font-mono" style="color: var(--text-muted);">#<%= item.rank %></span>
+                  <% } %>
+                </td>
+                <td style="font-weight: 600;">
+                  <a href="/projects/<%= item.project_id %>" style="color: inherit; text-decoration: none;"><%= item.project_title %></a>
+                </td>
+                <td style="color: var(--text-secondary);"><%= item.team_name %></td>
+                <td><span class="track-pill" style="font-size: 0.72rem;"><%= item.track_name %></span></td>
+                <td style="text-align: right; font-family: var(--font-mono); font-weight: 700; color: <%= item.vote_count > 0 ? '#6d28d9' : 'var(--text-muted)' %>;">
+                  <%= item.vote_count %>
+                </td>
+                <td style="text-align: right;">
+                  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.4rem;">
+                    <div style="width: 50px; background: var(--border-light); height: 6px; border-radius: 3px; overflow: hidden;">
+                      <div style="width: <%= Math.min(100, item.vote_share_pct) %>%; background: #8b5cf6; height: 100%;"></div>
+                    </div>
+                    <span class="font-mono" style="font-size: 0.75rem; color: var(--text-muted);"><%= item.vote_share_pct %>%</span>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                No community votes registered in this competition yet.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- Embedded Immutable Audit Ledger -->

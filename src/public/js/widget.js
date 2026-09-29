@@ -1,16 +1,16 @@
 /**
- * DOGFOOD 2026 Standalone Embeddable Gallery Widget Loader
+ * PrismJudge Standalone Embeddable Gallery Widget Loader
  * Zero dependencies. Embeds interactive project showcases on any host website.
  *
  * Usage:
- *   <div class="dogfood-widget" data-track="all" data-limit="3"></div>
+ *   <div class="prismjudge-widget" data-track="all" data-limit="3"></div>
  *   <script src="http://localhost:8080/static/js/widget.js" async></script>
  */
 (function () {
   'use strict';
 
   function initWidgets() {
-    var containers = document.querySelectorAll('.dogfood-widget:not([data-initialized])');
+    var containers = document.querySelectorAll('.prismjudge-widget:not([data-initialized]), .dogfood-widget:not([data-initialized])');
     if (!containers || containers.length === 0) return;
 
     var scriptTag = document.currentScript || document.querySelector('script[src*="widget.js"]');
@@ -42,7 +42,7 @@
       iframe.style.borderRadius = '12px';
       iframe.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
       iframe.style.overflow = 'hidden';
-      iframe.title = 'DOGFOOD 2026 Hackathon Gallery Showcase';
+      iframe.title = 'PrismJudge Hackathon Gallery Showcase';
       iframe.setAttribute('loading', 'lazy');
 
       container.innerHTML = '';
@@ -56,7 +56,8 @@
     initWidgets();
   }
 
-  window.DogfoodWidget = {
+  window.PrismJudgeWidget = {
     reload: initWidgets,
   };
+  window.DogfoodWidget = window.PrismJudgeWidget;
 })();

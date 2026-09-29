@@ -113,7 +113,7 @@ export async function pairwiseRoutes(fastify: FastifyInstance, _opts: FastifyPlu
 
     if (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin') {
       return reply.code(403).view('403.ejs', {
-        title: 'Access Restricted — DOGFOOD 2026',
+        title: 'Access Restricted — PrismJudge',
         user: req.user,
         message: `The Pairwise Arena is reserved for registered technical evaluators. Your current active role is ${req.user.role}.`,
       });
@@ -124,7 +124,7 @@ export async function pairwiseRoutes(fastify: FastifyInstance, _opts: FastifyPlu
     const ratings = solveBradleyTerry();
 
     return reply.view('pairwise.ejs', {
-      title: 'Pairwise Judging Mode — DOGFOOD 2026',
+      title: 'Pairwise Judging Mode — PrismJudge',
       user: req.user,
       project_a: projectA,
       project_b: projectB,

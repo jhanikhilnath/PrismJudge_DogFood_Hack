@@ -1,4 +1,4 @@
-# DOGFOOD 2026
+# PrismJudge
 > *"Build the platform that will judge you."*  
 > **Self-Hostable Hackathon Submission, Evaluation & Normalization Engine**  
 > Built from first principles for [DOGFOOD 2026](https://dogfoodhack.com/).  
@@ -6,7 +6,7 @@
 
 ---
 
-![DOGFOOD 2026 Welcome Portal](docs/screenshots/hero.png)
+![PrismJudge Welcome Portal](docs/screenshots/hero.png)
 
 ### System Verification & Compliance
 | Metric | Result | Verification Runbook |
@@ -24,38 +24,13 @@
 
 Most hackathon platforms average scores. An arithmetic average treats a judge who gave everyone a 4.0 as if they thought about it, and it rewards whichever project happened to draw the most generous judges. Standard Z-score formulas crash with division by zero when an evaluator has zero sample variance. Peer isolation is routinely faked in HTML templates while APIs leak scores to curl commands. And platforms collapse when conference Wi-Fi drops.
 
-**DOGFOOD 2026 is built from first principles to hold the line:**
+**PrismJudge is built from first principles to hold the line:**
 
 1. **Empirical Bayesian Shrinkage (The Zero-Variance Proof)**: We shrink each judge's mean and spread toward the competition-wide prior ($\mu_0 \approx 3.57, \sigma_0^2 \approx 0.43$) with pseudo-weight $m = 3.0$. For judge `jdg_07` (who gave 4.0 on every review, sample variance $v = 0$), the shrunk spread is $\sigma_7^{\star} = 0.5105 > 0$. **Division by zero is mathematically impossible.**
 2. **Bradley-Terry Pairwise Engine**: Beside the rubric, judges can evaluate head-to-head showdowns. We solve latent capability using Minorization-Maximization (MM) with Dirichlet smoothing, mapping win rates to standard Elo ratings ($1300–1700$).
 3. **Hard Backend Peer Isolation**: Fastify `preHandler` hooks inspect every request before the database is touched. If Judge B probes `/api/judge/scores?judge=judge_a`, the server halts with a hard **HTTP 403 Forbidden**.
 4. **Single-Process Offline Speed**: Zero external database containers, zero cloud authentication services. Built in Node.js 22 LTS with embedded SQLite 3 (WAL mode) and 256MB memory mapping. Boots in **< 800ms** on an air-gapped laptop with physical network disconnected.
-
----
-
-## Two Independent Evaluation Tracks: Official Judging vs. Community Choice
-
-A common question in hackathon systems is: *Why can visitors vote on projects? Can random people skew the final winners?*
-
-**No. The platform maintains two strictly decoupled evaluation systems:**
-
-| Evaluation Dimension | Track 1: Official Evaluation (Tier 2) | Track 2: Community Choice Award (Tier 3) |
-| :--- | :--- | :--- |
-| **Who Participates** | **Official Registered Judges Only** (`judge` role) | **Audience, Attendees, Peers & Visitors** (Public) |
-| **What It Decides** | **Official Grand Prizes, Track Winners & Leaderboard** | **Standalone "Community Choice / People's Choice" Prize** |
-| **Scoring Engine** | 4-criterion weighted rubrics + Bayesian shrinkage + Pairwise Elo | Simple 1-person-1-vote ballot tally |
-| **Access Control** | **Hard backend role isolation (HTTP 403)**; curl probes rejected | Public ballot protected by anti-abuse and anti-Sybil barriers |
-| **Self-Voting Barrier** | Judges cannot evaluate their own projects (Conflict of Interest check) | **Strictly blocked (HTTP 403)**: cannot vote for own team project |
-| **Result Sealing** | Hidden from peers and participants during active judging | Tallies sealed until voting concludes to prevent herd bias |
-| **Specification Mandate** | PRD §3.2 (FR-100 to FR-126) | PRD §3.3.1 (FR-200 to FR-216) |
-
-### Why Public Voting Exists in Tier 3 (PRD §3.3.1)
-The competition specification explicitly requires supporting public engagement via a "People's Choice" award:
-* **PRD FR-200 — FR-203**: Mandates support for `open` (anyone with link), `email_gated`, and `authenticated` voting modes.
-* **PRD FR-205 (Anti-Self-Voting Barrier)**: *"A voter cannot vote on their own team project. The API returns 403."* Our backend verifies voter sessions and emails against SQLite team rosters to reject self-votes.
-* **PRD FR-206 & FR-210 (Sealed Results)**: Aggregate vote tallies are concealed from the public until results are announced to eliminate bandwagon voting.
-* **Fisher-Yates Presentation Debiasing**: Ballot order is pseudo-randomly shuffled per visitor session using cryptographic hashing, so projects at the top of the list don't gain an unfair advantage.
-* **Anti-Sybil Defenses**: Compound database constraints (`UNIQUE(project_id, voter_hash)`) and sliding-window IP rate limiters block bot floods and automated manipulation.
+5. **Decoupled Community Choice & Embargoed Results**: Official prizes and track rankings are governed exclusively by registered judges. A standalone People's Choice track allows public attendee voting with strict self-voting barriers (HTTP 403) and sealed tallies until the coordinator publishes final results at `/results`.
 
 ---
 
@@ -254,7 +229,7 @@ sequenceDiagram
 
 ## Adversarial Threat Matrix & Security Defenses
 
-| Threat Vector | Real-World Attack Scenario | Engineered Defense in DOGFOOD 2026 | Verified Result |
+| Threat Vector | Real-World Attack Scenario | Engineered Defense in PrismJudge | Verified Result |
 | :--- | :--- | :--- | :---: |
 | **Peer Snooping (IDOR)** | Judge B queries `/api/judge/scores?judge=judge_a` | Fastify `preHandler` hook verifies requesting user ID matches query target | **HTTP 403 Forbidden** |
 | **SSRF Webhook Exploits** | Attacker registers webhook pointing to `169.254.169.254` | `isSafeWebhookUrl` rejects loopback, RFC 1918, link-local, and metadata IPs | **HTTP 400 Bad Request** |
@@ -301,5 +276,5 @@ npx tsc --noEmit
 ---
 
 <p align="center">
-  <b>DOGFOOD 2026 · Self-Hostable Hackathon Submission & Evaluation Platform</b>
+  <b>PrismJudge · Self-Hostable Hackathon Submission & Evaluation Platform</b>
 </p>

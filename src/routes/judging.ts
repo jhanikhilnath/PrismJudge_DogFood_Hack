@@ -143,7 +143,7 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
 
     if (req.user.role !== 'judge' && req.user.role !== 'organizer' && req.user.role !== 'admin') {
       return reply.code(403).view('403.ejs', {
-        title: 'Access Restricted — DOGFOOD 2026',
+        title: 'Access Restricted — PrismJudge',
         user: req.user,
         message: `The Judging Dashboard is reserved for registered technical evaluators. Your current active role is ${req.user.role}.`,
       });
@@ -180,7 +180,7 @@ export async function judgingRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     }
 
     return reply.view('judge_dashboard.ejs', {
-      title: 'Judge Evaluation Dashboard — DOGFOOD 2026',
+      title: 'Judge Evaluation Dashboard — PrismJudge',
       user: req.user,
       assigned,
       tracks,

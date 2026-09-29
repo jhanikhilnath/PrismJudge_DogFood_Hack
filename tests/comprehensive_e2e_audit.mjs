@@ -84,7 +84,7 @@ async function runEndToEndVerification() {
   console.log('1. Checking Home Portal (http://localhost:8080/)...');
   const resHome = await request({ path: '/' });
   recordTest('T1.1.1', 'Home portal returns HTTP 200 OK', resHome.status === 200, `status=${resHome.status}`);
-  recordTest('T1.1.2', 'Page title contains DOGFOOD 2026', resHome.body.includes('DOGFOOD 2026'), 'Title tag verified');
+  recordTest('T1.1.2', 'Page title contains PrismJudge', resHome.body.includes('PrismJudge'), 'Title tag verified');
   recordTest('T1.1.3', 'Hero status pill displays active phase', 
     resHome.body.includes('hero-status-pill') && (resHome.body.includes('Submissions Closed') || resHome.body.includes('Evaluation Phase')),
     'Status pill present');

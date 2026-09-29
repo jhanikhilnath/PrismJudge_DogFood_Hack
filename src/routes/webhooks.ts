@@ -13,7 +13,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     if (!project) {
       if (req.headers.accept?.includes('text/html')) {
         return reply.code(404).view('404.ejs', {
-          title: 'Certificate Not Found — DOGFOOD 2026',
+          title: 'Certificate Not Found — PrismJudge',
           user: req.user,
           path: req.url,
         });
@@ -45,7 +45,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         });
       }
       return reply.code(403).view('certificate_restricted.ejs', {
-        title: 'Access Restricted — DOGFOOD 2026',
+        title: 'Access Restricted — PrismJudge',
         project,
         user: req.user,
       });
@@ -60,7 +60,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
 
     if (req.headers.accept?.includes('application/json')) {
       return reply.send({
-        event: 'DOGFOOD 2026',
+        event: 'PrismJudge 2026',
         project,
         members,
         verification: {
@@ -109,7 +109,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     if (!record) {
       if (req.headers.accept?.includes('text/html')) {
         return reply.code(404).view('404.ejs', {
-          title: 'Judge Record Not Found — DOGFOOD 2026',
+          title: 'Judge Record Not Found — PrismJudge',
           user: req.user,
           path: req.url,
         });
@@ -137,7 +137,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
         });
       }
       return reply.code(403).view('certificate_restricted.ejs', {
-        title: 'Access Restricted — DOGFOOD 2026',
+        title: 'Access Restricted — PrismJudge',
         project: { title: `Evaluator Commendation (${record.judge.name})` },
         user: req.user,
       });
@@ -149,7 +149,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
 
     if (req.headers.accept?.includes('application/json')) {
       return reply.send({
-        event: 'DOGFOOD 2026',
+        event: 'PrismJudge 2026',
         credential_type: 'JUROR_COMMENDATION_RECORD',
         judge: record.judge,
         tracks: record.tracks,
@@ -204,7 +204,7 @@ export async function webhookRoutes(fastify: FastifyInstance, _opts: FastifyPlug
     const tracks = getAllTracks();
 
     return reply.view('embed_gallery.ejs', {
-      title: 'DOGFOOD 2026 — Project Showcase Widget',
+      title: 'PrismJudge — Project Showcase Widget',
       projects,
       tracks,
       currentTrack: query.track || '',

@@ -1,4 +1,4 @@
-# Architecture Decision Records (ADR) — DOGFOOD 2026
+# Architecture Decision Records (ADR) — PrismJudge
 > **Permanent Record of Engineering Decisions, Trade-Offs, and Mathematical Rationales**  
 > Platform: Node.js (v22 LTS) · TypeScript · Fastify v5 · Embedded SQLite 3 (WAL Mode) · EJS SSR
 
