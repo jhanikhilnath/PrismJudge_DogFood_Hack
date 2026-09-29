@@ -244,7 +244,7 @@ sequenceDiagram
 | :--- | :--- | :--- | :---: |
 | **Peer Snooping (IDOR)** | Judge B queries `/api/judge/scores?judge=judge_a` | Fastify `preHandler` hook verifies requesting user ID matches query target | **HTTP 403 Forbidden** |
 | **SSRF Webhook Exploits** | Attacker registers webhook pointing to `169.254.169.254` | `isSafeWebhookUrl` rejects loopback, RFC 1918, link-local, and metadata IPs | **HTTP 400 Bad Request** |
-| **CSV Formula Injection** | Project title contains `=cmd|' /C calc'!A0` | `sanitizeCSV` prefixes formula triggers (`=`, `+`, `-`, `@`, `\t`, `\|`, `%`) with `'` | **Neutralized Text** |
+| **CSV Formula Injection** | Project title contains `&#61;cmd&#124;' /C calc'!A0` | `sanitizeCSV` prefixes formula triggers (`=`, `+`, `-`, `@`, `\t`, `\|`, `%`) with `'` | **Neutralized Text** |
 | **Sybil Voting Floods** | Script floods community ballot with automated votes | Sliding-window IP rate limiter + voter email team verification | **HTTP 429 & 403** |
 | **Timing Side Channels** | Attacker measures latency to brute-force session tokens | `timingSafeTokenEqual` uses constant-time `crypto.timingSafeEqual` buffers | **Constant Time** |
 | **Open Redirects** | Phishing redirect `/login?redirect=https://evil.com` | `sanitizeRedirect` confines redirect targets strictly to local relative paths | **Confined to Local** |
