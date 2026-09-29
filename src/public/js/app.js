@@ -90,18 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 4b. Dynamic Persona Switch Interceptor (Preserves contextual route safely)
-  document.querySelectorAll('a[href^="/api/auth/switch/"]').forEach((link) => {
-    link.addEventListener('click', () => {
-      const curPath = window.location.pathname;
-      const curSearch = window.location.search;
-      if (curPath && curPath !== '/login' && curPath !== '/') {
-        const fullLoc = curPath + curSearch;
-        const baseHref = link.getAttribute('href').split('?')[0];
-        link.setAttribute('href', `${baseHref}?redirect=${encodeURIComponent(fullLoc)}`);
-      }
-    });
-  });
 
   // 4c. Flash Toast from Persona Switching
   function checkSwitchToast() {

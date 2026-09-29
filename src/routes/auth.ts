@@ -47,22 +47,12 @@ export function sanitizeRedirect(url?: string | null): string {
   return '/projects';
 }
 
-export function resolveSmartRedirect(targetRole: string, requestedRedirect?: string | null, refererHeader?: string | null): string {
-  let candidate = (requestedRedirect || '').trim();
-
-  // If candidate is not provided or just root/login, inspect referer header
-  if (!candidate || candidate === '/' || candidate === '/login') {
-    if (refererHeader) {
-      try {
-        const refUrl = new URL(refererHeader, 'http://localhost:8080');
-        if (refUrl.pathname && refUrl.pathname !== '/login' && refUrl.pathname !== '/') {
-          candidate = refUrl.pathname + refUrl.search;
-        }
-      } catch {}
-    }
+export function resolveSmartRedirect(targetRole: string, requestedRedirect?: string | null): string {
+  if (!requestedRedirect || typeof requestedRedirect !== 'string') {
+    return getRoleDefaultPath(targetRole);
   }
 
-  // If still empty or at root/login, go to role's primary home
+  const candidate = requestedRedirect.trim();
   if (!candidate || candidate === '/' || candidate === '/login') {
     return getRoleDefaultPath(targetRole);
   }
@@ -193,7 +183,7 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
           maxAge: 15,
         });
 
-        const targetUrl = resolveSmartRedirect(session.role, body.redirect || req.query?.redirect, req.headers.referer);
+        const targetUrl = resolveSmartRedirect(session.role, body.redirect || req.query?.redirect);
         if (isHtml) return reply.redirect(targetUrl);
         return reply.send({ message: 'Logged in as demo persona', token: session.token, redirect: targetUrl });
       }
@@ -294,7 +284,7 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
       maxAge: 15,
     });
 
-    const targetUrl = resolveSmartRedirect(session.role, req.query?.redirect, req.headers.referer);
+    const targetUrl = resolveSmartRedirect(session.role, req.query?.redirect);
     return reply.redirect(targetUrl);
   });
 
@@ -308,7 +298,7 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
         resourceType: 'session',
       });
     }
-    reply.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
+    reply.clearCookie(SESSION_COOKIE_NAME, { path: '/', httpOnly: true, sameSite: 'lax' });
     return reply.redirect('/login');
   });
 
@@ -324,7 +314,7 @@ export async function authRoutes(fastify: FastifyInstance, _opts: FastifyPluginO
       });
     }
 
-    reply.clearCookie(SESSION_COOKIE_NAME, { path: '/' });
+    reply.clearCookie(SESSION_COOKIE_NAME, { path: '/', httpOnly: true, sameSite: 'lax' });
     return reply.send({ message: 'Logged out successfully' });
   });
 

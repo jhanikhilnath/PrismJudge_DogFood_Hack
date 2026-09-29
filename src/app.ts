@@ -86,7 +86,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   fastify.addHook('preHandler', resolveUserHook);
 
   // 5b. Enterprise Security Headers Hook
-  fastify.addHook('onSend', async (_request, reply) => {
+  fastify.addHook('onSend', async (request, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('X-Frame-Options', 'SAMEORIGIN');
     reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -95,6 +95,11 @@ export async function buildApp(): Promise<FastifyInstance> {
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self';"
     );
+    if (!request.url.startsWith('/static/')) {
+      reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      reply.header('Pragma', 'no-cache');
+      reply.header('Expires', '0');
+    }
   });
 
   // 5c. Robots Exclusion Standard
